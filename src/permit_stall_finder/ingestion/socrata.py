@@ -23,6 +23,19 @@ def normalize_permit(permit_number: str) -> str:
     return re.sub(r"[^A-Z0-9]", "", permit_number.upper())
 
 
+def escape_soql_string(value: str) -> str:
+    """Escapes a value for safe interpolation inside a single-quoted SoQL
+    string literal, by doubling embedded single quotes -- the standard
+    SQL/SoQL escaping convention this package already uses in
+    ingestion/inspections.py (permit-number variants) and ingestion/
+    cohort_populations.py (its local _esc() helper). Every `$where` clause
+    built anywhere in this package that interpolates a string value must
+    route it through this function first -- see permits.py for the one
+    call site that was missing it (found during UI-integration review,
+    2026-08; a public text input made the previously low-risk gap real)."""
+    return value.replace("'", "''")
+
+
 def query(dataset_id: str, params: dict[str, str], base_url: str) -> list[dict]:
     url = f"{base_url}/{dataset_id}.json?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})

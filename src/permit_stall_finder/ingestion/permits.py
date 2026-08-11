@@ -34,7 +34,7 @@ def fetch_raw_permit_row(
         config.PERMIT_DATASET_ID,
         {
             "$select": socrata.select_with_system_columns(PERMIT_FIELDS),
-            "$where": f"permit_nbr='{permit_number}'",
+            "$where": f"permit_nbr='{socrata.escape_soql_string(permit_number)}'",
             "$limit": "1",
         },
         base_url,
