@@ -5,6 +5,7 @@ description = "Reconstructs LA building permit journeys from LADBS open data to 
 requires-python = ">=3.9"
 dependencies = [
     "duckdb>=1.0",
+    "streamlit>=1.30",
 ]
 
 [project.optional-dependencies]
