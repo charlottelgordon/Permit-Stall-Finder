@@ -1,0 +1,443 @@
+[
+  {
+    ":id": "row-jq3g_h72b~38p3",
+    ":created_at": "2022-05-02T09:18:25.230Z",
+    ":updated_at": "2022-05-02T09:18:35.004Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-04-28T00:00:00.000",
+    "inspection": "Floor/Roof Diaphrgm/Shear Wall",
+    "inspection_result": "Insp Cancelled"
+  },
+  {
+    ":id": "row-aeyj_z2fj.rx58",
+    ":created_at": "2022-05-30T09:18:52.925Z",
+    ":updated_at": "2022-05-30T09:19:02.208Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-05-26T00:00:00.000",
+    "inspection": "Underground Mechanical",
+    "inspection_result": "Cancelled"
+  },
+  {
+    ":id": "row-7i2d~kdng.2rvc",
+    ":created_at": "2022-06-06T09:19:35.150Z",
+    ":updated_at": "2022-06-06T09:19:47.196Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-05-31T00:00:00.000",
+    "inspection": "PLUMBING-Rough",
+    "inspection_result": "Not Ready for Inspection"
+  },
+  {
+    ":id": "row-gr8g.i5hi~h8cd",
+    ":created_at": "2022-06-06T09:19:35.150Z",
+    ":updated_at": "2022-06-06T09:19:47.196Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-05-31T00:00:00.000",
+    "inspection": "Sewer",
+    "inspection_result": "Not Ready for Inspection"
+  },
+  {
+    ":id": "row-gxuv~mzx4_9n9q",
+    ":created_at": "2022-06-06T09:19:35.150Z",
+    ":updated_at": "2022-06-06T09:19:47.196Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-06-03T00:00:00.000",
+    "inspection": "Sewer",
+    "inspection_result": "Corrections Issued"
+  },
+  {
+    ":id": "row-je5m_xa7v_fzbw",
+    ":created_at": "2022-06-06T09:19:35.150Z",
+    ":updated_at": "2022-06-06T09:19:47.196Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-06-03T00:00:00.000",
+    "inspection": "PLUMBING-Rough",
+    "inspection_result": "Partial Approval"
+  },
+  {
+    ":id": "row-ue5w_xdwa~kak5",
+    ":created_at": "2022-06-13T09:18:42.906Z",
+    ":updated_at": "2022-06-13T09:18:51.095Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-06-09T00:00:00.000",
+    "inspection": "Underground Mechanical",
+    "inspection_result": "Not Ready for Inspection"
+  },
+  {
+    ":id": "row-6jg9_pdq8_434k",
+    ":created_at": "2022-06-13T09:18:42.906Z",
+    ":updated_at": "2022-06-13T09:18:51.095Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-06-09T00:00:00.000",
+    "inspection": "Deputy Pre-Stress Concrete",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-62rx.6hsn_pxep",
+    ":created_at": "2022-06-13T09:18:42.906Z",
+    ":updated_at": "2022-06-13T09:18:51.095Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-06-09T00:00:00.000",
+    "inspection": "Sewer",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-ch34.3gwt-a33z",
+    ":created_at": "2022-06-20T09:19:26.372Z",
+    ":updated_at": "2022-06-20T09:19:40.640Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-06-13T00:00:00.000",
+    "inspection": "Underground Mechanical",
+    "inspection_result": "Cancelled"
+  },
+  {
+    ":id": "row-9sds~inyb.k6t8",
+    ":created_at": "2022-06-20T09:19:26.372Z",
+    ":updated_at": "2022-06-20T09:19:40.640Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-06-14T00:00:00.000",
+    "inspection": "Footing/Foundation/Slab",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-p5fn_n97a_qmeu",
+    ":created_at": "2022-06-20T09:19:26.372Z",
+    ":updated_at": "2022-06-20T09:19:40.640Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-06-15T00:00:00.000",
+    "inspection": "Deputy Pre-Stress Concrete",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-pqns~s33f~rr8n",
+    ":created_at": "2022-06-20T09:19:26.372Z",
+    ":updated_at": "2022-06-20T09:19:40.640Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-06-17T00:00:00.000",
+    "inspection": "Deputy Reinf. Concrete",
+    "inspection_result": "Conditional Approval"
+  },
+  {
+    ":id": "row-u3nm-dsg5_erxy",
+    ":created_at": "2022-07-11T09:18:40.416Z",
+    ":updated_at": "2022-07-11T09:18:56.538Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-07-08T00:00:00.000",
+    "inspection": "Floor/Roof Diaphrgm/Shear Wall",
+    "inspection_result": "Partial Approval"
+  },
+  {
+    ":id": "row-vctf_z7vs~gh5a",
+    ":created_at": "2022-08-01T09:19:56.621Z",
+    ":updated_at": "2022-08-01T09:20:05.101Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-07-29T00:00:00.000",
+    "inspection": "Deputy Wood Construction",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-3btx-frne-spf5",
+    ":created_at": "2022-08-08T09:19:10.384Z",
+    ":updated_at": "2022-08-08T09:19:17.761Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-08-01T00:00:00.000",
+    "inspection": "Floor/Roof Diaphrgm/Shear Wall",
+    "inspection_result": "Corrections Issued"
+  },
+  {
+    ":id": "row-vju3-md5n~9fn3",
+    ":created_at": "2022-08-15T09:19:11.624Z",
+    ":updated_at": "2022-08-15T09:19:22.581Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-08-11T00:00:00.000",
+    "inspection": "Deputy Wood Construction",
+    "inspection_result": "Conditional Approval"
+  },
+  {
+    ":id": "row-254v-pzef.4tmx",
+    ":created_at": "2022-09-12T09:26:16.905Z",
+    ":updated_at": "2022-09-12T09:26:32.811Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-09-09T00:00:00.000",
+    "inspection": "PLUMBING-Rough",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-zdx4.a8vx_4tqd",
+    ":created_at": "2022-09-12T09:26:16.905Z",
+    ":updated_at": "2022-09-12T09:26:32.811Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-09-09T00:00:00.000",
+    "inspection": "ELECTRICAL-Rough",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-ibzg.ttv8.c2cr",
+    ":created_at": "2022-09-12T09:26:16.905Z",
+    ":updated_at": "2022-09-12T09:26:32.811Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-09-09T00:00:00.000",
+    "inspection": "HVAC-Rough",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-3fr7-fxrx~h89h",
+    ":created_at": "2022-09-19T09:26:12.661Z",
+    ":updated_at": "2022-09-19T09:26:30.199Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-09-12T00:00:00.000",
+    "inspection": "Interior/Exterior Lathing",
+    "inspection_result": "Partial Approval"
+  },
+  {
+    ":id": "row-xkxj_n4w3~4g9j",
+    ":created_at": "2022-09-26T09:26:33.450Z",
+    ":updated_at": "2022-09-26T09:26:45.669Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-09-21T00:00:00.000",
+    "inspection": "Interior/Exterior Lathing",
+    "inspection_result": "Not Ready for Inspection"
+  },
+  {
+    ":id": "row-j46x.73rq_pae2",
+    ":created_at": "2022-09-26T09:26:33.450Z",
+    ":updated_at": "2022-09-26T09:26:45.669Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-09-21T00:00:00.000",
+    "inspection": "BUILDING-Rough-Frame",
+    "inspection_result": "Corrections Issued"
+  },
+  {
+    ":id": "row-tgvs_v32e-nz5h",
+    ":created_at": "2022-09-26T09:26:33.450Z",
+    ":updated_at": "2022-09-26T09:26:45.669Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-09-21T00:00:00.000",
+    "inspection": "Verify Sprinkler Sign Off",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-6jbb_wba2-645p",
+    ":created_at": "2022-09-26T09:26:33.450Z",
+    ":updated_at": "2022-09-26T09:26:45.669Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-09-21T00:00:00.000",
+    "inspection": "Green Building Rough",
+    "inspection_result": "Corrections Issued"
+  },
+  {
+    ":id": "row-dvx7_pa2g.ty28",
+    ":created_at": "2022-10-10T09:26:20.408Z",
+    ":updated_at": "2022-10-10T09:26:36.063Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-10-05T00:00:00.000",
+    "inspection": "BUILDING-Rough-Frame",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-ux5w_9uwb~fz8n",
+    ":created_at": "2022-10-10T09:26:20.408Z",
+    ":updated_at": "2022-10-10T09:26:36.063Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-10-05T00:00:00.000",
+    "inspection": "Green Building Rough",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-qd66~aakm~s42h",
+    ":created_at": "2022-10-24T09:26:21.082Z",
+    ":updated_at": "2022-10-24T09:26:55.035Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-10-18T00:00:00.000",
+    "inspection": "Interior/Exterior Lathing",
+    "inspection_result": "Corrections Issued"
+  },
+  {
+    ":id": "row-ybfw_ug2y_3dyi",
+    ":created_at": "2022-10-24T09:26:21.082Z",
+    ":updated_at": "2022-10-24T09:26:55.035Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-10-21T00:00:00.000",
+    "inspection": "Interior/Exterior Lathing",
+    "inspection_result": "Partial Approval"
+  },
+  {
+    ":id": "row-vekn_5ds5.iqhu",
+    ":created_at": "2022-10-31T09:26:19.979Z",
+    ":updated_at": "2022-10-31T09:26:30.742Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-10-25T00:00:00.000",
+    "inspection": "Insulation",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-75s5.6a3y.vsp5",
+    ":created_at": "2022-10-31T09:26:19.979Z",
+    ":updated_at": "2022-10-31T09:26:30.742Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-10-28T00:00:00.000",
+    "inspection": "Drywall Nailing",
+    "inspection_result": "Insp Scheduled"
+  },
+  {
+    ":id": "row-ueqb-grj6-6bya",
+    ":created_at": "2022-11-07T10:26:23.062Z",
+    ":updated_at": "2022-11-07T10:26:34.193Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-11-01T00:00:00.000",
+    "inspection": "Interior/Exterior Lathing",
+    "inspection_result": "Corrections Issued"
+  },
+  {
+    ":id": "row-2vdn-a6ew-gzkk",
+    ":created_at": "2022-11-07T10:26:23.062Z",
+    ":updated_at": "2022-11-07T10:26:34.193Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-11-04T00:00:00.000",
+    "inspection": "Interior/Exterior Lathing",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-5gaq.quuc_8ug8",
+    ":created_at": "2023-01-02T10:25:50.119Z",
+    ":updated_at": "2023-01-02T10:25:54.297Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-12-27T00:00:00.000",
+    "inspection": "Service/Power Release",
+    "inspection_result": "Corrections Issued"
+  },
+  {
+    ":id": "row-83jb~3emf_vdsp",
+    ":created_at": "2023-01-02T10:25:50.119Z",
+    ":updated_at": "2023-01-02T10:25:54.297Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-12-27T00:00:00.000",
+    "inspection": "Gas Test",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-7spr_iyem_vuyc",
+    ":created_at": "2023-01-02T10:25:50.119Z",
+    ":updated_at": "2023-01-02T10:25:54.297Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-12-28T00:00:00.000",
+    "inspection": "SGSOV-Seismic Gas S/O Valve",
+    "inspection_result": "SGSOV Approved"
+  },
+  {
+    ":id": "row-s59m.w5g6_ybe6",
+    ":created_at": "2023-01-02T10:25:50.119Z",
+    ":updated_at": "2023-01-02T10:25:54.297Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2022-12-29T00:00:00.000",
+    "inspection": "Service/Power Release",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-q3ka~qcc4.32f6",
+    ":created_at": "2023-01-30T10:26:30.875Z",
+    ":updated_at": "2023-01-30T10:26:40.653Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-01-24T00:00:00.000",
+    "inspection": "Underground Mechanical",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-mehp~tis7~hhcx",
+    ":created_at": "2023-02-06T10:27:40.596Z",
+    ":updated_at": "2023-02-06T10:27:47.384Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-01-31T00:00:00.000",
+    "inspection": "PLUMBING-Final",
+    "inspection_result": "Corrections Issued"
+  },
+  {
+    ":id": "row-mfnj~k58g_yvcf",
+    ":created_at": "2023-02-06T10:27:40.596Z",
+    ":updated_at": "2023-02-06T10:27:47.384Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-01-31T00:00:00.000",
+    "inspection": "ELECTRICAL-Final",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-nzxc.7j9x-34cr",
+    ":created_at": "2023-02-13T10:26:51.804Z",
+    ":updated_at": "2023-02-13T10:27:00.392Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-02-07T00:00:00.000",
+    "inspection": "Grading Verification",
+    "inspection_result": "OK for CofO"
+  },
+  {
+    ":id": "row-u56u.rg2t_edki",
+    ":created_at": "2023-02-27T10:26:01.847Z",
+    ":updated_at": "2023-02-27T10:26:16.653Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-02-23T00:00:00.000",
+    "inspection": "HVAC-Final",
+    "inspection_result": "Not Ready for Inspection"
+  },
+  {
+    ":id": "row-k2eh~w4mp~ju2z",
+    ":created_at": "2023-02-27T10:26:01.847Z",
+    ":updated_at": "2023-02-27T10:26:16.653Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-02-23T00:00:00.000",
+    "inspection": "PLUMBING-Final",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-n446_52n5.f7ue",
+    ":created_at": "2023-03-20T09:27:50.214Z",
+    ":updated_at": "2023-03-20T09:28:04.240Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-03-14T00:00:00.000",
+    "inspection": "CofO Issuance",
+    "inspection_result": "CofO Issued"
+  },
+  {
+    ":id": "row-q5tn_ihm3-dktt",
+    ":created_at": "2023-03-20T09:27:50.214Z",
+    ":updated_at": "2023-03-20T09:28:04.240Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-03-14T00:00:00.000",
+    "inspection": "Inspection",
+    "inspection_result": "Permit Finaled"
+  },
+  {
+    ":id": "row-duy5_zfd2~ncz5",
+    ":created_at": "2023-03-20T09:27:50.214Z",
+    ":updated_at": "2023-03-20T09:28:04.240Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-03-14T00:00:00.000",
+    "inspection": "Inspection",
+    "inspection_result": "Permit Finaled"
+  },
+  {
+    ":id": "row-hwiz~kwce-i4g8",
+    ":created_at": "2023-03-27T09:26:09.689Z",
+    ":updated_at": "2023-03-27T09:26:28.545Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-03-14T00:00:00.000",
+    "inspection": "CofO Issuance",
+    "inspection_result": "CofO Issued"
+  },
+  {
+    ":id": "row-pwn6_6que-gpcx",
+    ":created_at": "2023-03-27T09:26:09.689Z",
+    ":updated_at": "2023-03-27T09:26:28.545Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-03-14T00:00:00.000",
+    "inspection": "Inspection",
+    "inspection_result": "Permit Finaled"
+  },
+  {
+    ":id": "row-7vc7~j23m_kajz",
+    ":created_at": "2023-03-27T09:26:09.689Z",
+    ":updated_at": "2023-03-27T09:26:28.545Z",
+    "permit": "20010 20000 02739",
+    "inspection_date": "2023-03-14T00:00:00.000",
+    "inspection": "Inspection",
+    "inspection_result": "Permit Finaled"
+  }
+]

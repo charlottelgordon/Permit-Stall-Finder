@@ -1,0 +1,29 @@
+[
+  {
+    ":id": "row-f5jc-96pw_7gw3",
+    ":created_at": "2021-09-20T09:16:48.962Z",
+    ":updated_at": "2021-09-20T09:16:55.340Z",
+    "permit": "21016 20000 20141",
+    "inspection_date": "2021-09-15T00:00:00.000",
+    "inspection": "BUILDING-Rough-Frame",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-fvqh-ghhc~5ymg",
+    ":created_at": "2021-12-13T10:17:56.577Z",
+    ":updated_at": "2021-12-13T10:18:06.790Z",
+    "permit": "21016 20000 20141",
+    "inspection_date": "2021-12-08T00:00:00.000",
+    "inspection": "Smoke Detectors",
+    "inspection_result": "Approved"
+  },
+  {
+    ":id": "row-96vy.8cfp_r2sx",
+    ":created_at": "2021-12-13T10:17:56.577Z",
+    ":updated_at": "2021-12-13T10:18:06.790Z",
+    "permit": "21016 20000 20141",
+    "inspection_date": "2021-12-08T00:00:00.000",
+    "inspection": "Final",
+    "inspection_result": "Permit Finaled"
+  }
+]

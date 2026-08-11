@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+build/
+dist/
+
+# local runtime state — never commit persisted snapshots or the working DB
+data/
+*.duckdb
+*.duckdb.wal
+
+# ad hoc research pulls (raw dataset dumps are regenerable via research/scripts/)
+research/scripts/*.txt
+research/scripts/*.log
