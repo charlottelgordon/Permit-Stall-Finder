@@ -1,0 +1,346 @@
+{
+  "metadata": {
+    "kb_version": "0.2.0",
+    "last_reviewed": "2026-08-11",
+    "revision_notes": "0.2.0: verification pass on the two LAMC citations before implementation. LAMC Sec. 98.0602 content CORRECTED -- a more detailed, quote-like search result surfaced the actual figures (2-year total validity, 12-month expiration if work not commenced, 12-month continuous-abandonment expiration), which differ from 0.1.0-draft's incorrect '180 days' figure (likely conflated with a different jurisdiction's default ICC/IBC period). The '106.4.4.3 project inactivity, 90-day cure window' citation from 0.1.0-draft could NOT be verified on a second, more targeted attempt (not present in the LABC administration chapter fetched from up.codes; no independent confirmation found) and has been DROPPED rather than shipped as an unconfirmed specific legal claim. Also added: per-source verification_status, per-step grounding_strength, and one new specifically-keyed entry (pre_issuance_status_dwell x 'Corrections Issued') so lookup isn't category-generic-only.",
+    "lookup_rule": "key = (stall_category, applies_to_dimension, applies_to_value); falls back to (stall_category, 'category_generic', null) if a more specific key is absent; returns null (NO_ENTRY_AVAILABLE) if neither resolves. Specific keys are always tried before the generic fallback."
+  },
+  "entries": [
+    {
+      "entry_id": "pre_issuance.generic",
+      "stall_category": "pre_issuance_status_dwell",
+      "applies_to_dimension": "category_generic",
+      "applies_to_value": null,
+      "explanation": "This status reflects a checkpoint in LADBS's plan check process. Depending on project complexity, permits are reviewed through different tracks -- Counter Plan Check and Express Permits for simpler projects, Expanded Counter Plan Check for modest projects like multi-floor tenant improvements or medium-sized additions, and Regular Plan Check for large or complex projects -- and processing checkpoints can take different amounts of time depending on the track and reviewer workload. Publicly available sources do not clearly document what specifically causes a permit to remain in most individual pre-issuance statuses for an extended time.",
+      "developer_actionable_steps": [
+        {
+          "text": "Contact LADBS or the assigned plan check engineer to ask what is needed to move this permit toward its next status.",
+          "grounding_strength": "cautious_synthesis"
+        }
+      ],
+      "city_dependent_steps": [
+        {
+          "text": "Advancing a permit past a plan-check review checkpoint is a LADBS-side action.",
+          "grounding_strength": "cautious_synthesis"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Plan Review & Permitting",
+          "url": "https://dbs.lacity.gov/services/plan-review-permitting",
+          "publisher": "Los Angeles Department of Building and Safety",
+          "source_type": "primary_official_agency",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "direct_primary_fetch"
+        }
+      ],
+      "caveats": [
+        "This is a generic entry covering most pre-issuance status_desc values because no official source distinguishing their individual meanings was found -- it does not explain what is specific to any one status.",
+        "Does not explain why THIS permit is in this status longer than comparable permits -- only that this status exists as part of the general plan-check process.",
+        "'Corrections Issued' has its own, more specific entry (pre_issuance.corrections_issued) -- this generic entry only applies when a more specific match isn't found."
+      ],
+      "confidence": "generic_low_confidence",
+      "kb_version": "0.2.0",
+      "last_reviewed": "2026-08-11"
+    },
+    {
+      "entry_id": "pre_issuance.corrections_issued",
+      "stall_category": "pre_issuance_status_dwell",
+      "applies_to_dimension": "status_desc",
+      "applies_to_value": "Corrections Issued",
+      "explanation": "LADBS issues a correction notice (referred to in LADBS's glossary as a 'G-49') when plan check review finds items that need to be revised before plans can be approved. The applicant is generally expected to review the circled corrections, revise the plans, and contact the plan check engineer for a verification appointment once corrections have been addressed. A permit remaining in 'Corrections Issued' status can indicate the applicant has not yet resubmitted revised plans, or that a resubmission is still awaiting the plan check engineer's re-review -- this data does not distinguish which.",
+      "developer_actionable_steps": [
+        {
+          "text": "Review the correction notice with the architect, engineer, or designer responsible for the plans.",
+          "grounding_strength": "cautious_synthesis"
+        },
+        {
+          "text": "Once revised plans address all circled corrections, contact the plan check engineer to schedule a verification appointment.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "city_dependent_steps": [
+        {
+          "text": "Re-review of resubmitted plans is performed by the LADBS plan check engineer.",
+          "grounding_strength": "cautious_synthesis"
+        }
+      ],
+      "sources": [
+        {
+          "title": "LADBS Glossary (G-49 = Correction notice)",
+          "url": "https://dbs.lacity.gov/glossary",
+          "publisher": "Los Angeles Department of Building and Safety",
+          "source_type": "primary_official_agency",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "direct_primary_fetch"
+        },
+        {
+          "title": "Single Family Dwelling/Duplex Plan Check Correction Sheets",
+          "url": "https://dbs.lacity.gov/sites/default/files/efs/forms/pc17/pc-str-corr-lst-020-2020.pdf",
+          "publisher": "Los Angeles Department of Building and Safety",
+          "source_type": "primary_official_agency",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "search_synthesis_detailed"
+        }
+      ],
+      "caveats": [
+        "Cannot distinguish whether the delay is on the applicant's side (revised plans not yet resubmitted) or LADBS's side (resubmission awaiting re-review) -- the underlying data does not carry this distinction."
+      ],
+      "confidence": "verified_search_synthesis",
+      "kb_version": "0.2.0",
+      "last_reviewed": "2026-08-11"
+    },
+    {
+      "entry_id": "issuance_to_first_inspection_gap.generic",
+      "stall_category": "issuance_to_first_inspection_gap",
+      "applies_to_dimension": "category_generic",
+      "applies_to_value": null,
+      "explanation": "LADBS expects a permit holder to schedule and pass inspections for each phase of a project before moving on to the next one, starting once the permit is issued and construction begins. A long gap between issuance and the first recorded inspection can occur when construction hasn't reached an inspectable stage yet, when the first inspection hasn't been requested, or for reasons not visible in this data.",
+      "developer_actionable_steps": [
+        {
+          "text": "If construction has reached an inspectable stage, request the applicable inspection through LADBS's inspection request service.",
+          "grounding_strength": "cautious_synthesis"
+        },
+        {
+          "text": "Confirm the permit and approved plans will be available on-site, as required for inspections.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "city_dependent_steps": [
+        {
+          "text": "Inspection scheduling and availability are managed by LADBS.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Homeowner: Step by Step",
+          "url": "https://dbs.lacity.gov/services/homeowner-step-by-step",
+          "publisher": "Los Angeles Department of Building and Safety",
+          "source_type": "primary_official_agency",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "direct_primary_fetch"
+        }
+      ],
+      "caveats": [
+        "Does not distinguish whether the delay is because work hasn't started, hasn't reached an inspectable stage, or an inspection was needed but not requested."
+      ],
+      "confidence": "verified_direct_fetch",
+      "kb_version": "0.2.0",
+      "last_reviewed": "2026-08-11"
+    },
+    {
+      "entry_id": "no_inspection_since_issuance.generic",
+      "stall_category": "no_inspection_since_issuance",
+      "applies_to_dimension": "category_generic",
+      "applies_to_value": null,
+      "explanation": "Under LAMC Sec. 98.0602, a permit is generally valid for two years from issuance, but expires 12 months from issuance if the authorized work has not commenced, and also expires if the Department determines the work has been suspended, discontinued, or abandoned for a continuous period of 12 months. Extensions may be available -- for residential permits, the code provides for extensions where unusual construction difficulties are shown to have prevented work from starting or continuing.",
+      "developer_actionable_steps": [
+        {
+          "text": "If work has not yet commenced, be aware the permit may expire 12 months after issuance under LAMC Sec. 98.0602 -- consider starting inspectable work or requesting an extension before that window closes.",
+          "grounding_strength": "directly_supported"
+        },
+        {
+          "text": "If unusual construction difficulties have prevented starting or continuing work, ask LADBS about requesting an extension.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "city_dependent_steps": [
+        {
+          "text": "LADBS determines whether a permit has expired due to non-commencement or abandonment, and decides on extension requests.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "sources": [
+        {
+          "title": "LAMC Sec. 98.0602 -- Expiration of Permits",
+          "url": "https://codelibrary.amlegal.com/codes/los_angeles/latest/lamc/0-0-0-190414",
+          "publisher": "Los Angeles Municipal Code",
+          "source_type": "primary_municipal_code",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "search_synthesis_detailed"
+        }
+      ],
+      "caveats": [
+        "This citation was retrieved via a detailed search synthesis that reads as a close paraphrase/quotation of the code, not a full direct-text fetch (the code library blocks automated scraping, confirmed on 3 separate attempts) -- recommended to verify exact current wording before relying on this for a specific compliance deadline.",
+        "Whether this specific permit genuinely requires an inspection at all cannot be determined from this data -- some permits legitimately need none.",
+        "This entry does NOT establish that the permit HAS expired or been abandoned -- only what the general rule is. Whether it applies to this specific permit is not something this tool can determine."
+      ],
+      "confidence": "verified_search_synthesis",
+      "kb_version": "0.2.0",
+      "last_reviewed": "2026-08-11"
+    },
+    {
+      "entry_id": "inter_inspection_gap.generic",
+      "stall_category": "inter_inspection_gap",
+      "applies_to_dimension": "category_generic",
+      "applies_to_value": null,
+      "explanation": "LADBS expects a permit holder to schedule and pass inspections for each phase of a project before moving on to the next one. A long gap between two recorded inspections can occur when construction work between phases is slower than typical, when the next inspection hasn't been requested yet, or for reasons not visible in this data.",
+      "developer_actionable_steps": [
+        {
+          "text": "If the next phase of work is ready, request the next inspection through LADBS's inspection request service.",
+          "grounding_strength": "cautious_synthesis"
+        },
+        {
+          "text": "Confirm the permit and approved plans are available on-site, as required for each inspection.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "city_dependent_steps": [
+        {
+          "text": "Inspection scheduling and availability are managed by LADBS; scheduling windows and any backlog are outside the applicant's control.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Homeowner: Step by Step",
+          "url": "https://dbs.lacity.gov/services/homeowner-step-by-step",
+          "publisher": "Los Angeles Department of Building and Safety",
+          "source_type": "primary_official_agency",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "direct_primary_fetch"
+        }
+      ],
+      "caveats": [
+        "Does not distinguish a gap caused by slow construction progress from one caused by a delay in requesting the next inspection."
+      ],
+      "confidence": "verified_direct_fetch",
+      "kb_version": "0.2.0",
+      "last_reviewed": "2026-08-11"
+    },
+    {
+      "entry_id": "inactivity_since_last_inspection.generic",
+      "stall_category": "inactivity_since_last_inspection",
+      "applies_to_dimension": "category_generic",
+      "applies_to_value": null,
+      "explanation": "Under LAMC Sec. 98.0602, a permit expires if the Department determines the authorized work has been suspended, discontinued, or abandoned for a continuous period of 12 months. An open-ended gap since the most recent recorded inspection can indicate the project is between phases, that the next inspection hasn't been requested, or that the project has become inactive.",
+      "developer_actionable_steps": [
+        {
+          "text": "Request the next applicable inspection to demonstrate the project remains active and reduce risk of the permit being treated as abandoned under LAMC Sec. 98.0602.",
+          "grounding_strength": "cautious_synthesis"
+        }
+      ],
+      "city_dependent_steps": [
+        {
+          "text": "Inspection scheduling, and any determination that work has been suspended, discontinued, or abandoned, are managed by LADBS.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "sources": [
+        {
+          "title": "LAMC Sec. 98.0602 -- Expiration of Permits",
+          "url": "https://codelibrary.amlegal.com/codes/los_angeles/latest/lamc/0-0-0-190414",
+          "publisher": "Los Angeles Municipal Code",
+          "source_type": "primary_municipal_code",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "search_synthesis_detailed"
+        }
+      ],
+      "caveats": [
+        "This interval has not closed -- the eventual total, if any, is not known; this explanation describes a general rule and risk going forward, not a determination that this permit has been abandoned.",
+        "LAMC citation retrieved via detailed search synthesis, not a full direct-text fetch -- verify exact current wording before relying on this for a specific compliance deadline."
+      ],
+      "confidence": "verified_search_synthesis",
+      "kb_version": "0.2.0",
+      "last_reviewed": "2026-08-11"
+    },
+    {
+      "entry_id": "finalization_gap.cofo_track",
+      "stall_category": "finalization_gap",
+      "applies_to_dimension": "track",
+      "applies_to_value": "cofo_track",
+      "explanation": "Before LADBS will schedule a final building inspection for a Certificate of Occupancy, other trade permits on the project (electrical, plumbing, mechanical, etc.) generally need to be finaled first, and multiple agencies' sub-final inspections (building, fire/life safety, accessibility, energy compliance, and others as applicable) are typically coordinated together. A gap between the last recorded substantive inspection and Certificate of Occupancy issuance can reflect this multi-trade coordination, additional required inspections not captured as 'substantive' in this data, or other reasons not visible here.",
+      "developer_actionable_steps": [
+        {
+          "text": "Confirm all other trade permits (electrical, plumbing, mechanical, etc.) on this project have been finaled.",
+          "grounding_strength": "cautious_synthesis"
+        },
+        {
+          "text": "Request the general building final inspection once all sub-finals are complete.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "city_dependent_steps": [
+        {
+          "text": "Issuing the Certificate of Occupancy, and verifying permit history for unpermitted work, is a LADBS action.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Homeowner: Step by Step",
+          "url": "https://dbs.lacity.gov/services/homeowner-step-by-step",
+          "publisher": "Los Angeles Department of Building and Safety",
+          "source_type": "primary_official_agency",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "direct_primary_fetch"
+        },
+        {
+          "title": "LADBS Glossary (C of O = Certificate of Occupancy)",
+          "url": "https://dbs.lacity.gov/glossary",
+          "publisher": "Los Angeles Department of Building and Safety",
+          "source_type": "primary_official_agency",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "direct_primary_fetch"
+        }
+      ],
+      "caveats": [
+        "This entry applies only to the cofo_track terminal track. The finaled_only_track terminal track has no corresponding detection at all -- Agent 2 confirmed it empirically degenerate (same-day finalization) and does not compute it, so there is nothing for Agent 3 to explain there.",
+        "The multi-trade sub-final coordination description is a general process summary, not a step-by-step verified against a single official document."
+      ],
+      "confidence": "verified_direct_fetch",
+      "kb_version": "0.2.0",
+      "last_reviewed": "2026-08-11"
+    },
+    {
+      "entry_id": "repeated_corrections.generic",
+      "stall_category": "repeated_corrections",
+      "applies_to_dimension": "category_generic",
+      "applies_to_value": null,
+      "explanation": "LADBS issues an Inspection Correction Notice when a site inspection finds items that need to be fixed before the work can be approved. After addressing plan-check corrections, the applicant is generally expected to contact the plan check engineer for a verification appointment. Repeated correction cycles are generally associated with recurring compliance issues that take more than one inspection visit to resolve.",
+      "developer_actionable_steps": [
+        {
+          "text": "Review each Inspection Correction Notice with the contractor or tradesperson responsible for that item before requesting reinspection.",
+          "grounding_strength": "cautious_synthesis"
+        },
+        {
+          "text": "Contact the plan check engineer for a verification appointment once corrections have been addressed.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "city_dependent_steps": [
+        {
+          "text": "Reinspection to confirm a correction has been resolved requires LADBS to visit the site again.",
+          "grounding_strength": "directly_supported"
+        }
+      ],
+      "sources": [
+        {
+          "title": "LADBS Glossary (G-49 = Correction notice)",
+          "url": "https://dbs.lacity.gov/glossary",
+          "publisher": "Los Angeles Department of Building and Safety",
+          "source_type": "primary_official_agency",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "direct_primary_fetch"
+        },
+        {
+          "title": "Single Family Dwelling/Duplex Plan Check Correction Sheets",
+          "url": "https://dbs.lacity.gov/sites/default/files/efs/forms/pc17/pc-str-corr-lst-020-2020.pdf",
+          "publisher": "Los Angeles Department of Building and Safety",
+          "source_type": "primary_official_agency",
+          "retrieved_date": "2026-08-11",
+          "verification_status": "search_synthesis_detailed"
+        }
+      ],
+      "caveats": [
+        "Whether these outcomes reflect scheduling/access issues, technical compliance issues, or something else cannot be determined from the result label alone.",
+        "The correction-sheet source describes plan-check-stage corrections specifically; applicability to field/inspection-stage corrections is inferred, not separately verified.",
+        "A high correction count is a statistical outlier relative to comparable permits, not a determination of non-compliance or fault -- see the detection's own cannot_infer statements."
+      ],
+      "confidence": "verified_search_synthesis",
+      "kb_version": "0.2.0",
+      "last_reviewed": "2026-08-11"
+    }
+  ]
+}

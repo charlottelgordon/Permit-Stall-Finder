@@ -1,5 +1,6 @@
 """python -m permit_stall_finder.cli journey <permit_number>
-python -m permit_stall_finder.cli stalls <permit_number>"""
+python -m permit_stall_finder.cli stalls <permit_number>
+python -m permit_stall_finder.cli explain <permit_number>"""
 
 from __future__ import annotations
 
@@ -8,6 +9,7 @@ import json
 from dataclasses import asdict
 
 from permit_stall_finder import config
+from permit_stall_finder.agents.developer_explainer import explain_assessment
 from permit_stall_finder.agents.journey_reconstructor import reconstruct_journey
 from permit_stall_finder.agents.stall_detector import assess_stalls
 from permit_stall_finder.storage.db import connect
@@ -41,6 +43,16 @@ def main(argv: list[str] | None = None) -> None:
         help="Sample size for post-issuance cohort population fetches",
     )
 
+    explain_parser = sub.add_parser("explain", help="Full pipeline: journey + stalls + explanations (Agent 1 + 2 + 3)")
+    explain_parser.add_argument("permit_number")
+    explain_parser.add_argument(
+        "--db", default=None, help=f"DuckDB path (default: {config.DEFAULT_DB_PATH})"
+    )
+    explain_parser.add_argument(
+        "--sample-size", type=int, default=config.DEFAULT_COHORT_SAMPLE_SIZE,
+        help="Sample size for post-issuance cohort population fetches",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "journey":
@@ -53,6 +65,13 @@ def main(argv: list[str] | None = None) -> None:
         journey = reconstruct_journey(conn, args.permit_number)
         assessment = assess_stalls(journey, sample_size=args.sample_size)
         print(json.dumps(asdict(assessment), default=_json_default, indent=2))
+
+    elif args.command == "explain":
+        conn = connect(args.db or config.DEFAULT_DB_PATH)
+        journey = reconstruct_journey(conn, args.permit_number)
+        assessment = assess_stalls(journey, sample_size=args.sample_size)
+        explanation_set = explain_assessment(assessment)
+        print(json.dumps(asdict(explanation_set), default=_json_default, indent=2))
 
 
 if __name__ == "__main__":
