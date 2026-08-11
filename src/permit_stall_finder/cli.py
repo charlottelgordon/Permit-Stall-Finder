@@ -1,17 +1,20 @@
 """python -m permit_stall_finder.cli journey <permit_number>
 python -m permit_stall_finder.cli stalls <permit_number>
-python -m permit_stall_finder.cli explain <permit_number>"""
+python -m permit_stall_finder.cli explain <permit_number>
+python -m permit_stall_finder.cli analyze <permit_number>"""
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import asdict
 
 from permit_stall_finder import config
 from permit_stall_finder.agents.developer_explainer import explain_assessment
 from permit_stall_finder.agents.journey_reconstructor import reconstruct_journey
 from permit_stall_finder.agents.stall_detector import assess_stalls
+from permit_stall_finder.orchestration.pipeline import PipelineExecutionError, run_pipeline
 from permit_stall_finder.storage.db import connect
 
 
@@ -53,6 +56,18 @@ def main(argv: list[str] | None = None) -> None:
         help="Sample size for post-issuance cohort population fetches",
     )
 
+    analyze_parser = sub.add_parser(
+        "analyze", help="Full orchestrated pipeline: PermitAnalysisResult (Agent 1 + 2 + 3)"
+    )
+    analyze_parser.add_argument("permit_number")
+    analyze_parser.add_argument(
+        "--db", default=None, help=f"DuckDB path (default: {config.DEFAULT_DB_PATH})"
+    )
+    analyze_parser.add_argument(
+        "--sample-size", type=int, default=config.DEFAULT_COHORT_SAMPLE_SIZE,
+        help="Sample size for post-issuance cohort population fetches",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "journey":
@@ -72,6 +87,15 @@ def main(argv: list[str] | None = None) -> None:
         assessment = assess_stalls(journey, sample_size=args.sample_size)
         explanation_set = explain_assessment(assessment)
         print(json.dumps(asdict(explanation_set), default=_json_default, indent=2))
+
+    elif args.command == "analyze":
+        conn = connect(args.db or config.DEFAULT_DB_PATH)
+        try:
+            result = run_pipeline(conn, args.permit_number, sample_size=args.sample_size)
+        except PipelineExecutionError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        print(json.dumps(asdict(result), default=_json_default, indent=2))
 
 
 if __name__ == "__main__":
