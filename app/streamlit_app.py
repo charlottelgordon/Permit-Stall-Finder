@@ -17,6 +17,20 @@ replaces an earlier persona-gated version of this file that asked "what
 best describes you?" on first load -- removed because sorting by intent
 (how many permits do you actually have in hand right now) is a more
 direct signal than sorting by declared role.
+
+Starred items and recent searches (storage/user_state.py, laid out by
+sections/quick_access.py) exist for the same return user this whole page
+is designed around: someone who checks the same permit(s) or address
+every day for their job. Clicking a starred/recent pill below sets the
+matching widget's session_state value *before* that widget is
+instantiated later in this same script run -- the same pattern Streamlit
+apps use to programmatically pre-fill a widget -- so a pill click behaves
+exactly like the user having typed that value and clicked the tab's own
+search/analyze button, with no extra st.rerun() required for the numbers
+case. The "Clear results" button follows the same pre-widget-instantiation
+rule in reverse: it blanks those same session_state keys and *does* call
+st.rerun(), since clearing needs to also wipe already-rendered result
+state below.
 """
 
 from __future__ import annotations
@@ -33,6 +47,7 @@ from sections import (
     location_map,
     next_best_action,
     permit_journey,
+    quick_access,
     quick_glance,
     stall_findings,
     top_level_result,
@@ -40,6 +55,7 @@ from sections import (
 
 from permit_stall_finder import config
 from permit_stall_finder.orchestration.pipeline import PipelineExecutionError, run_pipeline
+from permit_stall_finder.storage import user_state
 
 st.set_page_config(page_title="Permit Stall Finder", page_icon="🌴", layout="wide")
 
@@ -120,6 +136,45 @@ if "portfolio_results" not in st.session_state:
 
 conn = get_connection()
 
+# --- Quick access: starred + recent, for a return user checking the same
+# permit(s) or address every day -- and a Clear results button next to it
+# so the same daily user can also blank today's search without a page
+# reload. Both act by setting/clearing session_state keys *before* the
+# widgets that own those keys are instantiated further down this script,
+# rather than mutating already-rendered widgets. -------------------------
+qa_selection = quick_access.render(conn)
+
+clear_col, _ = st.columns([1, 5])
+if clear_col.button("Clear results", key="clear_results_button"):
+    st.session_state.result = None
+    st.session_state.error = None
+    st.session_state.portfolio_rows = None
+    st.session_state.portfolio_results = None
+    st.session_state.address_matches = None
+    st.session_state.permit_numbers_input = ""
+    st.session_state.address_query_input = ""
+    for key in list(st.session_state.keys()):
+        if key.startswith("address_match_"):
+            del st.session_state[key]
+    st.rerun()
+
+triggered = False
+permit_numbers: list[str] = []
+auto_run_address = False
+
+if qa_selection is not None:
+    if qa_selection.kind == "permit_number":
+        # Pre-fills the text area for visibility, but also runs the
+        # pipeline directly this same rerun -- a starred/recent permit
+        # pill is meant to be a one-click re-run, not a one-click
+        # pre-fill-then-still-have-to-click-Analyze.
+        st.session_state["permit_numbers_input"] = qa_selection.value
+        triggered = True
+        permit_numbers = [qa_selection.value]
+    else:
+        st.session_state["address_query_input"] = qa_selection.value
+        auto_run_address = True
+
 # --- Search: permit number(s), or address -------------------------------
 # Both tabs' code runs every rerun (Streamlit tabs are a display toggle,
 # not conditional execution) but only the tab whose button was actually
@@ -127,15 +182,13 @@ conn = get_connection()
 # drives any given rerun.
 tab_numbers, tab_address = st.tabs(["Search by permit number", "Search by address"])
 
-triggered = False
-permit_numbers: list[str] = []
-
 with tab_numbers:
     raw_text = st.text_area(
         "Permit number(s)",
         placeholder="21030-20000-00256\n25016-10000-32699",
         height=100,
         label_visibility="collapsed",
+        key="permit_numbers_input",
     )
     if st.button("Analyze", type="primary", key="analyze_numbers_button"):
         parsed = portfolio.parse_permit_numbers(raw_text)
@@ -146,11 +199,10 @@ with tab_numbers:
             permit_numbers = parsed
 
 with tab_address:
-    address_submitted, address_permit_numbers = address_search.render()
+    address_submitted, address_permit_numbers = address_search.render(conn, auto_run=auto_run_address)
     if address_submitted:
         triggered = True
         permit_numbers = address_permit_numbers
-
 
 # --- Run the pipeline: one permit goes straight to the deep dive, two or
 # more go to the portfolio table. This is the only place that decision is
@@ -169,6 +221,7 @@ if triggered:
                 st.session_state.result = result
                 st.session_state.portfolio_rows = None
                 st.session_state.portfolio_results = None
+                user_state.record_search(conn, "permit_number", permit_number)
             except PipelineExecutionError as exc:
                 st.session_state.result = None
                 st.session_state.error = safe_error_message(exc)
@@ -177,6 +230,8 @@ if triggered:
         st.session_state.result = None
         st.session_state.portfolio_rows = batch.rows
         st.session_state.portfolio_results = batch.results_by_permit
+        for permit_number in batch.results_by_permit:
+            user_state.record_search(conn, "permit_number", permit_number)
         if batch.errors:
             st.warning(
                 f"{len(batch.errors)} permit(s) couldn't be analyzed right now (the city's open "
@@ -213,6 +268,7 @@ if result is not None:
     # renders, per UI_DESIGN.md's "never hide the disclaimer" decision.
     quick_glance.render(result)
     st.caption(f"Permit {result.permit_number}")
+    quick_access.render_star_toggle(conn, "permit_number", result.permit_number)
 
     location_map.render(result)
     top_level_result.render(result)
