@@ -10,17 +10,17 @@ from __future__ import annotations
 
 import streamlit as st
 
-from formatting import MATCH_STATUS_LABELS
+from i18n import match_status_label, t
 from permit_stall_finder.schema.journey import PermitJourney
 
 
 def render(journey: PermitJourney) -> None:
-    st.subheader("Permit journey")
-    st.caption(MATCH_STATUS_LABELS.get(journey.match_status, journey.match_status.value))
+    st.subheader(t("permit_journey_header"))
+    st.caption(match_status_label(journey.match_status))
 
     snapshot = journey.latest_snapshot
     if snapshot is None:
-        st.write("No permit record was found to reconstruct a journey from.")
+        st.write(t("no_journey_record"))
         return
 
     st.markdown(
@@ -30,27 +30,27 @@ def render(journey: PermitJourney) -> None:
     if snapshot.work_description:
         st.caption(snapshot.work_description)
 
-    st.markdown("**Observed milestones**")
+    st.markdown(f"**{t('observed_milestones')}**")
     milestones = []
     if snapshot.submitted_date:
-        milestones.append(("Submitted", snapshot.submitted_date))
-    milestones.append((f"Current status — {snapshot.status_desc}", snapshot.status_date))
+        milestones.append((t("submitted"), snapshot.submitted_date))
+    milestones.append((f"{t('current_status_prefix')} — {snapshot.status_desc}", snapshot.status_date))
     if snapshot.issue_date:
-        milestones.append(("Issued", snapshot.issue_date))
+        milestones.append((t("issued"), snapshot.issue_date))
     if snapshot.cofo_date:
-        milestones.append(("Certificate of Occupancy issued", snapshot.cofo_date))
+        milestones.append((t("cofo_issued"), snapshot.cofo_date))
     for label, dt in milestones:
         if dt is not None:
             st.markdown(f"- **{label}** — {dt.isoformat()}")
 
     if journey.inspection_events:
-        st.markdown("**Observed inspection events**")
+        st.markdown(f"**{t('observed_inspections')}**")
         st.dataframe(
             [
                 {
-                    "Date": e.inspection_date.isoformat(),
-                    "Type": e.inspection_type,
-                    "Result": e.inspection_result,
+                    t("col_date"): e.inspection_date.isoformat(),
+                    t("col_type"): e.inspection_type,
+                    t("col_result"): e.inspection_result,
                 }
                 for e in journey.inspection_events
             ],
@@ -62,27 +62,31 @@ def render(journey: PermitJourney) -> None:
     if derived is not None:
         derived_rows = []
         if derived.days_submitted_to_issuance is not None:
-            derived_rows.append(("Submitted → issued", f"{derived.days_submitted_to_issuance} days"))
+            derived_rows.append(
+                (t("submitted_to_issued"), f"{derived.days_submitted_to_issuance} {t('days_suffix')}")
+            )
         if derived.days_issuance_to_first_inspection is not None:
             derived_rows.append(
-                ("Issued → first inspection", f"{derived.days_issuance_to_first_inspection} days")
+                (t("issued_to_first_inspection"), f"{derived.days_issuance_to_first_inspection} {t('days_suffix')}")
             )
         if derived.total_observed_elapsed_days is not None:
-            derived_rows.append(("Total observed span", f"{derived.total_observed_elapsed_days} days"))
+            derived_rows.append(
+                (t("total_observed_span"), f"{derived.total_observed_elapsed_days} {t('days_suffix')}")
+            )
         if derived_rows:
-            st.markdown("**Derived elapsed-time metrics**")
+            st.markdown(f"**{t('derived_metrics')}**")
             for label, value in derived_rows:
                 st.markdown(f"- {label}: {value}")
 
     if journey.not_observed_notes:
-        st.markdown("**Not observed**")
+        st.markdown(f"**{t('not_observed')}**")
         for note in journey.not_observed_notes:
             st.markdown(f"- {note}")
 
     if journey.reconstruction_notes or journey.source_provenance:
-        with st.expander("Technical details"):
+        with st.expander(t("technical_details")):
             if journey.reconstruction_notes:
-                st.markdown("Reconstruction notes:")
+                st.markdown(t("reconstruction_notes"))
                 for note in journey.reconstruction_notes:
                     st.markdown(f"- {note}")
             if journey.source_provenance:

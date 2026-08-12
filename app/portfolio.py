@@ -24,7 +24,7 @@ from dataclasses import dataclass
 
 import streamlit as st
 
-from formatting import SEVERITY_LABELS, outcome_headline
+from i18n import outcome_headline, severity_label, t
 from permit_stall_finder.orchestration.pipeline import (
     AnalysisOutcome,
     PermitAnalysisResult,
@@ -194,24 +194,24 @@ def render_table(rows: list[PortfolioRow]) -> None:
     selectbox (key="selected_permit") lives here because it's part of the
     same at-a-glance table, but which result loads into the detail view
     below is decided by streamlit_app.py, not this function."""
-    st.subheader("Portfolio triage")
-    st.caption(f"{len(rows)} permits, worst first.")
+    st.subheader(t("portfolio_triage_header"))
+    st.caption(f"{len(rows)} {t('portfolio_worst_first')}")
 
     table_data = [
         {
-            "Permit": r.permit_number,
-            "Address": r.address,
-            "Type": r.permit_type,
-            "Status": r.status_desc,
-            "Severity": SEVERITY_LABELS.get(r.top_severity, "—") if r.top_severity else "—",
-            "Result": r.headline,
-            "Days in status": r.days_in_current_status if r.days_in_current_status is not None else "—",
-            "Developer action available": "Yes" if r.has_actionable_step else "—",
+            t("qg_permit"): r.permit_number,
+            t("qg_address"): r.address,
+            t("qg_type"): r.permit_type,
+            t("qg_status"): r.status_desc,
+            t("portfolio_severity_col"): severity_label(r.top_severity) if r.top_severity else "—",
+            t("qg_result"): r.headline,
+            t("qg_days_in_status"): r.days_in_current_status if r.days_in_current_status is not None else "—",
+            t("portfolio_dev_action_col"): t("yes") if r.has_actionable_step else "—",
         }
         for r in rows
     ]
     st.dataframe(table_data, hide_index=True, width="stretch")
 
     options = [r.permit_number for r in rows]
-    st.selectbox("View full detail for:", options, key="selected_permit")
+    st.selectbox(t("portfolio_view_detail_for"), options, key="selected_permit")
 

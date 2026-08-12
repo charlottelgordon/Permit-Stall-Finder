@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from formatting import DATA_QUALITY_FLAG_LABELS
+from i18n import data_quality_flag_label, t
 from permit_stall_finder.schema.journey import DataQualityFlag
 
 
@@ -19,19 +19,15 @@ def render(coverage_gaps: list[str], data_quality_flags: list[DataQualityFlag]) 
     if not coverage_gaps and not data_quality_flags:
         return
 
-    st.subheader("Coverage & data-quality notes")
-    st.warning(
-        "Parts of this permit could not be fully assessed, or the underlying data has "
-        "known limitations. This is separate from -- and does not confirm or rule out -- "
-        "a stall."
-    )
+    st.subheader(t("coverage_notes_header"))
+    st.warning(t("coverage_notes_warning"))
 
     if coverage_gaps:
-        st.markdown("**Coverage gaps**")
+        st.markdown(f"**{t('coverage_gaps_label')}**")
         for gap in coverage_gaps:
             st.markdown(f"- {gap}")
 
     if data_quality_flags:
-        st.markdown("**Data-quality notes**")
+        st.markdown(f"**{t('data_quality_notes_label')}**")
         for flag in data_quality_flags:
-            st.markdown(f"- {DATA_QUALITY_FLAG_LABELS.get(flag, flag.value)}")
+            st.markdown(f"- {data_quality_flag_label(flag)}")

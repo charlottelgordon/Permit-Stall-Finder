@@ -25,6 +25,7 @@ import duckdb
 import streamlit as st
 
 from errors import GENERIC_ERROR_MESSAGE
+from i18n import t, translate_error_message
 from sections import quick_access
 from permit_stall_finder.ingestion.permits import fetch_permits_by_address
 from permit_stall_finder.storage import user_state
@@ -49,40 +50,37 @@ def render(conn: duckdb.DuckDBPyConnection, *, auto_run: bool = False) -> tuple[
     when a user clicks a starred/recent address pill in quick_access.py,
     so picking a past address search behaves exactly like typing it and
     clicking "Search by address" again."""
-    st.caption(
-        "Don't know the permit number? Search by street address and pick the permit(s) "
-        "you want analyzed."
-    )
+    st.caption(t("address_search_caption"))
     address_query = st.text_input(
-        "Street address", placeholder="e.g. 200 N Spring St", key="address_query_input"
+        t("street_address_label"), placeholder=t("street_address_placeholder"), key="address_query_input"
     )
-    search_clicked = st.button("Search by address", key="address_search_button")
+    search_clicked = st.button(t("search_by_address_button"), key="address_search_button")
 
     if search_clicked or auto_run:
         query = address_query.strip()
         if not query:
             st.session_state.address_matches = None
             if search_clicked:
-                st.warning("Enter a street address to search.")
+                st.warning(t("warning_enter_address"))
         else:
             try:
                 st.session_state.address_matches = fetch_permits_by_address(query)
                 user_state.record_search(conn, "address", query)
             except Exception:
                 st.session_state.address_matches = None
-                st.error(GENERIC_ERROR_MESSAGE)
+                st.error(translate_error_message(GENERIC_ERROR_MESSAGE))
 
     if address_query.strip():
         quick_access.render_star_toggle(conn, "address", address_query.strip())
 
     matches = st.session_state.get("address_matches")
     if matches is not None and not matches:
-        st.info("No permits found for that address. Try a shorter or differently formatted address.")
+        st.info(t("info_no_permits_found"))
 
     submitted = False
     selected: list[str] = []
     if matches:
-        st.caption(f"{len(matches)} permit(s) found -- select which to analyze:")
+        st.caption(f"{len(matches)} {t('permits_found_caption')}")
         for row in matches:
             permit_nbr = row.get("permit_nbr")
             if not permit_nbr:
@@ -90,6 +88,6 @@ def render(conn: duckdb.DuckDBPyConnection, *, auto_run: bool = False) -> tuple[
             if st.checkbox(_format_match_label(row), key=f"address_match_{permit_nbr}"):
                 selected.append(permit_nbr)
         if selected:
-            submitted = st.button("Analyze selected", type="primary", key="address_analyze_button")
+            submitted = st.button(t("analyze_selected_button"), type="primary", key="address_analyze_button")
 
     return submitted, selected

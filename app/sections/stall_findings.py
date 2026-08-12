@@ -16,16 +16,15 @@ from __future__ import annotations
 
 import streamlit as st
 
-from formatting import (
-    BENCHMARK_SEMANTICS_LABELS,
-    CATEGORY_LABELS,
-    GROUNDING_STRENGTH_LABELS,
-    INTERVAL_STATE_LABELS,
-    SEVERITY_COLORS,
-    SEVERITY_LABELS,
-    VERIFICATION_STATUS_LABELS,
-    has_mixed_grounding,
-    kb_entry_by_id,
+from formatting import SEVERITY_COLORS, has_mixed_grounding, kb_entry_by_id
+from i18n import (
+    benchmark_semantics_label,
+    category_label,
+    grounding_strength_label,
+    interval_state_label,
+    severity_label,
+    t,
+    verification_status_label,
 )
 from permit_stall_finder.knowledge_base.loader import KnowledgeBase
 from permit_stall_finder.schema.developer_explanation import (
@@ -40,14 +39,12 @@ from permit_stall_finder.schema.stall_detection import (
     StallAssessment,
 )
 
-_NO_DEVELOPER_STEPS = "No developer-actionable guidance is available for this specific pattern."
-_NO_CITY_STEPS = "No city-dependent guidance is available for this specific pattern."
-_NO_ENTRY_HEADING = "No authoritative guidance available"
+# _NO_DEVELOPER_STEPS / _NO_CITY_STEPS / _NO_ENTRY_HEADING replaced by i18n.t() lookups below.
 
 
 def _severity_badge(detection: DelayStallDetection | FrictionStallDetection) -> str:
     color = SEVERITY_COLORS[detection.severity]
-    label = SEVERITY_LABELS[detection.severity]
+    label = severity_label(detection.severity)
     return (
         f'<span style="background-color:{color};color:white;padding:2px 8px;'
         f'border-radius:4px;font-size:0.85em;font-weight:600">{label}</span>'
@@ -57,24 +54,24 @@ def _severity_badge(detection: DelayStallDetection | FrictionStallDetection) -> 
 def _render_metrics(detection: DelayStallDetection | FrictionStallDetection) -> None:
     cols = st.columns(3)
     if isinstance(detection, DelayStallDetection):
-        cols[0].metric("Elapsed days", detection.elapsed_days)
+        cols[0].metric(t("elapsed_days_metric"), detection.elapsed_days)
         if detection.percentile_rank is not None:
-            cols[1].metric("Percentile rank", f"{detection.percentile_rank:.0f}")
+            cols[1].metric(t("percentile_rank_metric"), f"{detection.percentile_rank:.0f}")
         if detection.excess_days_vs_median is not None:
-            cols[2].metric("Excess vs. median", f"{detection.excess_days_vs_median:+.0f} days")
+            cols[2].metric(t("excess_vs_median_metric"), f"{detection.excess_days_vs_median:+.0f} {t('days_suffix')}")
         st.caption(
-            f"{INTERVAL_STATE_LABELS[detection.interval_state]} · "
-            f"{BENCHMARK_SEMANTICS_LABELS[detection.cohort.benchmark_semantics]} "
+            f"{interval_state_label(detection.interval_state)} · "
+            f"{benchmark_semantics_label(detection.cohort.benchmark_semantics)} "
             f"(n={detection.cohort.n}, {detection.cohort.confidence.value})"
         )
     else:
-        cols[0].metric("Observed count", detection.observed_count)
+        cols[0].metric(t("observed_count_metric"), detection.observed_count)
         if detection.percentile_rank is not None:
-            cols[1].metric("Percentile rank", f"{detection.percentile_rank:.0f}")
+            cols[1].metric(t("percentile_rank_metric"), f"{detection.percentile_rank:.0f}")
         if detection.excess_count_vs_median is not None:
-            cols[2].metric("Excess vs. median", f"{detection.excess_count_vs_median:+.1f}")
+            cols[2].metric(t("excess_vs_median_metric"), f"{detection.excess_count_vs_median:+.1f}")
         st.caption(
-            f"{BENCHMARK_SEMANTICS_LABELS[detection.cohort.benchmark_semantics]} "
+            f"{benchmark_semantics_label(detection.cohort.benchmark_semantics)} "
             f"(n={detection.cohort.n}, {detection.cohort.confidence.value})"
         )
 
@@ -85,24 +82,24 @@ def _render_steps(heading: str, steps: list[NextStep], placeholder: str) -> None
         st.caption(placeholder)
         return
     for step in steps:
-        st.markdown(f"- {step.text} _( {GROUNDING_STRENGTH_LABELS[step.grounding_strength]} )_")
+        st.markdown(f"- {step.text} _( {grounding_strength_label(step.grounding_strength)} )_")
 
 
 def _render_source_grounding(explanation: DeveloperExplanation, kb: KnowledgeBase) -> None:
-    with st.expander("Source & grounding"):
+    with st.expander(t("source_and_grounding")):
         entry = kb_entry_by_id(kb, explanation.knowledge_base_entry_id)
         if entry is None:
-            st.caption("No knowledge-base entry is associated with this explanation.")
+            st.caption(t("no_kb_entry"))
             return
         st.caption(f"Knowledge-base entry {entry.entry_id} · v{entry.kb_version} · last reviewed {entry.last_reviewed.isoformat()}")
         for source in entry.sources:
             st.markdown(f"- [{source.title}]({source.url}) — {source.publisher}")
             st.caption(
-                f"{VERIFICATION_STATUS_LABELS[source.verification_status]} "
+                f"{verification_status_label(source.verification_status)} "
                 f"(retrieved {source.retrieved_date.isoformat()})"
             )
         if entry.caveats:
-            st.markdown("**Caveats on this guidance**")
+            st.markdown(f"**{t('caveats_on_guidance')}**")
             for caveat in entry.caveats:
                 st.markdown(f"- {caveat}")
 
@@ -114,36 +111,36 @@ def _render_card(
 ) -> None:
     with st.container(border=True):
         st.markdown(
-            f"#### {CATEGORY_LABELS[detection.category]}  {_severity_badge(detection)}",
+            f"#### {category_label(detection.category)}  {_severity_badge(detection)}",
             unsafe_allow_html=True,
         )
 
         _render_metrics(detection)
 
-        st.markdown("**What the data shows**")
+        st.markdown(f"**{t('what_data_shows')}**")
         st.write(explanation.what_the_data_shows)
 
         if explanation.grounding_status == GroundingStatus.NO_ENTRY_AVAILABLE:
-            st.markdown(f"**{_NO_ENTRY_HEADING}**")
+            st.markdown(f"**{t('no_entry_heading')}**")
             st.write(explanation.what_this_usually_means)
         else:
-            st.markdown("**What this usually means**")
+            st.markdown(f"**{t('what_this_usually_means')}**")
             st.write(explanation.what_this_usually_means)
 
         _render_steps(
-            "Steps you can take", explanation.developer_actionable_steps, _NO_DEVELOPER_STEPS
+            t("steps_you_can_take"), explanation.developer_actionable_steps, t("no_developer_steps")
         )
         _render_steps(
-            "Steps that depend on the city", explanation.city_dependent_steps, _NO_CITY_STEPS
+            t("steps_depend_on_city"), explanation.city_dependent_steps, t("no_city_steps")
         )
 
         if explanation.limitations:
-            st.markdown("**What we cannot tell from this data**")
+            st.markdown(f"**{t('cannot_tell')}**")
             for item in explanation.limitations:
                 st.markdown(f"- {item}")
 
         if detection.caveats:
-            st.markdown("**Caveats**")
+            st.markdown(f"**{t('caveats')}**")
             for caveat in detection.caveats:
                 st.markdown(f"- {caveat}")
 
@@ -158,13 +155,10 @@ def render(
     if not stall_assessment.detections:
         return
 
-    st.subheader("Stall findings")
+    st.subheader(t("stall_findings_header"))
 
     if has_mixed_grounding(developer_explanations.explanations):
-        st.caption(
-            "Some findings below are backed by an authoritative knowledge-base entry; "
-            "others are not -- this is noted individually on each finding."
-        )
+        st.caption(t("mixed_grounding_caption"))
 
     for detection, explanation in zip(stall_assessment.detections, developer_explanations.explanations):
         _render_card(detection, explanation, kb)

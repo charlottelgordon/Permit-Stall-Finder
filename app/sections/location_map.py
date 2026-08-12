@@ -24,10 +24,8 @@ from __future__ import annotations
 
 import streamlit as st
 
+from i18n import t
 from permit_stall_finder.orchestration.pipeline import PermitAnalysisResult
-
-CITY_LABEL = "City of Los Angeles"
-COUNTY_LABEL = "Los Angeles County"
 
 
 def _coordinates(result: PermitAnalysisResult) -> tuple[float, float] | None:
@@ -70,14 +68,14 @@ def render(result: PermitAnalysisResult) -> None:
         # No silent placeholder map centered on nowhere -- if the source
         # row has no coordinates, say so rather than showing something
         # that looks like a located pin at (0, 0).
-        st.caption("Map unavailable -- this permit's source record has no coordinates.")
+        st.caption(t("map_unavailable"))
     else:
         lat, lon = coords
         st.iframe(google_maps_embed_url(lat, lon), height=280)
-        st.caption(f"[Open in Google Maps]({google_maps_link_url(lat, lon)})")
+        st.caption(f"[{t('open_in_google_maps')}]({google_maps_link_url(lat, lon)})")
 
-    location_bits = [CITY_LABEL, COUNTY_LABEL]
+    location_bits = [t("city_label"), t("county_label")]
     if zip_code:
-        location_bits.append(f"ZIP {zip_code}")
+        location_bits.append(f"{t('zip_prefix')} {zip_code}")
     st.caption(" · ".join(location_bits))
 

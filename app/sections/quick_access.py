@@ -23,6 +23,7 @@ from dataclasses import dataclass
 import duckdb
 import streamlit as st
 
+from i18n import t
 from permit_stall_finder.storage import user_state
 
 
@@ -71,22 +72,22 @@ def render(conn: duckdb.DuckDBPyConnection) -> QuickAccessSelection | None:
     selection: QuickAccessSelection | None = None
 
     if starred:
-        st.caption("⭐ Starred")
+        st.caption(t("starred"))
         clicked = _render_pill_row(
             [(item.kind, item.value) for item in starred], key_prefix="qa_star"
         )
         selection = clicked or selection
 
-        with st.expander("Manage starred"):
+        with st.expander(t("manage_starred")):
             for item in starred:
                 label_col, action_col = st.columns([4, 1])
                 label_col.write(_pill_label(item.kind, item.value))
-                if action_col.button("Unstar", key=f"qa_unstar_{item.kind}_{item.value}"):
+                if action_col.button(t("unstar"), key=f"qa_unstar_{item.kind}_{item.value}"):
                     user_state.unstar_item(conn, item.kind, item.value)
                     st.rerun()
 
     if recent:
-        st.caption("🕒 Recent")
+        st.caption(t("recent"))
         clicked = _render_pill_row(
             [(entry.kind, entry.value) for entry in recent], key_prefix="qa_recent"
         )
@@ -103,7 +104,7 @@ def render_star_toggle(conn: duckdb.DuckDBPyConnection, kind: str, value: str) -
     dropped next to a single-permit result or an address search query so
     starring the thing you're already looking at takes one click."""
     starred = user_state.is_starred(conn, kind, value)
-    label = "★ Starred" if starred else "☆ Star this"
+    label = t("starred_button") if starred else t("star_this_button")
     if st.button(label, key=f"star_toggle_{kind}_{value}"):
         if starred:
             user_state.unstar_item(conn, kind, value)

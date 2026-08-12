@@ -17,7 +17,8 @@ from __future__ import annotations
 
 import streamlit as st
 
-from formatting import SEVERITY_COLORS, SEVERITY_LABELS, outcome_headline
+from formatting import SEVERITY_COLORS
+from i18n import outcome_headline, severity_label, t
 from permit_stall_finder.orchestration.pipeline import AnalysisOutcome, PermitAnalysisResult
 from permit_stall_finder.schema.stall_detection import Severity
 
@@ -61,20 +62,20 @@ def render(result: PermitAnalysisResult) -> None:
 
     with st.container(border=True):
         cols = st.columns(6)
-        cols[0].markdown(f"**Permit**  \n{result.permit_number}")
-        cols[1].markdown(f"**Address**  \n{address}")
-        cols[2].markdown(f"**Type**  \n{permit_type}")
-        cols[3].markdown(f"**Status**  \n{status_desc}")
-        cols[4].markdown(f"**Days in status**  \n{days if days is not None else '—'}")
+        cols[0].markdown(f"**{t('qg_permit')}**  \n{result.permit_number}")
+        cols[1].markdown(f"**{t('qg_address')}**  \n{address}")
+        cols[2].markdown(f"**{t('qg_type')}**  \n{permit_type}")
+        cols[3].markdown(f"**{t('qg_status')}**  \n{status_desc}")
+        cols[4].markdown(f"**{t('qg_days_in_status')}**  \n{days if days is not None else '—'}")
 
         if severity is not None:
             color = SEVERITY_COLORS[severity]
             badge = (
                 f'<span style="background-color:{color};color:white;padding:2px 10px;'
-                f'border-radius:4px;font-weight:600">{SEVERITY_LABELS[severity]}</span>'
+                f'border-radius:4px;font-weight:600">{severity_label(severity)}</span>'
             )
-            cols[5].markdown(f"**Top finding**  \n{badge}", unsafe_allow_html=True)
+            cols[5].markdown(f"**{t('qg_top_finding')}**  \n{badge}", unsafe_allow_html=True)
         else:
             icon = _OUTCOME_ICONS[result.outcome]
-            cols[5].markdown(f"**Result**  \n{icon} {outcome_headline(result)}")
+            cols[5].markdown(f"**{t('qg_result')}**  \n{icon} {outcome_headline(result)}")
 

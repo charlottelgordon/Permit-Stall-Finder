@@ -39,6 +39,7 @@ import streamlit as st
 
 import portfolio
 from db import get_connection, get_knowledge_base
+from i18n import get_language, render_language_toggle, t, translate_error_message
 from errors import safe_error_message, validate_permit_number
 from sections import (
     address_search,
@@ -117,12 +118,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.write(
-    "Understand the observable journey of an LA building permit, identify unusual delays or "
-    "process friction, and see grounded guidance on what may happen next. Paste one permit "
-    "number for a full deep-dive, or several to triage a portfolio at once -- or search by "
-    "address if you don't have the permit number handy."
-)
+# Language toggle -- EN/ES. Placed above the intro sentence so it's the
+# first interactive control on the page; changing it reruns the script,
+# and every t()/label lookup elsewhere on the page reads the choice back
+# out of st.session_state on that same rerun.
+render_language_toggle()
+
+st.write(t("page_intro"))
 
 # --- Session state defaults --------------------------------------------
 if "result" not in st.session_state:
@@ -145,7 +147,7 @@ conn = get_connection()
 qa_selection = quick_access.render(conn)
 
 clear_col, _ = st.columns([1, 5])
-if clear_col.button("Clear results", key="clear_results_button"):
+if clear_col.button(t("clear_results"), key="clear_results_button"):
     st.session_state.result = None
     st.session_state.error = None
     st.session_state.portfolio_rows = None
@@ -180,20 +182,20 @@ if qa_selection is not None:
 # not conditional execution) but only the tab whose button was actually
 # clicked this run can set triggered=True, since only one widget click
 # drives any given rerun.
-tab_numbers, tab_address = st.tabs(["Search by permit number", "Search by address"])
+tab_numbers, tab_address = st.tabs([t("tab_permit_number"), t("tab_address")])
 
 with tab_numbers:
     raw_text = st.text_area(
-        "Permit number(s)",
+        t("permit_numbers_label"),
         placeholder="21030-20000-00256\n25016-10000-32699",
         height=100,
         label_visibility="collapsed",
         key="permit_numbers_input",
     )
-    if st.button("Analyze", type="primary", key="analyze_numbers_button"):
+    if st.button(t("analyze_button"), type="primary", key="analyze_numbers_button"):
         parsed = portfolio.parse_permit_numbers(raw_text)
         if not parsed:
-            st.warning("Enter at least one permit number.")
+            st.warning(t("warning_enter_permit_number"))
         else:
             triggered = True
             permit_numbers = parsed
@@ -216,7 +218,7 @@ if triggered:
             st.session_state.error = validation_error
         else:
             try:
-                with st.spinner("Analysing permit..."):
+                with st.spinner(t("spinner_analyzing")):
                     result = run_pipeline(conn, permit_number)
                 st.session_state.result = result
                 st.session_state.portfolio_rows = None
@@ -234,8 +236,7 @@ if triggered:
             user_state.record_search(conn, "permit_number", permit_number)
         if batch.errors:
             st.warning(
-                f"{len(batch.errors)} permit(s) couldn't be analyzed right now (the city's open "
-                "data service may be temporarily unavailable) and are omitted below: "
+                f"{len(batch.errors)} " + t("warning_some_unanalyzed") + " "
                 + ", ".join(p for p, _ in batch.errors)
             )
 
@@ -255,7 +256,7 @@ if st.session_state.portfolio_rows:
         st.session_state.error = None
 
 if st.session_state.error:
-    st.error(st.session_state.error)
+    st.error(translate_error_message(st.session_state.error))
 
 result = st.session_state.result
 if result is not None:
@@ -267,7 +268,7 @@ if result is not None:
     # long page. The disclaimer itself stays outside the toggle and always
     # renders, per UI_DESIGN.md's "never hide the disclaimer" decision.
     quick_glance.render(result)
-    st.caption(f"Permit {result.permit_number}")
+    st.caption(f"{t('permit_caption')} {result.permit_number}")
     quick_access.render_star_toggle(conn, "permit_number", result.permit_number)
 
     location_map.render(result)
@@ -275,7 +276,7 @@ if result is not None:
     next_best_action.render(result, get_knowledge_base())
 
     show_full_analysis = st.toggle(
-        "Show full analysis (permit journey, finding-by-finding explanations, coverage notes)",
+        t("show_full_analysis"),
         value=False,
     )
     if show_full_analysis:

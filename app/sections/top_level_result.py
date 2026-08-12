@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from formatting import outcome_headline
+from i18n import outcome_headline
 from permit_stall_finder.orchestration.pipeline import AnalysisOutcome, PermitAnalysisResult
 
 _ICONS = {

@@ -39,7 +39,8 @@ from __future__ import annotations
 
 import streamlit as st
 
-from formatting import CATEGORY_LABELS, kb_entry_by_id
+from formatting import kb_entry_by_id
+from i18n import category_label, t
 from permit_stall_finder.knowledge_base.loader import KnowledgeBase
 from permit_stall_finder.orchestration.pipeline import PermitAnalysisResult
 from permit_stall_finder.schema.developer_explanation import GroundingStatus
@@ -65,22 +66,20 @@ LADBS_CASE_MANAGEMENT_CONTACT = (
 
 
 def render(result: PermitAnalysisResult, kb: KnowledgeBase) -> None:
-    st.markdown("**Next best action**")
+    st.markdown(f"**{t('next_best_action')}**")
     st.markdown(
-        f"→ [Confirm this permit's current status directly on LADBS]({LADBS_PERMIT_STATUS_URL}) "
-        "— the authoritative source; this tool is informational only."
+        f"→ [{t('confirm_status_link')}]({LADBS_PERMIT_STATUS_URL}) "
+        f"— {t('authoritative_source_note')}"
     )
     st.markdown(
-        f"→ [Search LADBS's online building records for this address]({LADBS_RECORDS_SEARCH_URL})"
+        f"→ [{t('search_records_link')}]({LADBS_RECORDS_SEARCH_URL})"
     )
 
-    st.markdown("**Talk to a person**")
+    st.markdown(f"**{t('talk_to_a_person')}**")
     st.markdown(
-        f"Call {LADBS_311_LINE} or {LADBS_OUTSIDE_LA_PHONE} to reach LADBS customer service -- "
-        "they take inspection requests, answer general questions, and can route zoning or "
-        "code questions to an engineer or inspector."
+        f"{t('call_prefix')} {LADBS_311_LINE} {t('or')} {LADBS_OUTSIDE_LA_PHONE} {t('call_line_text')}"
     )
-    st.markdown(f"For a case that needs deeper attention: {LADBS_CASE_MANAGEMENT_CONTACT}")
+    st.markdown(f"{t('deeper_attention_prefix')} {LADBS_CASE_MANAGEMENT_CONTACT}")
 
     seen_entry_ids: set[str] = set()
     source_links: list[tuple[str, str, str]] = []  # (category label, source title, url)
@@ -93,11 +92,11 @@ def render(result: PermitAnalysisResult, kb: KnowledgeBase) -> None:
         seen_entry_ids.add(entry.entry_id)
         for source in entry.sources:
             source_links.append(
-                (CATEGORY_LABELS[explanation.stall_category], source.title, source.url)
+                (category_label(explanation.stall_category), source.title, source.url)
             )
 
     if source_links:
-        with st.expander(f"Learn more about your {len(source_links)} grounded finding(s)"):
+        with st.expander(f"{t('learn_more_prefix')} {len(source_links)} {t('grounded_findings_suffix')}"):
             for category_label, title, url in source_links:
                 st.markdown(f"- **{category_label}**: [{title}]({url})")
 
