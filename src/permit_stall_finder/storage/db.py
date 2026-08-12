@@ -53,6 +53,31 @@ CREATE TABLE IF NOT EXISTS reconstruction_log (
     detail TEXT
 );
 
+CREATE TABLE IF NOT EXISTS starred_items (
+    -- A return user's bookmarked permits/addresses -- no user-account
+    -- system exists in this app, so this table is app-wide state, the
+    -- same scope every other table here already has. kind is
+    -- 'permit_number' or 'address'; value is the permit number or the
+    -- raw address search text, respectively.
+    kind TEXT NOT NULL,
+    value TEXT NOT NULL,
+    starred_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (kind, value)
+);
+
+CREATE TABLE IF NOT EXISTS search_history (
+    -- Every permit-number or address search, most-recent-first via
+    -- searched_at -- lets a daily user re-run yesterday's search in one
+    -- click instead of retyping it. Re-searching the same (kind, value)
+    -- updates searched_at in place (see user_state.record_search) rather
+    -- than appending a duplicate row, so "recent" reflects distinct
+    -- searches ordered by last use, not a raw click log.
+    kind TEXT NOT NULL,
+    value TEXT NOT NULL,
+    searched_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (kind, value)
+);
+
 CREATE TABLE IF NOT EXISTS cohort_stats (
     cohort_key TEXT NOT NULL,       -- category + sorted dimensions, e.g. "pre_issuance_status_dwell|permit_type=Bldg-Alter/Repair|status_desc=Corrections Issued"
     computed_at TIMESTAMP NOT NULL,
@@ -80,3 +105,4 @@ def connect(db_path: str = config.DEFAULT_DB_PATH) -> duckdb.DuckDBPyConnection:
     conn = duckdb.connect(db_path)
     conn.execute(DDL)
     return conn
+
