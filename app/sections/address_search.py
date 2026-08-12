@@ -10,14 +10,24 @@ kind of live network call run_pipeline() itself makes, just for a
 different lookup. Every raw row it gets back is display-only here: no
 analysis, no severity, no journey reconstruction -- selecting a result
 below only queues its permit_number for the real pipeline to run.
+
+Also records each successful search into storage/user_state.py's
+search_history (so it shows up in quick_access.py's "Recent" row for a
+return user) and offers a star toggle for the address query itself --
+the same "log/star the thing you're doing here" pattern portfolio.py and
+streamlit_app.py already follow for permit numbers, just for the address
+half of the search flow.
 """
 
 from __future__ import annotations
 
+import duckdb
 import streamlit as st
 
 from errors import GENERIC_ERROR_MESSAGE
+from sections import quick_access
 from permit_stall_finder.ingestion.permits import fetch_permits_by_address
+from permit_stall_finder.storage import user_state
 
 
 def _format_match_label(row: dict) -> str:
@@ -28,11 +38,17 @@ def _format_match_label(row: dict) -> str:
     return f"**{permit_nbr}** — {permit_type} — {status_desc} — {address}"
 
 
-def render() -> tuple[bool, list[str]]:
+def render(conn: duckdb.DuckDBPyConnection, *, auto_run: bool = False) -> tuple[bool, list[str]]:
     """Returns (submitted, permit_numbers). submitted is True only on the
     Streamlit run where the user just clicked "Analyze selected" --
     callers should treat submitted=False as "nothing to do yet", not as
-    "the search found nothing"."""
+    "the search found nothing".
+
+    auto_run=True re-runs the search immediately using whatever's already
+    in the address input's session_state -- streamlit_app.py sets that
+    when a user clicks a starred/recent address pill in quick_access.py,
+    so picking a past address search behaves exactly like typing it and
+    clicking "Search by address" again."""
     st.caption(
         "Don't know the permit number? Search by street address and pick the permit(s) "
         "you want analyzed."
@@ -40,17 +56,24 @@ def render() -> tuple[bool, list[str]]:
     address_query = st.text_input(
         "Street address", placeholder="e.g. 200 N Spring St", key="address_query_input"
     )
-    if st.button("Search by address", key="address_search_button"):
+    search_clicked = st.button("Search by address", key="address_search_button")
+
+    if search_clicked or auto_run:
         query = address_query.strip()
         if not query:
             st.session_state.address_matches = None
-            st.warning("Enter a street address to search.")
+            if search_clicked:
+                st.warning("Enter a street address to search.")
         else:
             try:
                 st.session_state.address_matches = fetch_permits_by_address(query)
+                user_state.record_search(conn, "address", query)
             except Exception:
                 st.session_state.address_matches = None
                 st.error(GENERIC_ERROR_MESSAGE)
+
+    if address_query.strip():
+        quick_access.render_star_toggle(conn, "address", address_query.strip())
 
     matches = st.session_state.get("address_matches")
     if matches is not None and not matches:
@@ -70,4 +93,3 @@ def render() -> tuple[bool, list[str]]:
             submitted = st.button("Analyze selected", type="primary", key="address_analyze_button")
 
     return submitted, selected
-
