@@ -18,7 +18,7 @@ from __future__ import annotations
 import streamlit as st
 
 from formatting import SEVERITY_COLORS
-from i18n import outcome_headline, severity_label, t
+from i18n import outcome_headline, plain_status_desc, severity_label, t
 from permit_stall_finder.orchestration.pipeline import AnalysisOutcome, PermitAnalysisResult
 from permit_stall_finder.schema.stall_detection import Severity
 
@@ -52,7 +52,7 @@ def render(result: PermitAnalysisResult) -> None:
     snapshot = result.journey.latest_snapshot
     address = (snapshot.raw.get("primary_address") if snapshot else None) or "—"
     permit_type = snapshot.permit_type if snapshot else "—"
-    status_desc = snapshot.status_desc if snapshot else "—"
+    status_desc = plain_status_desc(snapshot.status_desc) if snapshot else "—"
     days = (
         result.journey.derived.days_submitted_to_current_status
         if result.journey.derived is not None

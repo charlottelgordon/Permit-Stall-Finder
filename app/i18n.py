@@ -286,6 +286,63 @@ def outcome_headline(result) -> str:
     return summarize_severity_counts(result.stall_assessment.detections)
 
 
+# --- Plain-language status descriptions -----------------------------------
+# status_desc is a raw field straight from LADBS's own open-data record
+# (research/DATASET_VALIDATION.md catalogs the full observed vocabulary --
+# both the pre-issuance "Submitted" family and the post-issuance "Final"
+# family). Several of LADBS's own values use internal abbreviations
+# ("PC" = Plan Check, "CofO" = Certificate of Occupancy) that make sense
+# to LADBS staff but not to a homeowner or developer reading this page.
+# This is a display-only relabeling -- the underlying status_desc string
+# is never altered or reinterpreted, just spelled out in plain words.
+# Anything LADBS returns that isn't in this dict (a long tail of rare
+# values exists) falls back to showing the raw string unchanged, rather
+# than hiding or guessing at unfamiliar statuses.
+
+_STATUS_DESC_LABELS: dict[str, dict[str, str]] = {
+    "Submitted": {"en": "Submitted, not yet under review", "es": "Presentado, aún no revisado"},
+    "Plans on Hold": {"en": "Plans on hold", "es": "Planos en espera"},
+    "Re-Submittal Required": {"en": "Resubmission required", "es": "Se requiere volver a presentar"},
+    "Quality Review Completed": {"en": "Initial quality review completed", "es": "Revisión de calidad inicial completada"},
+    "Verifications in Progress": {"en": "Verifications in progress", "es": "Verificaciones en curso"},
+    "PC Assigned": {"en": "Assigned for plan review", "es": "Asignado para revisión de planos"},
+    "PC in Progress": {"en": "Plan review in progress", "es": "Revisión de planos en curso"},
+    "PC Info Complete": {"en": "Plan review information complete", "es": "Información de revisión de planos completa"},
+    "Corrections Issued": {"en": "Corrections requested", "es": "Correcciones solicitadas"},
+    "Not Ready to Issue": {"en": "Not yet ready to issue", "es": "Aún no listo para emitir"},
+    "Reviewed by Supervisor": {"en": "Reviewed by a supervisor", "es": "Revisado por un supervisor"},
+    "Submitted for Qual. Rev.": {"en": "Submitted for quality review", "es": "Presentado para revisión de calidad"},
+    "No Progress": {"en": "No progress recorded", "es": "Sin progreso registrado"},
+    "PC Approved": {"en": "Plan review approved, not yet issued", "es": "Revisión de planos aprobada, aún no emitido"},
+    "Ready to Issue": {"en": "Approved and ready to be issued", "es": "Aprobado y listo para ser emitido"},
+    "Issued": {"en": "Permit issued", "es": "Permiso emitido"},
+    "CofO Issued": {"en": "Certificate of Occupancy issued", "es": "Certificado de ocupación emitido"},
+    "CofO in Progress": {"en": "Certificate of Occupancy in progress", "es": "Certificado de ocupación en trámite"},
+    "CofO Corrected": {"en": "Certificate of Occupancy corrected", "es": "Certificado de ocupación corregido"},
+    "CofO Reactivated": {"en": "Certificate of Occupancy reactivated", "es": "Certificado de ocupación reactivado"},
+    "CofC Issued": {"en": "Certificate of Compliance issued", "es": "Certificado de cumplimiento emitido"},
+    "Permit Finaled": {"en": "Permit finaled -- all inspections complete", "es": "Permiso finalizado -- todas las inspecciones completas"},
+    "Permit Closed": {"en": "Permit closed", "es": "Permiso cerrado"},
+    "Permit Expired": {"en": "Permit expired", "es": "Permiso vencido"},
+    "Refund Completed": {"en": "Refund completed", "es": "Reembolso completado"},
+    "Permit Withdrawn": {"en": "Permit withdrawn", "es": "Permiso retirado"},
+    "Re-Activate Permit": {"en": "Permit reactivated", "es": "Permiso reactivado"},
+}
+
+
+def plain_status_desc(raw_status: str | None) -> str:
+    """LADBS's own status_desc, in plain words instead of internal
+    abbreviations -- falls back to the raw value unchanged for anything
+    not in the table above (an unfamiliar status is still better shown
+    than hidden)."""
+    if not raw_status:
+        return raw_status or "—"
+    entry = _STATUS_DESC_LABELS.get(raw_status)
+    if entry is None:
+        return raw_status
+    return entry.get(get_language(), entry.get("en", raw_status))
+
+
 # --- Static UI chrome ----------------------------------------------------
 
 _STRINGS: dict[str, dict[str, str]] = {
@@ -308,6 +365,31 @@ _STRINGS: dict[str, dict[str, str]] = {
     "tab_address": {"en": "Search by address", "es": "Buscar por dirección"},
     "permit_numbers_label": {"en": "Permit number(s)", "es": "Número(s) de permiso"},
     "analyze_button": {"en": "Analyze", "es": "Analizar"},
+    "analyzing_button": {"en": "Analyzing...", "es": "Analizando..."},
+    "searching_button": {"en": "Searching...", "es": "Buscando..."},
+    "permit_number_help": {
+        "en": (
+            "LADBS permit numbers look like 21030-20000-00256 (year - plan check number - "
+            "permit number). Find yours on your permit paperwork, an inspection notice, or "
+            "by searching your address under the \u201cSearch by address\u201d tab."
+        ),
+        "es": (
+            "Los números de permiso de LADBS tienen este formato: 21030-20000-00256 (año - "
+            "número de revisión de planos - número de permiso). Lo encuentra en el papeleo de "
+            "su permiso, en un aviso de inspección, o buscando su dirección en la pestaña "
+            "\u201cBuscar por dirección\u201d."
+        ),
+    },
+    "street_address_help": {
+        "en": (
+            "Enter the property's street address as it's filed with LADBS, e.g. 200 N Spring "
+            "St. No need to include city, state, or ZIP code."
+        ),
+        "es": (
+            "Ingrese la dirección de la propiedad tal como está registrada en LADBS, por "
+            "ejemplo 200 N Spring St. No es necesario incluir ciudad, estado ni código postal."
+        ),
+    },
     "warning_enter_permit_number": {
         "en": "Enter at least one permit number.",
         "es": "Ingrese al menos un número de permiso.",

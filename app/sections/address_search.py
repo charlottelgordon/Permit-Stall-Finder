@@ -25,7 +25,7 @@ import duckdb
 import streamlit as st
 
 from errors import GENERIC_ERROR_MESSAGE
-from i18n import t, translate_error_message
+from i18n import plain_status_desc, t, translate_error_message
 from sections import quick_access
 from permit_stall_finder.ingestion.permits import fetch_permits_by_address
 from permit_stall_finder.storage import user_state
@@ -34,7 +34,7 @@ from permit_stall_finder.storage import user_state
 def _format_match_label(row: dict) -> str:
     permit_nbr = row.get("permit_nbr") or "—"
     permit_type = row.get("permit_type") or "—"
-    status_desc = row.get("status_desc") or "—"
+    status_desc = plain_status_desc(row.get("status_desc")) if row.get("status_desc") else "—"
     address = row.get("primary_address") or "—"
     return f"**{permit_nbr}** — {permit_type} — {status_desc} — {address}"
 
@@ -52,9 +52,17 @@ def render(conn: duckdb.DuckDBPyConnection, *, auto_run: bool = False) -> tuple[
     clicking "Search by address" again."""
     st.caption(t("address_search_caption"))
     address_query = st.text_input(
-        t("street_address_label"), placeholder=t("street_address_placeholder"), key="address_query_input"
+        t("street_address_label"),
+        placeholder=t("street_address_placeholder"),
+        key="address_query_input",
+        help=t("street_address_help"),
     )
-    search_clicked = st.button(t("search_by_address_button"), key="address_search_button")
+    # Same placeholder-swap pattern as the permit-number Analyze button --
+    # give immediate visual feedback (Visibility of System Status) rather
+    # than leaving the button static while fetch_permits_by_address()
+    # makes a live network call.
+    search_button_slot = st.empty()
+    search_clicked = search_button_slot.button(t("search_by_address_button"), key="address_search_button")
 
     if search_clicked or auto_run:
         query = address_query.strip()
@@ -63,6 +71,10 @@ def render(conn: duckdb.DuckDBPyConnection, *, auto_run: bool = False) -> tuple[
             if search_clicked:
                 st.warning(t("warning_enter_address"))
         else:
+            if search_clicked:
+                search_button_slot.button(
+                    t("searching_button"), disabled=True, key="address_search_button_loading"
+                )
             try:
                 st.session_state.address_matches = fetch_permits_by_address(query)
                 user_state.record_search(conn, "address", query)
@@ -88,6 +100,13 @@ def render(conn: duckdb.DuckDBPyConnection, *, auto_run: bool = False) -> tuple[
             if st.checkbox(_format_match_label(row), key=f"address_match_{permit_nbr}"):
                 selected.append(permit_nbr)
         if selected:
-            submitted = st.button(t("analyze_selected_button"), type="primary", key="address_analyze_button")
+            analyze_selected_slot = st.empty()
+            submitted = analyze_selected_slot.button(
+                t("analyze_selected_button"), type="primary", key="address_analyze_button"
+            )
+            if submitted:
+                analyze_selected_slot.button(
+                    t("analyzing_button"), type="primary", disabled=True, key="address_analyze_button_loading"
+                )
 
     return submitted, selected

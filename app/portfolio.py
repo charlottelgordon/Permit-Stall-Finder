@@ -24,7 +24,7 @@ from dataclasses import dataclass
 
 import streamlit as st
 
-from i18n import outcome_headline, severity_label, t
+from i18n import outcome_headline, plain_status_desc, severity_label, t
 from permit_stall_finder.orchestration.pipeline import (
     AnalysisOutcome,
     PermitAnalysisResult,
@@ -115,7 +115,7 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
         permit_number=result.permit_number,
         address=_address(result),
         permit_type=snapshot.permit_type if snapshot else "—",
-        status_desc=snapshot.status_desc if snapshot else "—",
+        status_desc=plain_status_desc(snapshot.status_desc) if snapshot else "—",
         outcome=result.outcome,
         headline=outcome_headline(result),
         top_severity=top_severity,

@@ -60,16 +60,30 @@ from permit_stall_finder.storage import user_state
 
 st.set_page_config(page_title="Permit Stall Finder", page_icon="🌴", layout="wide")
 
-# Cosmetic only -- a Los Angeles sunset accent bar that also carries the
-# app's own title, instead of a separate thin decorative bar plus a full
-# st.title() heading underneath it. Folding the title into the gradient
-# bar (via a pure-CSS ::after label, since Streamlit's header has no
-# built-in text slot) reclaims the vertical space a second heading row
-# would cost -- consistent with this page's "no scrolling" layout goal.
-# Touches no analytical content or component structure; every fact still
-# comes from PermitAnalysisResult exactly as the section renderers already
-# display it. layout="wide" supports the quick-glance card and portfolio
-# table sitting in a single horizontal strip without wrapping.
+# Cosmetic only -- a gradient accent bar that also carries the app's own
+# title, instead of a separate thin decorative bar plus a full st.title()
+# heading underneath it. Folding the title into the gradient bar (via a
+# pure-CSS ::after label, since Streamlit's header has no built-in text
+# slot) reclaims the vertical space a second heading row would cost --
+# consistent with this page's "no scrolling" layout goal. Touches no
+# analytical content or component structure; every fact still comes from
+# PermitAnalysisResult exactly as the section renderers already display
+# it. layout="wide" supports the quick-glance card and portfolio table
+# sitting in a single horizontal strip without wrapping.
+#
+# Palette and type are Patreon-inspired: the gradient runs from Patreon's
+# "Fiery Coral" (#FF424D) to their "Blue Whale" navy (#052D49) -- the same
+# warm/creative-meets-solid/professional pairing Patreon's own brand uses,
+# which is also just a good match for "cool and trustworthy." The title
+# text sits on this gradient as branding/logotype (WCAG's contrast rule
+# has an explicit exemption for logotype text), which is why it can use
+# plain white regardless of where it lands on the gradient -- unlike the
+# app's actual buttons and links, which use the flat, high-contrast navy
+# from .streamlit/config.toml's primaryColor instead of the coral, since
+# white-on-coral only clears ~3.4:1 contrast (below the 4.5:1 minimum for
+# real UI text). Poppins (a free geometric sans from Google Fonts) stands
+# in for Patreon's own GT Walsheim Bold, which is a paid commercial
+# typeface not available to load from a CDN.
 #
 # position: relative (overriding Streamlit's default position: fixed) so
 # the header scrolls away with the rest of the page instead of staying
@@ -80,8 +94,20 @@ st.set_page_config(page_title="Permit Stall Finder", page_icon="🌴", layout="w
 st.markdown(
     """
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Poppins', sans-serif;
+    }
+    h1, h2, h3, h4, h5, h6,
+    [data-testid="stMarkdownContainer"] h1,
+    [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stMarkdownContainer"] h3 {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+    }
     [data-testid="stHeader"] {
-        background: linear-gradient(90deg, #D9683C 0%, #E0975A 30%, #C8637A 60%, #6E7FA3 100%) !important;
+        background: linear-gradient(90deg, #FF424D 0%, #F96854 35%, #6B4A63 65%, #052D49 100%) !important;
         height: 3.25rem !important;
         position: relative !important;
         overflow: visible !important;
@@ -98,6 +124,7 @@ st.markdown(
         align-items: center;
         justify-content: center;
         color: white;
+        font-family: 'Poppins', sans-serif;
         font-size: 1.35rem;
         font-weight: 700;
         letter-spacing: -0.01em;
@@ -191,12 +218,22 @@ with tab_numbers:
         height=100,
         label_visibility="collapsed",
         key="permit_numbers_input",
+        help=t("permit_number_help"),
     )
-    if st.button(t("analyze_button"), type="primary", key="analyze_numbers_button"):
+    # A placeholder (rather than a bare st.button) so the button can be
+    # swapped for a disabled "Analyzing..." version the instant it's
+    # clicked -- Nielsen Norman's Visibility of System Status heuristic:
+    # the user should never wonder whether their click registered while
+    # the (network-bound) pipeline call below is still running.
+    analyze_button_slot = st.empty()
+    if analyze_button_slot.button(t("analyze_button"), type="primary", key="analyze_numbers_button"):
         parsed = portfolio.parse_permit_numbers(raw_text)
         if not parsed:
             st.warning(t("warning_enter_permit_number"))
         else:
+            analyze_button_slot.button(
+                t("analyzing_button"), type="primary", disabled=True, key="analyze_numbers_button_loading"
+            )
             triggered = True
             permit_numbers = parsed
 

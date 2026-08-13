@@ -1,9 +1,17 @@
 [theme]
 base = "light"
-primaryColor = "#D9683C"
-backgroundColor = "#FDF8F2"
-secondaryBackgroundColor = "#F2E6D8"
-textColor = "#2B2622"
+# Patreon-inspired palette: "Blue Whale" navy as the primary interactive
+# color (buttons, links, focus rings, active-tab indicator) -- chosen over
+# Patreon's own brand coral (#FF424D) specifically because white text on
+# that coral only reaches ~3.4:1 contrast, below WCAG's 4.5:1 minimum for
+# normal text (the same failure the accessibility review flagged for the
+# previous primaryColor). The coral still appears as an accent in the
+# decorative header gradient in streamlit_app.py, where it's exempt from
+# text-contrast rules as branding/logotype rather than functional UI text.
+primaryColor = "#052D49"
+backgroundColor = "#FAFAFA"
+secondaryBackgroundColor = "#F2EFEC"
+textColor = "#0B1F33"
 font = "sans serif"
 
 [browser]

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from i18n import match_status_label, t
+from i18n import match_status_label, plain_status_desc, t
 from permit_stall_finder.schema.journey import PermitJourney
 
 
@@ -34,7 +34,7 @@ def render(journey: PermitJourney) -> None:
     milestones = []
     if snapshot.submitted_date:
         milestones.append((t("submitted"), snapshot.submitted_date))
-    milestones.append((f"{t('current_status_prefix')} — {snapshot.status_desc}", snapshot.status_date))
+    milestones.append((f"{t('current_status_prefix')} — {plain_status_desc(snapshot.status_desc)}", snapshot.status_date))
     if snapshot.issue_date:
         milestones.append((t("issued"), snapshot.issue_date))
     if snapshot.cofo_date:
