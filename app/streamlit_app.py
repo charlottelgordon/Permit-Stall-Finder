@@ -262,16 +262,14 @@ if st.session_state.pop("pending_clear", False):
 
 conn = get_connection()
 
-# Welcome/intro text, centered under the logo -- shown only before the
-# first search (or after "Clear results", which resets table_rows back
-# to None the same way), so it doesn't compete with actual results. A
-# placeholder rather than an immediate st.markdown(): this position in
-# the script runs *before* a same-click search's own processing further
-# down sets table_rows, so filling it here would show stale pre-search
-# state on the very click that just produced results. welcome_slot gets
-# filled in (or left empty) further down, once table_rows reflects
-# whatever this render actually ended up with.
-welcome_slot = st.empty()
+# Welcome/intro text, centered under the logo -- always visible
+# (Phase: kept even after a search, per explicit request -- toggling it
+# on/off based on search state made the top of the page change on every
+# search, which read as jarring rather than helpful).
+st.markdown(
+    f'<p class="site-welcome-intro">{t("site_welcome_intro")}</p>',
+    unsafe_allow_html=True,
+)
 
 # --- Search: one bar, permit number(s) or address ------------------------
 _, search_col, _ = st.columns([1, 3, 1])
@@ -339,7 +337,11 @@ if search_clicked:
         st.warning(t("warning_enter_permit_number"))
     else:
         search_button_slot.button(
-            t("searching_button"), type="primary", disabled=True, key="unified_search_button_loading"
+            t("searching_button"),
+            type="primary",
+            disabled=True,
+            key="unified_search_button_loading",
+            width="stretch",
         )
         loading_bar_slot.markdown(
             '<div class="search-loading-track"><div class="search-loading-bar"></div></div>',
@@ -396,12 +398,6 @@ if search_clicked:
         search_button_slot.button(
             t("search_button"), type="primary", key="unified_search_button_done", width="stretch"
         )
-
-if not st.session_state.table_rows:
-    welcome_slot.markdown(
-        f'<p class="site-welcome-intro">{t("site_welcome_intro")}</p>',
-        unsafe_allow_html=True,
-    )
 
 st.divider()
 

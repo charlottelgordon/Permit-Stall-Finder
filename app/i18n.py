@@ -671,13 +671,13 @@ _STRINGS: dict[str, dict[str, str]] = {
     # --- Phase 10 redesign: header, unified search, results table, drill-down ---
     "site_welcome_intro": {
         "en": (
-            "Welcome! Understand the observable journey of an LA building permit, identify "
-            "unusual delays or process friction, and see grounded guidance on what happens next."
+            "Welcome! Track the journey of an LA building permit, identify unusual delays or "
+            "process friction, and see grounded guidance on what might happen next."
         ),
         "es": (
-            "¡Bienvenido! Comprenda el trayecto observable de un permiso de construcción de "
-            "Los Ángeles, identifique retrasos inusuales o fricción en el proceso, y consulte "
-            "orientación fundamentada sobre los próximos pasos."
+            "¡Bienvenido! Siga el trayecto de un permiso de construcción de Los Ángeles, "
+            "identifique retrasos inusuales o fricción en el proceso, y consulte "
+            "orientación fundamentada sobre lo que podría pasar a continuación."
         ),
     },
     "unified_search_placeholder": {
