@@ -664,8 +664,10 @@ _STRINGS: dict[str, dict[str, str]] = {
         "en": "For a case that needs deeper attention:",
         "es": "Para un caso que necesite atención más profunda:",
     },
-    "learn_more_prefix": {"en": "Learn more about your", "es": "Más información sobre sus"},
-    "grounded_findings_suffix": {"en": "grounded finding(s)", "es": "hallazgo(s) fundamentado(s)"},
+    "learn_more_this_finding": {
+        "en": "Learn more about this finding",
+        "es": "Más información sobre este hallazgo",
+    },
     "yes": {"en": "Yes", "es": "Sí"},
 
     # --- Phase 10 redesign: header, unified search, results table, drill-down ---
@@ -755,10 +757,6 @@ _STRINGS: dict[str, dict[str, str]] = {
             "fricción de lo típico. Expanda la sección de abajo para ver qué suele significar "
             "cada uno y qué suele ayudar."
         ),
-    },
-    "drill_down_more_detail_header": {
-        "en": "Understand these findings",
-        "es": "Comprenda estos hallazgos",
     },
 }
 

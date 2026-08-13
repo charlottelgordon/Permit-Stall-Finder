@@ -20,6 +20,10 @@ the matching finding card's own metric row and "what the data shows"
 prose in the right panel, and including them here too was flagged as a
 third repeat of the same numbers. This list is a fast-scan index into
 those cards, not a restatement of their content.
+
+Phase 16: "Type" now also carries the match-status line and work
+description that used to open permit_journey.py's own view (moved, not
+copied -- permit_journey.py no longer renders them).
 """
 
 from __future__ import annotations
@@ -27,7 +31,7 @@ from __future__ import annotations
 import streamlit as st
 
 import portfolio
-from i18n import outcome_headline, t, top_finding_bullet
+from i18n import match_status_label, outcome_headline, t, top_finding_bullet
 from permit_stall_finder.orchestration.pipeline import AnalysisOutcome, PermitAnalysisResult
 
 _OUTCOME_ICONS = {
@@ -37,13 +41,30 @@ _OUTCOME_ICONS = {
 }
 
 
+def _type_block(result: PermitAnalysisResult, row: portfolio.PortfolioRow) -> str:
+    """Everything under "Type": match status (Phase 16 -- moved here
+    from permit_journey.py's own opening caption), permit type + sub
+    type, and the work description, e.g. "Issued, with inspections on
+    record" / "Bldg-New — 1 or 2 Family Dwelling" / "(N) 2-story SFD &
+    attached 2-car garage" as three stacked lines under one label."""
+    snapshot = result.journey.latest_snapshot
+    lines = [match_status_label(result.journey.match_status)]
+    permit_type_line = row.permit_type
+    if snapshot and snapshot.permit_sub_type:
+        permit_type_line += f" — {snapshot.permit_sub_type}"
+    lines.append(permit_type_line)
+    if snapshot and snapshot.work_description:
+        lines.append(snapshot.work_description)
+    return "  \n".join(lines)
+
+
 def render(result: PermitAnalysisResult) -> None:
     row = portfolio.summarize_result(result)
     detections = result.stall_assessment.detections
 
     with st.container(border=True):
         st.markdown(f"**{t('qg_address')}**  \n{row.address}")
-        st.markdown(f"**{t('qg_type')}**  \n{row.permit_type}")
+        st.markdown(f"**{t('qg_type')}**  \n{_type_block(result, row)}")
         st.markdown(f"**{t('qg_status')}**  \n{row.status_desc}")
         st.markdown(f"**{t('qg_issuance_status')}**  \n{row.issuance_status}")
         st.markdown(f"**{t('qg_last_update')}**  \n{row.last_status_update}")

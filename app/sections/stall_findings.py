@@ -10,6 +10,18 @@ Every sentence a card shows is either a structured field displayed as-is
 pre-composed section strings. This module never concatenates numbers into
 new prose of its own (UI_DESIGN.md decision "no UI-composed analytical
 sentences from raw numbers").
+
+Phase 15: each card is now a bordered container that's always visible
+(title, severity badge, metrics, and the interval/benchmark caption --
+no click required), followed by a "Learn more about this finding" link
+list (moved here from next_best_action.py's old aggregated list) and then
+one small expander per explanatory piece -- What the data shows / What
+this usually means / Steps you can take / Steps that depend on the city /
+What we cannot tell -- each collapsed by default, styled the same way
+"Source & grounding" already was. There's no longer one outer expander
+wrapping every card (drill_down.py calls render() directly into the right
+panel now), so a user can scan every finding's headline + numbers at a
+glance and only open the specific explanation they want.
 """
 
 from __future__ import annotations
@@ -88,13 +100,28 @@ def _render_metrics(detection: DelayStallDetection | FrictionStallDetection) -> 
         )
 
 
-def _render_steps(heading: str, steps: list[NextStep], placeholder: str) -> None:
-    st.markdown(f"**{heading}**")
+def _render_steps_content(steps: list[NextStep], placeholder: str) -> None:
     if not steps:
         st.caption(placeholder)
         return
     for step in steps:
         st.markdown(f"- {step.text} _( {grounding_strength_label(step.grounding_strength)} )_")
+
+
+def _render_learn_more(explanation: DeveloperExplanation, kb: KnowledgeBase) -> None:
+    """"Learn more about this finding" -- every source behind this one
+    finding's own grounded explanation, as plain links. Moved here from
+    next_best_action.py's old aggregated cross-finding list (Phase 15)
+    so a user reads a finding's sources right next to that finding,
+    rather than having to cross-reference back to a list elsewhere."""
+    if explanation.grounding_status != GroundingStatus.GROUNDED:
+        return
+    entry = kb_entry_by_id(kb, explanation.knowledge_base_entry_id)
+    if entry is None or not entry.sources:
+        return
+    st.markdown(f"**{t('learn_more_this_finding')}**")
+    for source in entry.sources:
+        st.markdown(f"- [{source.title}]({source.url})")
 
 
 def _render_source_grounding(explanation: DeveloperExplanation, kb: KnowledgeBase) -> None:
@@ -122,34 +149,38 @@ def _render_card(
     kb: KnowledgeBase,
 ) -> None:
     with st.container(border=True):
+        # Always visible, no click required: title, severity, the
+        # metrics row, and its interval/benchmark caption.
         st.markdown(
             f"#### {category_label(detection.category)}  {_severity_badge(detection)}",
             unsafe_allow_html=True,
         )
-
         _render_metrics(detection)
 
-        st.markdown(f"**{t('what_data_shows')}**")
-        st.write(explanation.what_the_data_shows)
+        _render_learn_more(explanation, kb)
 
-        if explanation.grounding_status == GroundingStatus.NO_ENTRY_AVAILABLE:
-            st.markdown(f"**{t('no_entry_heading')}**")
-            st.write(explanation.what_this_usually_means)
-        else:
-            st.markdown(f"**{t('what_this_usually_means')}**")
+        what_means_heading = (
+            t("no_entry_heading")
+            if explanation.grounding_status == GroundingStatus.NO_ENTRY_AVAILABLE
+            else t("what_this_usually_means")
+        )
+
+        with st.expander(t("what_data_shows")):
+            st.write(explanation.what_the_data_shows)
+
+        with st.expander(what_means_heading):
             st.write(explanation.what_this_usually_means)
 
-        _render_steps(
-            t("steps_you_can_take"), explanation.developer_actionable_steps, t("no_developer_steps")
-        )
-        _render_steps(
-            t("steps_depend_on_city"), explanation.city_dependent_steps, t("no_city_steps")
-        )
+        with st.expander(t("steps_you_can_take")):
+            _render_steps_content(explanation.developer_actionable_steps, t("no_developer_steps"))
+
+        with st.expander(t("steps_depend_on_city")):
+            _render_steps_content(explanation.city_dependent_steps, t("no_city_steps"))
 
         if explanation.limitations:
-            st.markdown(f"**{t('cannot_tell')}**")
-            for item in explanation.limitations:
-                st.markdown(f"- {item}")
+            with st.expander(t("cannot_tell")):
+                for item in explanation.limitations:
+                    st.markdown(f"- {item}")
 
         if detection.caveats:
             st.markdown(f"**{t('caveats')}**")

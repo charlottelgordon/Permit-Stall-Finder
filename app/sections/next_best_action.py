@@ -1,6 +1,7 @@
 """Next Best Action -- links for a user to dive deeper than this tool's
-own summary goes. Two kinds of link, both sourced from data the pipeline
-already produced, never invented here:
+own summary goes, shown inside the left panel's collapsed "Resources"
+section. Two things, both sourced from data the pipeline already
+produced, never invented here:
 
 1. A fixed recommendation to confirm this permit's status directly on
    LADBS's own public Permit & Inspection Report tool -- the same action
@@ -12,13 +13,7 @@ already produced, never invented here:
    themselves, so this module never constructs or guesses a
    permit-specific URL.
 
-2. Per-finding source links, read from the same KnowledgeBaseEntry.sources
-   list stall_findings.py's "Source & grounding" expander already shows
-   via formatting.kb_entry_by_id() -- surfaced here as a flatter,
-   above-the-fold list so a user isn't required to open every finding
-   card's expander individually to find them.
-
-3. A "talk to a person" block -- not just a link. LADBS_311_LINE and
+2. A "talk to a person" block -- not just a link. LADBS_311_LINE and
    LADBS_OUTSIDE_LA_PHONE are LADBS's own general customer-service contact,
    verified live against dbs.lacity.gov/contact ("Call 3-1-1 (within the
    City of Los Angeles). Callers from outside Los Angeles can call
@@ -33,17 +28,19 @@ already produced, never invented here:
    question, not scraped or private data. Both numbers can change; the
    directory itself is dated, so this is presented as a starting point,
    not a guarantee the same person still holds that role.
+
+Phase 15: the per-finding source links this module used to surface as a
+flat "Learn more about your N grounded findings" list moved into each
+finding's own card in stall_findings.py (a "Learn more about this
+finding" line right on that finding, rather than a list here a user has
+to cross-reference back to the right panel to make sense of).
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
-from formatting import kb_entry_by_id
-from i18n import category_label, t
-from permit_stall_finder.knowledge_base.loader import KnowledgeBase
-from permit_stall_finder.orchestration.pipeline import PermitAnalysisResult
-from permit_stall_finder.schema.developer_explanation import GroundingStatus
+from i18n import t
 
 # Verified live against dbs.lacity.gov -- LADBS's own public tools, not
 # permit-specific deep links.
@@ -65,7 +62,7 @@ LADBS_CASE_MANAGEMENT_CONTACT = (
 )
 
 
-def render(result: PermitAnalysisResult, kb: KnowledgeBase) -> None:
+def render() -> None:
     st.markdown(f"**{t('next_best_action')}**")
     st.markdown(
         f"→ [{t('confirm_status_link')}]({LADBS_PERMIT_STATUS_URL}) "
@@ -80,23 +77,4 @@ def render(result: PermitAnalysisResult, kb: KnowledgeBase) -> None:
         f"{t('call_prefix')} {LADBS_311_LINE} {t('or')} {LADBS_OUTSIDE_LA_PHONE} {t('call_line_text')}"
     )
     st.markdown(f"{t('deeper_attention_prefix')} {LADBS_CASE_MANAGEMENT_CONTACT}")
-
-    seen_entry_ids: set[str] = set()
-    source_links: list[tuple[str, str, str]] = []  # (category label, source title, url)
-    for explanation in result.developer_explanations.explanations:
-        if explanation.grounding_status != GroundingStatus.GROUNDED:
-            continue
-        entry = kb_entry_by_id(kb, explanation.knowledge_base_entry_id)
-        if entry is None or entry.entry_id in seen_entry_ids:
-            continue
-        seen_entry_ids.add(entry.entry_id)
-        for source in entry.sources:
-            source_links.append(
-                (category_label(explanation.stall_category), source.title, source.url)
-            )
-
-    if source_links:
-        st.markdown(f"**{t('learn_more_prefix')} {len(source_links)} {t('grounded_findings_suffix')}**")
-        for category_label_text, title, url in source_links:
-            st.markdown(f"- **{category_label_text}**: [{title}]({url})")
 

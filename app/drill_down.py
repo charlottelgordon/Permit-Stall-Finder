@@ -2,23 +2,25 @@
 more permits are selected (Phase 10 redesign; two-panel layout added in
 Phase 11, left-panel regrouping in Phase 12, severity-count banner
 dropped in Phase 14 since the results table's own "Findings" column now
-covers it). One tab per selected permit, so a user can hold several open
-at once (e.g. their own permit plus a neighbor's, or several units on the
-same job). Each tab opens with a short orientation line explaining what a
+covers it, right-panel restructured to per-finding cards in Phase 15).
+One tab per selected permit, so a user can hold several open at once
+(e.g. their own permit plus a neighbor's, or several units on the same
+job). Each tab opens with a short orientation line explaining what a
 "finding" is, then splits into two panels:
 
 - Left: the permit's at-a-glance facts and full "Top Findings" bullet
-  list (quick_glance.render()), then three quick-reference sections
-  stacked above the map -- an expandable "Permit Journey"
-  (permit_journey.py), an expandable "Other permits at this address" (a
-  new, in-app-clickable listing -- clicking one adds it as another open
-  tab rather than linking off-site, since LADBS has no per-permit deep
-  link), and a plain (non-collapsible) "Resources" section holding
-  next_best_action.py's links/contacts, and the map at the very bottom.
-- Right: collapsed by default, holding the finding detail cards
-  (stall_findings.py) and "Data Limitations" (coverage_gaps.py, renamed)
-  -- the deeper, per-finding explanations someone would open after
-  already skimming the left panel's Top Findings bullets.
+  list (quick_glance.render()), then three sections stacked above the
+  map -- an expandable "Permit Journey" (permit_journey.py), an
+  expandable "Other permits at this address" (a new, in-app-clickable
+  listing -- clicking one adds it as another open tab rather than
+  linking off-site, since LADBS has no per-permit deep link), and an
+  expandable "Resources" (collapsed by default) holding
+  next_best_action.py's links/contacts.
+- Right: the finding detail cards (stall_findings.py), each its own
+  always-visible header (category, severity, metrics) with small
+  per-explanation expanders underneath, plus "Data Limitations"
+  (coverage_gaps.py, renamed) -- no outer wrapping expander anymore,
+  so a user sees every finding's headline at a glance.
 
 The informational disclaimer stays outside both panels, always visible,
 per UI_DESIGN.md decision 4 ("never inside an expander").
@@ -125,19 +127,21 @@ def _render_one(result: PermitAnalysisResult, kb) -> None:
         with st.expander(t("drill_down_other_permits")):
             _render_other_permits_at_address(result)
 
-        st.markdown(f"**{t('resources_header')}**")
-        next_best_action.render(result, kb)
+        with st.expander(t("resources_header"), expanded=False):
+            next_best_action.render()
 
         st.divider()
         location_map.render(result)
 
     with right_col:
-        with st.expander(t("drill_down_more_detail_header"), expanded=False):
-            stall_findings.render(result.stall_assessment, result.developer_explanations, kb)
+        # Phase 15: no outer wrapping expander here anymore -- each
+        # finding card in stall_findings.py is now its own always-visible
+        # header with its own small expanders underneath, so a user can
+        # scan every finding at a glance without a click.
+        stall_findings.render(result.stall_assessment, result.developer_explanations, kb)
 
-            if result.coverage_gaps or result.data_quality_flags:
-                st.divider()
-                coverage_gaps.render(result.coverage_gaps, result.data_quality_flags)
+        if result.coverage_gaps or result.data_quality_flags:
+            coverage_gaps.render(result.coverage_gaps, result.data_quality_flags)
 
     disclaimer.render(result.developer_explanations.disclaimer)
 

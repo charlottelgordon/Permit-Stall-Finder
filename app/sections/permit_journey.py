@@ -10,30 +10,27 @@ quick-glance overview's own Status field, and this section's own call
 site (drill_down.py) now wraps it in an st.expander titled "Permit
 Journey", so the st.subheader() this render() used to open with is
 dropped too (it would just repeat that same title immediately below it).
+
+Phase 16: the match-status caption and the permit type/sub-type/work
+description block were moved (not copied) into quick_glance.py's own
+"Type" field -- this view now starts directly at the inspection events
+table, still gated on a snapshot actually existing since inspection
+events only ever accompany a matched snapshot in practice.
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
-from i18n import match_status_label, t
+from i18n import t
 from permit_stall_finder.schema.journey import PermitJourney
 
 
 def render(journey: PermitJourney) -> None:
-    st.caption(match_status_label(journey.match_status))
-
     snapshot = journey.latest_snapshot
     if snapshot is None:
         st.write(t("no_journey_record"))
         return
-
-    st.markdown(
-        f"**{snapshot.permit_type}**"
-        + (f" — {snapshot.permit_sub_type}" if snapshot.permit_sub_type else "")
-    )
-    if snapshot.work_description:
-        st.caption(snapshot.work_description)
 
     if journey.inspection_events:
         st.markdown(f"**{t('observed_inspections')}**")
