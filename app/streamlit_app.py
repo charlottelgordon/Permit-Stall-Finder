@@ -266,7 +266,7 @@ welcome_slot = st.empty()
 # --- Search: one bar, permit number(s) or address ------------------------
 _, search_col, _ = st.columns([1, 3, 1])
 with search_col:
-    input_col, toggle_col, tip_col = st.columns([9, 2, 1])
+    input_col, tip_col, toggle_col = st.columns([9, 1, 2])
     with input_col:
         raw_query = st.text_input(
             t("unified_search_placeholder"),
@@ -274,10 +274,6 @@ with search_col:
             key="unified_search_input",
             label_visibility="collapsed",
         )
-    with toggle_col:
-        # Language toggle, moved here (left of the search-bar tooltip)
-        # from its own centered row below the header.
-        render_language_toggle()
     with tip_col:
         # A custom circular "?" icon with a CSS-only hover tooltip --
         # not text_input's own help= (Streamlit drops that help icon
@@ -286,7 +282,9 @@ with search_col:
         # native title= attribute (unreliable: inconsistent per-browser
         # delay, easy to miss, no hover state at all on touch/mobile).
         # This is a real :hover-driven CSS reveal, so it doesn't depend
-        # on native tooltip timing/rendering the way title= did.
+        # on native tooltip timing/rendering the way title= did. Right
+        # next to the search box, with the language toggle further
+        # right, per request.
         _help_paragraphs = "".join(
             f"<p>{html.escape(p)}</p>" for p in t("unified_search_help").split("\n\n")
         )
@@ -297,6 +295,9 @@ with search_col:
             "</div>",
             unsafe_allow_html=True,
         )
+    with toggle_col:
+        # Language toggle, to the right of the search-bar tooltip.
+        render_language_toggle()
 
     # Search + Clear, centered as a pair below the search bar.
     _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])
