@@ -146,8 +146,6 @@ def test_header_and_language_toggle(monkeypatch):
 
     headers = [h.value for h in at.get("markdown") if "Permit Check LA" in h.value]
     assert headers, "app title header not found"
-    guide_links = [m.value for m in at.markdown if "dbs.lacity.gov/services/homeowner-step-by-step" in m.value]
-    assert guide_links, "homeowner guide link not found in header"
 
     toggles = at.get("toggle")
     assert toggles, "language toggle not found"

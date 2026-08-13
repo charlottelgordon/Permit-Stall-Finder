@@ -38,13 +38,12 @@ import search_input
 from db import get_connection, get_knowledge_base
 from i18n import (
     APP_NAME,
-    HOMEOWNER_GUIDE_URL,
     render_language_toggle,
     t,
     translate_error_message,
 )
 from errors import GENERIC_ERROR_MESSAGE, validate_permit_number
-from sections import results_table
+from sections import report_export, results_table
 
 from permit_stall_finder import config
 from permit_stall_finder.ingestion.permits import fetch_permits_by_address
@@ -118,23 +117,11 @@ st.markdown(
         width: auto;
         display: block;
     }
-    .app-header-bar a {
-        /* A plain hyperlink, not a button -- positioned in the header
-           bar's top-right corner without disturbing the logo's own
-           centering. Absolutely positioned, so it's out of the flex flow
-           above and top: 50% resolves against .app-header-bar's own
-           (now header-height-exact) box. */
-        position: absolute;
-        top: 50%;
-        right: 1rem;
-        transform: translateY(-50%);
-        color: #052D49;
-        font-weight: 600;
-        text-decoration: underline;
-        white-space: nowrap;
-    }
-    .app-header-bar a:hover {
-        color: #FFFFFF;
+    .site-welcome-intro {
+        text-align: center;
+        max-width: 640px;
+        margin: 0.5rem auto 1.5rem auto;
+        color: #444;
     }
     .search-loading-track {
         width: 100%;
@@ -218,25 +205,19 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# The header bar itself: logo centered (a div with role="heading"
-# aria-level="1" rather than a real <h1> -- Streamlit auto-wraps every
-# actual h1-h6 it finds in rendered markdown with its own hover "anchor
-# link" chrome, which comes with padding that broke this row's vertical
-# centering math and can't be fully overridden; an ARIA heading gets
-# assistive tech the same "level-1 heading, announced via the image's
-# alt text" treatment without Streamlit's own instrumentation), and in
-# the top-right corner a plain hyperlink out to LADBS's own Homeowner
-# Step-by-Step guide -- Nielsen Norman's Help and Documentation
-# heuristic, pointing at the city's own authoritative walkthrough rather
-# than this tool trying to re-explain the permitting process itself. Both
-# sit inside the colored bar itself (not a separate row below it), so the
-# logo doesn't cost its own line of vertical space.
+# The header bar itself: just the logo, centered (a div with
+# role="heading" aria-level="1" rather than a real <h1> -- Streamlit
+# auto-wraps every actual h1-h6 it finds in rendered markdown with its
+# own hover "anchor link" chrome, which comes with padding that broke
+# this row's vertical centering math and can't be fully overridden; an
+# ARIA heading gets assistive tech the same "level-1 heading, announced
+# via the image's alt text" treatment without Streamlit's own
+# instrumentation). Sits inside the colored bar itself (not a separate
+# row below it), so the logo doesn't cost its own line of vertical space.
 _logo_b64 = base64.b64encode((Path(__file__).parent / "assets" / "logo.png").read_bytes()).decode()
 st.markdown(
     '<div class="app-header-bar">'
     f'<div role="heading" aria-level="1"><img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></div>'
-    f'<a href="{HOMEOWNER_GUIDE_URL}" target="_blank" rel="noopener noreferrer">'
-    f'{t("homeowner_guide_link")}</a>'
     "</div>",
     unsafe_allow_html=True,
 )
@@ -253,7 +234,34 @@ if "extra_drilldown_permits" not in st.session_state:
 if "error" not in st.session_state:
     st.session_state.error = None
 
+# One-shot flag from a "Clear results" click (see below): must run
+# *before* st.text_input(key="unified_search_input") is instantiated
+# further down, since Streamlit disallows writing to a widget's
+# session_state key once that widget has already rendered this run --
+# the button that sets this flag is itself rendered after the text
+# input, so the reset can only safely happen on the *next* pass, right
+# at the top, which is what the button's own st.rerun() sets up.
+if st.session_state.pop("pending_clear", False):
+    st.session_state.table_rows = None
+    st.session_state.results_cache = {}
+    st.session_state.drilldown_permits = []
+    st.session_state.extra_drilldown_permits = []
+    st.session_state.error = None
+    st.session_state.batch_errors = []
+    st.session_state.unified_search_input = ""
+
 conn = get_connection()
+
+# Welcome/intro text, centered under the logo -- shown only before the
+# first search (or after "Clear results", which resets table_rows back
+# to None the same way), so it doesn't compete with actual results. A
+# placeholder rather than an immediate st.markdown(): this position in
+# the script runs *before* a same-click search's own processing further
+# down sets table_rows, so filling it here would show stale pre-search
+# state on the very click that just produced results. welcome_slot gets
+# filled in (or left empty) further down, once table_rows reflects
+# whatever this render actually ended up with.
+welcome_slot = st.empty()
 
 # --- Search: one bar, permit number(s) or address ------------------------
 _, search_col, _ = st.columns([1, 3, 1])
@@ -311,13 +319,7 @@ with search_col:
     loading_bar_slot = st.empty()
 
 if clear_clicked:
-    st.session_state.table_rows = None
-    st.session_state.results_cache = {}
-    st.session_state.drilldown_permits = []
-    st.session_state.extra_drilldown_permits = []
-    st.session_state.error = None
-    st.session_state.batch_errors = []
-    st.session_state.unified_search_input = ""
+    st.session_state.pending_clear = True
     st.rerun()
 
 if search_clicked:
@@ -384,6 +386,12 @@ if search_clicked:
             t("search_button"), type="primary", key="unified_search_button_done", width="stretch"
         )
 
+if not st.session_state.table_rows:
+    welcome_slot.markdown(
+        f'<p class="site-welcome-intro">{t("site_welcome_intro")}</p>',
+        unsafe_allow_html=True,
+    )
+
 st.divider()
 
 if st.session_state.error:
@@ -411,6 +419,15 @@ if st.session_state.table_rows:
     for permit_number in table_selected:
         if permit_number not in st.session_state.drilldown_permits:
             st.session_state.drilldown_permits.append(permit_number)
+
+    # One combined, print-friendly report covering every permit currently
+    # shown in the table above (not just checked rows) -- someone who
+    # wants to save/print the full detail rather than read it on screen.
+    report_export.render_download_button(
+        [r.permit_number for r in st.session_state.table_rows],
+        st.session_state.results_cache,
+        get_knowledge_base(),
+    )
 
     combined = list(st.session_state.drilldown_permits) + list(
         st.session_state.extra_drilldown_permits

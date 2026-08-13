@@ -49,8 +49,6 @@ APP_NAME = "Permit Check LA"
 (the same treatment the earlier gradient-bar title text got), not routed
 through _STRINGS/t()."""
 
-HOMEOWNER_GUIDE_URL = "https://dbs.lacity.gov/services/homeowner-step-by-step"
-
 
 def get_language() -> str:
     return st.session_state.get("language", DEFAULT_LANGUAGE)
@@ -671,9 +669,16 @@ _STRINGS: dict[str, dict[str, str]] = {
     "yes": {"en": "Yes", "es": "Sí"},
 
     # --- Phase 10 redesign: header, unified search, results table, drill-down ---
-    "homeowner_guide_link": {
-        "en": "Homeowner Permit Step by Step Guide",
-        "es": "Guía paso a paso de permisos para propietarios",
+    "site_welcome_intro": {
+        "en": (
+            "Welcome! Understand the observable journey of an LA building permit, identify "
+            "unusual delays or process friction, and see grounded guidance on what happens next."
+        ),
+        "es": (
+            "¡Bienvenido! Comprenda el trayecto observable de un permiso de construcción de "
+            "Los Ángeles, identifique retrasos inusuales o fricción en el proceso, y consulte "
+            "orientación fundamentada sobre los próximos pasos."
+        ),
     },
     "unified_search_placeholder": {
         "en": "Search permits by permit number or address",
@@ -706,6 +711,10 @@ _STRINGS: dict[str, dict[str, str]] = {
     "results_table_hint": {
         "en": "Click a row to see its full detail below.",
         "es": "Haga clic en una fila para ver su detalle completo abajo.",
+    },
+    "download_searched_permits_button": {
+        "en": "⬇ Download Searched Permits",
+        "es": "⬇ Descargar permisos buscados",
     },
     "col_permit_number": {"en": "Permit number", "es": "Número de permiso"},
     "col_findings": {"en": "Findings", "es": "Hallazgos"},
