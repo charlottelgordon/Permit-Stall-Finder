@@ -12,27 +12,36 @@ over Severity values Agent 2 already assigned to that permit's own
 detections -- ranking for sort/color order, not a new severity judgment,
 the same spirit as formatting.summarize_severity_counts()'s plain count.
 
-run_batch() and render_table() are split apart (rather than one monolithic
-render()) so streamlit_app.py can collect permit numbers from either input
-path -- a pasted list or an address-search selection -- and feed either
-into the same batch-run-and-display logic.
+run_batch() collects permit numbers from either input path -- typed
+number(s) or an address-search selection -- and runs the pipeline once
+per permit, worst-first sorted; app/sections/results_table.py and
+app/drill_down.py (Phase 10 redesign) do the actual rendering from the
+PortfolioRow/PermitAnalysisResult data this module produces, rather than
+this module rendering its own table as earlier versions did.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 
 import streamlit as st
 
-from formatting import SEVERITY_COLORS
-from i18n import outcome_headline, plain_status_desc, severity_label, t
+from i18n import (
+    delay_status_phrase,
+    issuance_status_text,
+    outcome_headline,
+    plain_status_desc,
+    relative_days_ago,
+    status_updated_phrase,
+)
 from permit_stall_finder.orchestration.pipeline import (
     AnalysisOutcome,
     PermitAnalysisResult,
     PipelineExecutionError,
     run_pipeline,
 )
-from permit_stall_finder.schema.stall_detection import Severity
+from permit_stall_finder.schema.stall_detection import DelayStallDetection, Severity
 
 _SEVERITY_RANK: dict[Severity, int] = {
     Severity.SEVERE: 3,
@@ -79,6 +88,43 @@ def _has_actionable_step(result: PermitAnalysisResult) -> bool:
     )
 
 
+def address_of(result: PermitAnalysisResult) -> str:
+    """Public wrapper around _address() -- drill_down.py needs the same
+    best-effort display address (to look up "other permits at this
+    address") without reaching into a name-mangled internal helper."""
+    return _address(result)
+
+
+def _top_delay_detection(result: PermitAnalysisResult) -> DelayStallDetection | None:
+    """Highest-severity *delay* (day-count) detection, if any -- a plain
+    max() over Agent 2's own severity labels restricted to
+    DelayStallDetection, the same pattern _max_severity() uses across all
+    detection types. FrictionStallDetection (inspection-outcome-based, not
+    day-count-based) is deliberately excluded: the results table's "Delay
+    status" column is specifically about elapsed time vs. a cohort, which
+    only DelayStallDetection carries."""
+    delay_detections = [
+        d for d in result.stall_assessment.detections if isinstance(d, DelayStallDetection)
+    ]
+    if not delay_detections:
+        return None
+    return max(delay_detections, key=lambda d: _SEVERITY_RANK[d.severity])
+
+
+def _delay_percent(detection: DelayStallDetection) -> float | None:
+    """Restates a DelayStallDetection's own already-computed
+    excess_days_vs_median as a percentage of its own cohort's own
+    median_days_or_count -- pure arithmetic on two numbers Agent 2 already
+    produced, never a new severity judgment. None whenever either input
+    Agent 2 left as None, or the median is non-positive (a percentage of
+    zero isn't meaningful)."""
+    median = detection.cohort.median_days_or_count
+    excess = detection.excess_days_vs_median
+    if median is None or excess is None or median <= 0:
+        return None
+    return (excess / median) * 100
+
+
 @dataclass(frozen=True)
 class PortfolioRow:
     permit_number: str
@@ -91,13 +137,24 @@ class PortfolioRow:
     days_in_current_status: int | None
     has_actionable_step: bool
     sort_key: tuple
+    # --- added for the unified results table (Phase 10 redesign) ---
+    submitted_date: date | None = None
+    time_since_submission: str = "—"
+    issuance_status: str = "—"
+    raw_status_desc: str = "—"
+    delay_status: str = "—"
+    last_status_update: str = "—"
+    status_date: date | None = None
 
 
 def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
-    """Builds one portfolio-table row from an already-complete
+    """Builds one results-table row from an already-complete
     PermitAnalysisResult. Every field is read directly off the result or
     its nested journey/derived metrics -- no recomputation of anything
-    Agent 1/2/3 didn't already compute."""
+    Agent 1/2/3 didn't already compute; the only arithmetic done here is
+    day-count subtraction against "as of" (analyzed_at, when present) and
+    a percentage restatement in _delay_percent() above, both plain
+    re-expressions of already-observed dates/numbers, not new judgments."""
     snapshot = result.journey.latest_snapshot
     top_severity = _max_severity(result)
     days = (
@@ -105,6 +162,25 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
         if result.journey.derived is not None
         else None
     )
+
+    as_of = getattr(result, "analyzed_at", None)
+    as_of_date = as_of.date() if as_of is not None else date.today()
+
+    submitted_date = snapshot.submitted_date if snapshot else None
+    status_date = snapshot.status_date if snapshot else None
+
+    time_since_submission = (
+        relative_days_ago((as_of_date - submitted_date).days) if submitted_date else "—"
+    )
+    last_status_update = (
+        status_updated_phrase((as_of_date - status_date).days) if status_date else "—"
+    )
+    issuance_status = issuance_status_text(bool(snapshot and snapshot.issue_date))
+    raw_status_desc = snapshot.status_desc if snapshot else "—"
+
+    delay_detection = _top_delay_detection(result)
+    delay_percent = _delay_percent(delay_detection) if delay_detection is not None else None
+    delay_status = delay_status_phrase(delay_percent, delay_detection is not None, result.outcome)
 
     sort_key = (
         _OUTCOME_RANK[result.outcome],
@@ -123,6 +199,13 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
         days_in_current_status=days,
         has_actionable_step=_has_actionable_step(result),
         sort_key=sort_key,
+        submitted_date=submitted_date,
+        time_since_submission=time_since_submission,
+        issuance_status=issuance_status,
+        raw_status_desc=raw_status_desc,
+        delay_status=delay_status,
+        last_status_update=last_status_update,
+        status_date=status_date,
     )
 
 
@@ -188,80 +271,4 @@ def run_batch(
         rows=sort_rows(rows), results_by_permit=results_by_permit, errors=errors
     )
 
-
-def render_table(rows: list[PortfolioRow]) -> None:
-    """Pure rendering of an already-computed, already-sorted row list --
-    no pipeline calls, no session_state writes. The permit-detail
-    selectbox (key="selected_permit") lives here because it's part of the
-    same at-a-glance table, but which result loads into the detail view
-    below is decided by streamlit_app.py, not this function."""
-    st.subheader(t("portfolio_triage_header"))
-    st.caption(f"{len(rows)} {t('portfolio_worst_first')}")
-
-    table_data = [
-        {
-            t("qg_permit"): r.permit_number,
-            t("qg_address"): r.address,
-            t("qg_type"): r.permit_type,
-            t("qg_status"): r.status_desc,
-            t("portfolio_severity_col"): severity_label(r.top_severity) if r.top_severity else "—",
-            t("qg_result"): r.headline,
-            t("qg_days_in_status"): r.days_in_current_status if r.days_in_current_status is not None else "—",
-            t("portfolio_dev_action_col"): t("yes") if r.has_actionable_step else "—",
-        }
-        for r in rows
-    ]
-    st.dataframe(table_data, hide_index=True, width="stretch")
-
-    options = [r.permit_number for r in rows]
-    st.selectbox(t("portfolio_view_detail_for"), options, key="selected_permit")
-
-
-_OUTCOME_ICONS: dict[AnalysisOutcome, str] = {
-    AnalysisOutcome.NO_MATERIAL_STALL_DETECTED: "✅",
-    AnalysisOutcome.INSUFFICIENT_EVIDENCE: "🔍",
-    AnalysisOutcome.STALL_DETECTED: "📋",
-}
-
-
-def render_two_panel(rows: list[PortfolioRow]) -> None:
-    """Side-by-side comparison cards for the common two-permit case --
-    e.g. comparing your own permit against a neighbor's, or tracking two
-    active projects at once. streamlit_app.py calls this instead of
-    render_table() only when exactly two permit numbers were entered;
-    three or more still go to the table, which scales better past two
-    items. Every field here is the same already-computed PortfolioRow
-    data render_table() uses -- this is a different layout, not a
-    different computation.
-
-    'View full detail' sets the same session_state['selected_permit']
-    key render_table()'s selectbox sets, so streamlit_app.py's existing
-    'load the selected permit's cached result' logic below doesn't need
-    to know which of the two layouts produced the selection."""
-    st.subheader(t("two_panel_header"))
-    cols = st.columns(2)
-    for col, row in zip(cols, rows):
-        with col:
-            with st.container(border=True):
-                st.markdown(f"**{row.permit_number}**")
-                st.caption(f"{row.address} · {row.permit_type}")
-                st.markdown(f"**{t('qg_status')}:** {row.status_desc}")
-                if row.days_in_current_status is not None:
-                    st.caption(f"{t('qg_days_in_status')}: {row.days_in_current_status} {t('days_suffix')}")
-
-                if row.top_severity is not None:
-                    color = SEVERITY_COLORS[row.top_severity]
-                    badge = (
-                        f'<span style="background-color:{color};color:white;padding:2px 10px;'
-                        f'border-radius:4px;font-weight:600">{severity_label(row.top_severity)}</span>'
-                    )
-                    st.markdown(badge, unsafe_allow_html=True)
-                    st.caption(row.headline)
-                else:
-                    icon = _OUTCOME_ICONS[row.outcome]
-                    st.markdown(f"{icon} {row.headline}")
-
-                if st.button(t("view_full_detail"), key=f"two_panel_detail_{row.permit_number}"):
-                    st.session_state["selected_permit"] = row.permit_number
-                    st.rerun()
 

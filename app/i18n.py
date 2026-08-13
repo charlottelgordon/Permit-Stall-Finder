@@ -44,6 +44,13 @@ from permit_stall_finder.schema.stall_detection import (
 DEFAULT_LANGUAGE = "en"
 LANGUAGES = {"en": "English", "es": "Español"}
 
+APP_NAME = "Permit Check LA"
+"""The app's own name -- a proper noun, kept identical in both languages
+(the same treatment the earlier gradient-bar title text got), not routed
+through _STRINGS/t()."""
+
+HOMEOWNER_GUIDE_URL = "https://dbs.lacity.gov/services/homeowner-step-by-step"
+
 
 def get_language() -> str:
     return st.session_state.get("language", DEFAULT_LANGUAGE)
@@ -72,25 +79,24 @@ def _sync_html_lang(lang: str) -> None:
 
 
 def render_language_toggle() -> None:
-    """A small language picker. Changing it reruns the script (every
-    Streamlit widget interaction does), and every t()/label lookup below
-    reads st.session_state["language"] fresh on that rerun -- so the
-    whole page reflects the choice immediately, not just newly-rendered
-    widgets."""
+    """A two-state language switch (Phase 10 redesign -- replaces the
+    earlier st.radio picker with a single st.toggle, since there are
+    only ever two languages; streamlit_app.py centers this directly
+    below the page title). Same rerun-and-reread-from-session_state
+    pattern as before: every t()/label lookup below reads
+    st.session_state["language"] fresh on the rerun a toggle flip
+    triggers, so the whole page reflects the choice immediately."""
     current = get_language()
     _sync_html_lang(current)
-    codes = list(LANGUAGES.keys())
-    choice = st.radio(
-        "Language / Idioma",
-        options=codes,
-        format_func=lambda code: LANGUAGES[code],
-        index=codes.index(current),
+    is_spanish = st.toggle(
+        "EN  ·  ES",
+        value=(current == "es"),
         key="language_picker",
-        horizontal=True,
-        label_visibility="collapsed",
+        help=t("language_toggle_help"),
     )
-    if choice != current:
-        set_language(choice)
+    new_lang = "es" if is_spanish else "en"
+    if new_lang != current:
+        set_language(new_lang)
         st.rerun()
 
 
@@ -675,18 +681,100 @@ _STRINGS: dict[str, dict[str, str]] = {
     },
     "learn_more_prefix": {"en": "Learn more about your", "es": "Más información sobre sus"},
     "grounded_findings_suffix": {"en": "grounded finding(s)", "es": "hallazgo(s) fundamentado(s)"},
-    # portfolio.py
-    "portfolio_triage_header": {"en": "Portfolio triage", "es": "Evaluación del portafolio"},
-    "portfolio_worst_first": {"en": "permits, worst first.", "es": "permisos, del peor al mejor."},
-    "portfolio_severity_col": {"en": "Severity", "es": "Severidad"},
-    "portfolio_dev_action_col": {
-        "en": "Developer action available",
-        "es": "Acción del desarrollador disponible",
-    },
-    "portfolio_view_detail_for": {"en": "View full detail for:", "es": "Ver detalle completo de:"},
     "yes": {"en": "Yes", "es": "Sí"},
-    "two_panel_header": {"en": "Comparing 2 permits", "es": "Comparando 2 permisos"},
-    "view_full_detail": {"en": "View full detail", "es": "Ver detalle completo"},
+
+    # --- Phase 10 redesign: header, unified search, results table, drill-down ---
+    "language_toggle_help": {
+        "en": "Switch the page between English and Español.",
+        "es": "Cambie la página entre English y Español.",
+    },
+    "homeowner_guide_link": {
+        "en": "Homeowner Step-by-Step Guide",
+        "es": "Guía paso a paso para propietarios",
+    },
+    "unified_search_placeholder": {
+        "en": "Search permits by permit number or address",
+        "es": "Busque permisos por número de permiso o dirección",
+    },
+    "unified_search_help": {
+        "en": (
+            "Permit number: LADBS permit numbers look like 21030-20000-00256 (year - plan "
+            "check number - permit number). Enter more than one, separated by commas or new "
+            "lines, to check several at once.\n\n"
+            "Address: enter the property's street address as it's filed with LADBS, e.g. "
+            "200 N Spring St. No need to include city, state, or ZIP code."
+        ),
+        "es": (
+            "Número de permiso: los números de permiso de LADBS tienen este formato: "
+            "21030-20000-00256 (año - número de revisión de planos - número de permiso). "
+            "Ingrese más de uno, separados por comas o saltos de línea, para revisar varios "
+            "a la vez.\n\n"
+            "Dirección: ingrese la dirección de la propiedad tal como está registrada en "
+            "LADBS, por ejemplo 200 N Spring St. No es necesario incluir ciudad, estado ni "
+            "código postal."
+        ),
+    },
+    "search_button": {"en": "Search", "es": "Buscar"},
+    "onboarding_intro": {
+        "en": (
+            "Check the status of your permit and whether it is moving at a normal pace or "
+            "getting stuck and why. When you search, we'll compare your permit to hundreds "
+            "of similar ones, and when something's taking longer, we'll tell you how unusual "
+            "the delay is, why it might be happening, and what you or the city can do next."
+        ),
+        "es": (
+            "Consulte el estado de su permiso y si avanza a un ritmo normal o si se ha "
+            "estancado y por qué. Al buscar, compararemos su permiso con cientos de permisos "
+            "similares, y cuando algo esté tardando más de lo normal, le diremos qué tan "
+            "inusual es el retraso, por qué podría estar pasando, y qué puede hacer usted o "
+            "la ciudad al respecto."
+        ),
+    },
+    "results_table_header": {"en": "Your permits", "es": "Sus permisos"},
+    "results_table_caption_suffix": {"en": "permit(s) found", "es": "permiso(s) encontrado(s)"},
+    "results_table_hint": {
+        "en": "Click a row to see its full detail below.",
+        "es": "Haga clic en una fila para ver su detalle completo abajo.",
+    },
+    "col_permit_number": {"en": "Permit number", "es": "Número de permiso"},
+    "col_submitted_date": {"en": "Submitted", "es": "Presentado"},
+    "col_time_since_submission": {"en": "Time since submission", "es": "Tiempo desde la presentación"},
+    "col_permit_type": {"en": "Permit type", "es": "Tipo de permiso"},
+    "col_issuance_status": {"en": "Issuance status", "es": "Estado de emisión"},
+    "col_permit_status": {"en": "Permit status", "es": "Estado del permiso"},
+    "col_delay_status": {"en": "Delay status", "es": "Estado de retraso"},
+    "col_last_update": {"en": "Last status update", "es": "Última actualización de estado"},
+    "issued_status_text": {"en": "Permit has been issued", "es": "El permiso ha sido emitido"},
+    "not_issued_status_text": {"en": "Permit has not been issued", "es": "El permiso no ha sido emitido"},
+    "delayed_more_than_template": {
+        "en": "Permit delayed more than {pct}%",
+        "es": "Permiso retrasado más del {pct}%",
+    },
+    "no_delay_detected": {"en": "No delay detected", "es": "No se detectó retraso"},
+    "not_enough_data_delay": {
+        "en": "Not enough data to assess",
+        "es": "Datos insuficientes para evaluar",
+    },
+    "today_label": {"en": "today", "es": "hoy"},
+    "one_day_ago": {"en": "1 day ago", "es": "hace 1 día"},
+    "days_ago_template": {"en": "{n} days ago", "es": "hace {n} días"},
+    "status_updated_template": {
+        "en": "status updated {rel}",
+        "es": "estado actualizado {rel}",
+    },
+    "drill_down_header": {"en": "Permit detail", "es": "Detalle del permiso"},
+    "drill_down_permit_journey": {"en": "Permit Journey", "es": "Trayectoria del permiso"},
+    "drill_down_other_permits": {
+        "en": "Other permits at this address",
+        "es": "Otros permisos en esta dirección",
+    },
+    "drill_down_data_limitations": {"en": "Data Limitations", "es": "Limitaciones de los datos"},
+    "no_other_permits_found": {
+        "en": "No other permits were found at this address.",
+        "es": "No se encontraron otros permisos en esta dirección.",
+    },
+    "open_permit_tab_button": {"en": "Open", "es": "Abrir"},
+    "recent_searches_label": {"en": "Recent searches", "es": "Búsquedas recientes"},
 }
 
 
@@ -726,6 +814,56 @@ _ERROR_TRANSLATIONS: dict[str, str] = {
         "Inténtelo de nuevo en unos momentos."
     ),
 }
+
+
+def relative_days_ago(days: int) -> str:
+    """Turns an already-computed day count (today's date minus some
+    observed date -- the caller does that subtraction, this function only
+    words the result) into "today" / "1 day ago" / "{n} days ago"."""
+    if days <= 0:
+        return t("today_label")
+    if days == 1:
+        return t("one_day_ago")
+    return t("days_ago_template").format(n=days)
+
+
+def status_updated_phrase(days_since_status_change: int) -> str:
+    """"status updated 2 days ago" style phrasing for the results table's
+    'Last status update' column -- wraps relative_days_ago() in the
+    language-appropriate sentence frame."""
+    return t("status_updated_template").format(rel=relative_days_ago(days_since_status_change))
+
+
+def issuance_status_text(issued: bool) -> str:
+    """"Permit has been issued" / "Permit has not been issued" -- reads
+    directly off whether an issue_date is present on the latest snapshot;
+    no new judgment, just wording an already-observed fact (issue_date is
+    None or it isn't)."""
+    return t("issued_status_text") if issued else t("not_issued_status_text")
+
+
+def delay_status_phrase(
+    delay_percent: float | None, has_delay_detection: bool, outcome
+) -> str:
+    """Words the results table's 'Delay status' column from values Agent 2
+    already computed: delay_percent is arithmetic on an existing
+    DelayStallDetection's excess_days_vs_median and its cohort's own
+    median_days_or_count (a percentage restatement of numbers Agent 2
+    already produced, not a new severity judgment). has_delay_detection
+    and outcome are Agent 2/the orchestrator's own already-assigned
+    labels, read the same way portfolio.py's other summarize_result()
+    fields are."""
+    if delay_percent is not None and delay_percent > 0:
+        return t("delayed_more_than_template").format(pct=round(delay_percent))
+    if has_delay_detection:
+        # A delay detection exists but a percentage couldn't be computed
+        # (e.g. a zero-variance cohort) -- distinct from "no delay found".
+        return t("not_enough_data_delay")
+    from permit_stall_finder.orchestration.pipeline import AnalysisOutcome
+
+    if outcome == AnalysisOutcome.INSUFFICIENT_EVIDENCE:
+        return t("not_enough_data_delay")
+    return t("no_delay_detected")
 
 
 def translate_error_message(message: str) -> str:
