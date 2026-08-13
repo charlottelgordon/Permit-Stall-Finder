@@ -20,10 +20,14 @@ from formatting import SEVERITY_COLORS, has_mixed_grounding, kb_entry_by_id
 from i18n import (
     benchmark_semantics_label,
     category_label,
+    cohort_basis_caption,
+    count_vs_typical_phrase,
+    days_vs_typical_phrase,
     grounding_strength_label,
     interval_state_label,
     severity_label,
     t,
+    unusualness_phrase,
     verification_status_label,
 )
 from permit_stall_finder.knowledge_base.loader import KnowledgeBase
@@ -52,27 +56,35 @@ def _severity_badge(detection: DelayStallDetection | FrictionStallDetection) -> 
 
 
 def _render_metrics(detection: DelayStallDetection | FrictionStallDetection) -> None:
+    # Every number below is exactly what Agent 2 already computed
+    # (elapsed_days, percentile_rank, excess_days_vs_median /
+    # excess_count_vs_median, cohort.n, cohort.confidence) -- only the
+    # words around them changed, from statistical terms (percentile,
+    # median, n, confidence tier) to plain comparisons a non-technical
+    # user can read at a glance. See i18n.py's unusualness_phrase(),
+    # days_vs_typical_phrase(), count_vs_typical_phrase(), and
+    # cohort_basis_caption() for the exact wording.
     cols = st.columns(3)
     if isinstance(detection, DelayStallDetection):
-        cols[0].metric(t("elapsed_days_metric"), detection.elapsed_days)
+        cols[0].metric(t("elapsed_days_metric"), f"{detection.elapsed_days} {t('days_suffix')}")
         if detection.percentile_rank is not None:
-            cols[1].metric(t("percentile_rank_metric"), f"{detection.percentile_rank:.0f}")
+            cols[1].metric(t("how_unusual_metric"), unusualness_phrase(detection.percentile_rank))
         if detection.excess_days_vs_median is not None:
-            cols[2].metric(t("excess_vs_median_metric"), f"{detection.excess_days_vs_median:+.0f} {t('days_suffix')}")
+            cols[2].metric(t("extra_time_metric"), days_vs_typical_phrase(detection.excess_days_vs_median))
         st.caption(
             f"{interval_state_label(detection.interval_state)} · "
             f"{benchmark_semantics_label(detection.cohort.benchmark_semantics)} "
-            f"(n={detection.cohort.n}, {detection.cohort.confidence.value})"
+            f"({cohort_basis_caption(detection.cohort.n, detection.cohort.confidence)})"
         )
     else:
         cols[0].metric(t("observed_count_metric"), detection.observed_count)
         if detection.percentile_rank is not None:
-            cols[1].metric(t("percentile_rank_metric"), f"{detection.percentile_rank:.0f}")
+            cols[1].metric(t("how_unusual_metric"), unusualness_phrase(detection.percentile_rank))
         if detection.excess_count_vs_median is not None:
-            cols[2].metric(t("excess_vs_median_metric"), f"{detection.excess_count_vs_median:+.1f}")
+            cols[2].metric(t("extra_count_metric"), count_vs_typical_phrase(detection.excess_count_vs_median))
         st.caption(
             f"{benchmark_semantics_label(detection.cohort.benchmark_semantics)} "
-            f"(n={detection.cohort.n}, {detection.cohort.confidence.value})"
+            f"({cohort_basis_caption(detection.cohort.n, detection.cohort.confidence)})"
         )
 
 

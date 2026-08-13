@@ -32,7 +32,13 @@ import formatting
 from permit_stall_finder.orchestration.pipeline import AnalysisOutcome
 from permit_stall_finder.schema.developer_explanation import GroundingStrength, VerificationStatus
 from permit_stall_finder.schema.journey import DataQualityFlag, MatchStatus
-from permit_stall_finder.schema.stall_detection import BenchmarkSemantics, IntervalState, Severity, StallCategory
+from permit_stall_finder.schema.stall_detection import (
+    BenchmarkSemantics,
+    CohortConfidence,
+    IntervalState,
+    Severity,
+    StallCategory,
+)
 
 DEFAULT_LANGUAGE = "en"
 LANGUAGES = {"en": "English", "es": "Español"}
@@ -133,13 +139,13 @@ DATA_QUALITY_FLAG_LABELS_ES: dict[DataQualityFlag, str] = {
 }
 
 BENCHMARK_SEMANTICS_LABELS_ES: dict[BenchmarkSemantics, str] = {
-    BenchmarkSemantics.ACTIVE_PEER_DWELL: "Comparado con: permisos actualmente en este estado",
-    BenchmarkSemantics.COMPLETED_INTERVAL: "Comparado con: intervalos comparables completados",
+    BenchmarkSemantics.ACTIVE_PEER_DWELL: "Comparado con otros permisos atascados en este mismo paso ahora mismo",
+    BenchmarkSemantics.COMPLETED_INTERVAL: "Comparado con cuánto suele tardar este paso una vez terminado",
 }
 
 INTERVAL_STATE_LABELS_ES: dict[IntervalState, str] = {
-    IntervalState.ONGOING: "Aún en curso",
-    IntervalState.COMPLETED: "Intervalo completado",
+    IntervalState.ONGOING: "Todavía en curso",
+    IntervalState.COMPLETED: "Este paso ya terminó",
 }
 
 OUTCOME_CLEAN_TEXT_ES = "No se identificaron señales materiales de estancamiento"
@@ -203,6 +209,56 @@ def verification_status_label(v: VerificationStatus) -> str:
     return d[v]
 
 
+_CONFIDENCE_NOTES: dict[str, dict[CohortConfidence, str]] = {
+    "en": {
+        CohortConfidence.FULL: "",
+        CohortConfidence.REDUCED: " -- a smaller comparison group",
+        CohortConfidence.INSUFFICIENT: " -- too few similar permits to compare confidently",
+        CohortConfidence.ZERO_VARIANCE: " -- a comparison group where this rarely varies",
+    },
+    "es": {
+        CohortConfidence.FULL: "",
+        CohortConfidence.REDUCED: " -- un grupo de comparación más pequeño",
+        CohortConfidence.INSUFFICIENT: " -- muy pocos permisos similares para comparar con confianza",
+        CohortConfidence.ZERO_VARIANCE: " -- un grupo de comparación donde esto casi no varía",
+    },
+}
+
+
+def cohort_basis_caption(n: int, confidence: CohortConfidence) -> str:
+    """Plain-language replacement for the old '(n=50, full)' caption --
+    states the comparison group size in words, and only adds a qualifier
+    when the comparison is weaker than the normal case (full confidence
+    stays a bare count, nothing extra to hedge)."""
+    note = _CONFIDENCE_NOTES.get(get_language(), _CONFIDENCE_NOTES["en"]).get(confidence, "")
+    return t("based_on_n_similar").format(n=n) + note
+
+
+def unusualness_phrase(percentile_rank: float) -> str:
+    """'Slower than 97 out of 100 similar permits' instead of a bare
+    percentile number -- same underlying value, just spelled out."""
+    return t("slower_than_out_of_100").format(rank=round(percentile_rank))
+
+
+def days_vs_typical_phrase(excess_days: float) -> str:
+    """'{n} days longer/shorter than typical' instead of a signed
+    '+79 days vs. median' -- same number, phrased as a comparison rather
+    than a signed statistic."""
+    rounded = round(excess_days)
+    if rounded >= 0:
+        return t("days_longer_than_typical").format(days=rounded)
+    return t("days_shorter_than_typical").format(days=abs(rounded))
+
+
+def count_vs_typical_phrase(excess_count: float) -> str:
+    """Same idea as days_vs_typical_phrase() for count-based (friction)
+    detections, e.g. repeated corrections."""
+    rounded = round(excess_count, 1)
+    if rounded >= 0:
+        return t("more_than_typical").format(n=rounded)
+    return t("fewer_than_typical").format(n=abs(rounded))
+
+
 _SEVERITY_ORDER = [Severity.SEVERE, Severity.ELEVATED, Severity.WATCH]
 
 
@@ -235,17 +291,16 @@ def outcome_headline(result) -> str:
 _STRINGS: dict[str, dict[str, str]] = {
     "page_intro": {
         "en": (
-            "Understand the observable journey of an LA building permit, identify unusual "
-            "delays or process friction, and see grounded guidance on what may happen next. "
-            "Paste one permit number for a full deep-dive, or several to triage a portfolio "
-            "at once -- or search by address if you don't have the permit number handy."
+            "Check whether your permit is moving at a normal pace or getting stuck -- and "
+            "why. We compare your permit to hundreds of similar ones, and when something's "
+            "taking longer, we'll tell you how unusual the delay is, why it might be "
+            "happening, and what you or the city can do next."
         ),
         "es": (
-            "Entienda el trayecto observable de un permiso de construcción de LA, identifique "
-            "retrasos inusuales o fricciones en el proceso, y vea orientación fundamentada "
-            "sobre lo que podría pasar después. Pegue un número de permiso para un análisis "
-            "completo, o varios para evaluar un portafolio a la vez -- o busque por dirección "
-            "si no tiene a la mano el número de permiso."
+            "Vea si su permiso avanza a un ritmo normal o si se ha estancado -- y por qué. "
+            "Comparamos su permiso con cientos de permisos similares, y cuando algo está "
+            "tardando más de lo normal, le decimos qué tan inusual es el retraso, por qué "
+            "podría estar pasando, y qué puede hacer usted o la ciudad al respecto."
         ),
     },
     "clear_results": {"en": "Clear results", "es": "Borrar resultados"},
@@ -272,6 +327,19 @@ _STRINGS: dict[str, dict[str, str]] = {
     },
     "finding_singular": {"en": "finding", "es": "hallazgo"},
     "finding_plural": {"en": "findings", "es": "hallazgos"},
+    # plain-language stall-metric copy (stall_findings.py _render_metrics)
+    "how_unusual_metric": {"en": "How unusual", "es": "Qué tan inusual"},
+    "slower_than_out_of_100": {
+        "en": "Slower than {rank} of 100 similar permits",
+        "es": "Más lento que {rank} de cada 100 permisos similares",
+    },
+    "extra_time_metric": {"en": "Extra time vs. typical", "es": "Tiempo extra vs. lo típico"},
+    "days_longer_than_typical": {"en": "{days} days longer than typical", "es": "{days} días más que lo típico"},
+    "days_shorter_than_typical": {"en": "{days} days shorter than typical", "es": "{days} días menos que lo típico"},
+    "extra_count_metric": {"en": "Extra vs. typical", "es": "Extra vs. lo típico"},
+    "more_than_typical": {"en": "{n} more than typical", "es": "{n} más que lo típico"},
+    "fewer_than_typical": {"en": "{n} fewer than typical", "es": "{n} menos que lo típico"},
+    "based_on_n_similar": {"en": "Based on {n} similar permits", "es": "Basado en {n} permisos similares"},
     # quick_access.py
     "starred": {"en": "⭐ Starred", "es": "⭐ Destacados"},
     "recent": {"en": "🕒 Recent", "es": "🕒 Recientes"},

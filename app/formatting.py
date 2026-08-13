@@ -81,13 +81,13 @@ DATA_QUALITY_FLAG_LABELS: dict[DataQualityFlag, str] = {
 }
 
 BENCHMARK_SEMANTICS_LABELS: dict[BenchmarkSemantics, str] = {
-    BenchmarkSemantics.ACTIVE_PEER_DWELL: "Compared to: permits currently in this status",
-    BenchmarkSemantics.COMPLETED_INTERVAL: "Compared to: completed comparable intervals",
+    BenchmarkSemantics.ACTIVE_PEER_DWELL: "Compared to other permits stuck at this same step right now",
+    BenchmarkSemantics.COMPLETED_INTERVAL: "Compared to how long this step usually takes once it's done",
 }
 
 INTERVAL_STATE_LABELS: dict[IntervalState, str] = {
-    IntervalState.ONGOING: "Still ongoing",
-    IntervalState.COMPLETED: "Completed interval",
+    IntervalState.ONGOING: "Still in progress",
+    IntervalState.COMPLETED: "This step is finished",
 }
 
 OUTCOME_CLEAN_TEXT = "No material stall signals identified"
