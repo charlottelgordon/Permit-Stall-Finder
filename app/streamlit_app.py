@@ -118,9 +118,19 @@ st.markdown(
         display: block;
     }
     .site-welcome-intro {
+        /* !important on the margins: Streamlit's own default <p> margin
+           reset (inside its markdown-container wrapper) otherwise wins
+           over a bare class selector and zeroes out the auto left/right
+           margins that center this block -- max-width alone still
+           applies fine, so this looked like a "why is it centered-width
+           but not centered-position" bug until inspecting computed
+           styles showed margin-left/right coming back as 0px. */
         text-align: center;
         max-width: 640px;
-        margin: 0.5rem auto 1.5rem auto;
+        margin-top: 0.5rem !important;
+        margin-bottom: 1.5rem !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
         color: #444;
     }
     .search-loading-track {
