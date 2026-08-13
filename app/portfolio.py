@@ -33,6 +33,7 @@ from i18n import (
     outcome_headline,
     plain_status_desc,
     status_updated_phrase,
+    summarize_severity_counts_compact,
 )
 from permit_stall_finder.orchestration.pipeline import (
     AnalysisOutcome,
@@ -133,6 +134,7 @@ class PortfolioRow:
     outcome: AnalysisOutcome
     headline: str
     top_severity: Severity | None
+    severity_counts: str
     days_in_current_status: int | None
     has_actionable_step: bool
     sort_key: tuple
@@ -191,6 +193,7 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
         outcome=result.outcome,
         headline=outcome_headline(result),
         top_severity=top_severity,
+        severity_counts=summarize_severity_counts_compact(result.stall_assessment.detections),
         days_in_current_status=days,
         has_actionable_step=_has_actionable_step(result),
         sort_key=sort_key,

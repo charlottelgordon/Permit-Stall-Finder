@@ -10,14 +10,26 @@ Every column value is already computed on the PortfolioRow passed in --
 this module only lays out an st.dataframe and reads back which row(s)
 the user selected. See portfolio.py's summarize_result() for where each
 column's value actually comes from; nothing here recomputes anything.
+
+Phase 14: the "Findings" column (r.severity_counts, e.g. "3 severe, 1
+watch") gets a blue highlight on any row with at least one severe
+finding, so a user scanning many rows can spot the ones that need
+attention without reading every cell. Plain dict rows can't carry
+per-cell styling, so this now goes through a pandas DataFrame + Styler
+instead -- st.dataframe still accepts on_select/selection_mode the same
+way on a Styler as it does on a plain list of dicts.
 """
 
 from __future__ import annotations
 
+import pandas as pd
 import streamlit as st
 
-from i18n import severity_label, t
+from i18n import t
 from portfolio import PortfolioRow
+from permit_stall_finder.schema.stall_detection import Severity
+
+_SEVERE_HIGHLIGHT = "background-color: #1D4ED8; color: white; font-weight: 600;"
 
 
 def render(rows: list[PortfolioRow], *, key: str = "results_table") -> list[str]:
@@ -29,10 +41,11 @@ def render(rows: list[PortfolioRow], *, key: str = "results_table") -> list[str]
     st.subheader(t("results_table_header"))
     st.caption(f"{len(rows)} {t('results_table_caption_suffix')} · {t('results_table_hint')}")
 
+    findings_col = t("col_findings")
     table_data = [
         {
             t("col_permit_number"): r.permit_number,
-            t("col_top_finding"): severity_label(r.top_severity) if r.top_severity else "—",
+            findings_col: r.severity_counts,
             t("col_submitted_date"): r.submitted_date.isoformat() if r.submitted_date else "—",
             t("col_permit_type"): r.permit_type,
             t("col_issuance_status"): r.issuance_status,
@@ -43,8 +56,14 @@ def render(rows: list[PortfolioRow], *, key: str = "results_table") -> list[str]
         for r in rows
     ]
 
+    def _highlight_severe(row: pd.Series) -> list[str]:
+        has_severe = rows[row.name].top_severity == Severity.SEVERE
+        return [_SEVERE_HIGHLIGHT if (has_severe and col == findings_col) else "" for col in row.index]
+
+    styled = pd.DataFrame(table_data).style.apply(_highlight_severe, axis=1)
+
     event = st.dataframe(
-        table_data,
+        styled,
         hide_index=True,
         width="stretch",
         on_select="rerun",

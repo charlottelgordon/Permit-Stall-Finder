@@ -296,6 +296,21 @@ def summarize_severity_counts(detections) -> str:
     return " · ".join(parts) if parts else OUTCOME_CLEAN_TEXT_ES
 
 
+def summarize_severity_counts_compact(detections) -> str:
+    """Bilingual wrapper for formatting.summarize_severity_counts_compact(),
+    same "get_language() != 'es' -> delegate" pattern as
+    summarize_severity_counts() above."""
+    if get_language() != "es":
+        return formatting.summarize_severity_counts_compact(detections)
+    counts = Counter(d.severity for d in detections)
+    parts = []
+    for sev in _SEVERITY_ORDER:
+        n = counts.get(sev, 0)
+        if n:
+            parts.append(f"{n} {severity_label(sev).lower()}")
+    return ", ".join(parts) if parts else OUTCOME_CLEAN_TEXT_ES
+
+
 def outcome_headline(result) -> str:
     if get_language() != "es":
         return formatting.outcome_headline(result)
@@ -691,7 +706,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "es": "Haga clic en una fila para ver su detalle completo abajo.",
     },
     "col_permit_number": {"en": "Permit number", "es": "Número de permiso"},
-    "col_top_finding": {"en": "Top finding", "es": "Hallazgo principal"},
+    "col_findings": {"en": "Findings", "es": "Hallazgos"},
     "col_submitted_date": {"en": "Permit submission", "es": "Presentación del permiso"},
     "col_permit_type": {"en": "Permit type", "es": "Tipo de permiso"},
     "col_issuance_status": {"en": "Issuance status", "es": "Estado de emisión"},

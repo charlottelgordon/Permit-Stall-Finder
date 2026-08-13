@@ -124,6 +124,21 @@ def summarize_severity_counts(detections) -> str:
     return " · ".join(parts) if parts else OUTCOME_CLEAN_TEXT
 
 
+def summarize_severity_counts_compact(detections) -> str:
+    """Compact table-cell version of summarize_severity_counts() above,
+    e.g. "3 severe, 1 watch" instead of "3 severe findings · 1 watch
+    finding" -- same tally, same ordering, just shorter for a narrow
+    results-table column."""
+    counts = Counter(d.severity for d in detections)
+    order = [Severity.SEVERE, Severity.ELEVATED, Severity.WATCH]
+    parts = []
+    for sev in order:
+        n = counts.get(sev, 0)
+        if n:
+            parts.append(f"{n} {SEVERITY_LABELS[sev].lower()}")
+    return ", ".join(parts) if parts else OUTCOME_CLEAN_TEXT
+
+
 def outcome_headline(result) -> str:
     if result.outcome == AnalysisOutcome.NO_MATERIAL_STALL_DETECTED:
         return OUTCOME_CLEAN_TEXT

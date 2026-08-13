@@ -152,6 +152,7 @@ def _row(permit_number: str, outcome: AnalysisOutcome, top_severity, days: int) 
         outcome=outcome,
         headline="test",
         top_severity=top_severity,
+        severity_counts="—",
         days_in_current_status=days,
         has_actionable_step=False,
         sort_key=sort_key,

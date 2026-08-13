@@ -1,10 +1,11 @@
 """Tabbed drill-down section -- shown below the results table once one or
 more permits are selected (Phase 10 redesign; two-panel layout added in
-Phase 11, left-panel regrouping in Phase 12). One tab per selected
-permit, so a user can hold several open at once (e.g. their own permit
-plus a neighbor's, or several units on the same job). Each tab opens with
-a blue banner summarizing this permit's stall findings by severity count,
-then splits into two panels:
+Phase 11, left-panel regrouping in Phase 12, severity-count banner
+dropped in Phase 14 since the results table's own "Findings" column now
+covers it). One tab per selected permit, so a user can hold several open
+at once (e.g. their own permit plus a neighbor's, or several units on the
+same job). Each tab opens with a short orientation line explaining what a
+"finding" is, then splits into two panels:
 
 - Left: the permit's at-a-glance facts and full "Top Findings" bullet
   list (quick_glance.render()), then three quick-reference sections
@@ -34,7 +35,6 @@ import streamlit as st
 
 import portfolio
 from errors import GENERIC_ERROR_MESSAGE, safe_error_message
-from formatting import summarize_severity_counts
 from i18n import plain_status_desc, t, translate_error_message
 from sections import (
     coverage_gaps,
@@ -47,17 +47,10 @@ from sections import (
 )
 from permit_stall_finder.ingestion.permits import fetch_permits_by_address
 from permit_stall_finder.orchestration.pipeline import (
-    AnalysisOutcome,
     PermitAnalysisResult,
     PipelineExecutionError,
     run_pipeline,
 )
-
-_OUTCOME_ICONS = {
-    AnalysisOutcome.NO_MATERIAL_STALL_DETECTED: "✅",
-    AnalysisOutcome.INSUFFICIENT_EVIDENCE: "🔍",
-    AnalysisOutcome.STALL_DETECTED: "📋",
-}
 
 
 def _ensure_cached(conn, permit_number: str, results_cache: dict) -> None:
@@ -113,22 +106,14 @@ def _render_other_permits_at_address(result: PermitAnalysisResult) -> None:
             st.rerun()
 
 
-def _render_findings_banner(result: PermitAnalysisResult) -> None:
-    """Blue banner (Phase 11 redesign) -- the tab's single top-level
-    read, e.g. "3 severe findings · 1 watch finding". Replaces the
-    earlier neutral top_level_result.py banner: same underlying text
-    (summarize_severity_counts() falls back to the clean/insufficient-
-    evidence headline when there are no detections), just always in the
-    blue st.info() treatment, plus a line explaining what a "finding"
-    is, since this is now the first thing a user sees in the tab."""
-    icon = _OUTCOME_ICONS[result.outcome]
-    headline = summarize_severity_counts(result.stall_assessment.detections)
-    st.info(f"{icon}  **{headline}**")
-    st.caption(t("stall_findings_banner_subtext"))
-
-
 def _render_one(result: PermitAnalysisResult, kb) -> None:
-    _render_findings_banner(result)
+    # Phase 14: the blue severity-count banner that used to open every
+    # tab was removed -- the results table's own "Findings" column now
+    # shows the same "3 severe, 1 watch" tally (with a blue highlight on
+    # any row with a severe finding), so repeating it here was flagged as
+    # duplication. This orientation line stays: it's framing/context
+    # text, not a restatement of a number shown elsewhere.
+    st.caption(t("stall_findings_banner_subtext"))
 
     left_col, right_col = st.columns([2, 3])
     with left_col:
