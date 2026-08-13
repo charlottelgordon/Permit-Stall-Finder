@@ -23,6 +23,7 @@ rather than modifying it, so nothing there has to change.
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 
 import streamlit as st
@@ -330,6 +331,96 @@ _STATUS_DESC_LABELS: dict[str, dict[str, str]] = {
 }
 
 
+_FRICTION_CATEGORY_PHRASES: dict[str, dict[str, str]] = {
+    "repeated_corrections": {"en": "corrections were requested", "es": "se solicitaron correcciones"},
+    "repeated_not_ready_outcomes": {
+        "en": "inspections came back \u2018not ready\u2019",
+        "es": "las inspecciones resultaron \u2018no listo\u2019",
+    },
+    "repeated_cancellations": {"en": "inspections were cancelled", "es": "se cancelaron inspecciones"},
+}
+
+
+def plain_coverage_gap(raw_gap: str) -> str:
+    """Plain-language rendering of a coverage_gaps entry.
+
+    These strings come straight from Agent 2 (stall_detector.py) and are
+    explicitly passed through unchanged everywhere else in the pipeline
+    (see developer_explanation.py's own comment to that effect) -- this
+    function never touches the underlying coverage_gaps list, only how
+    one entry is displayed. It recognizes the small, fixed set of message
+    shapes Agent 2 actually produces (confirmed by reading
+    stall_detector.py directly) and rewords each into a plain sentence;
+    anything that doesn't match one of those shapes -- a future message
+    shape this function doesn't know about yet -- falls back to showing
+    the raw string unchanged, the same safety-net pattern
+    plain_status_desc() uses for unrecognized statuses."""
+    lang = get_language()
+
+    if raw_gap == "Permit not found by Agent 1 -- no stall assessment possible.":
+        return (
+            "We couldn't find this permit in the city's records, so no analysis could be run."
+            if lang != "es"
+            else "No pudimos encontrar este permiso en los registros de la ciudad, así que no se pudo hacer ningún análisis."
+        )
+
+    if raw_gap == (
+        "FINALIZATION_GAP not assessed for finaled_only_track: confirmed degenerate "
+        "(effectively same-day finalization is normal LADBS behavior for this track, "
+        "not a stall) -- see AGENT2_DESIGN.md \u00a77."
+    ):
+        return (
+            "We didn't score how long it took this permit to close out, because for this type of "
+            "permit, closing out the same day as the last inspection is normal LADBS practice -- not "
+            "a sign of delay."
+            if lang != "es"
+            else "No evaluamos cuánto tardó este permiso en cerrarse, porque para este tipo de permiso "
+            "es una práctica normal de LADBS cerrarse el mismo día de la última inspección -- no es "
+            "señal de retraso."
+        )
+
+    m = re.match(r"FINALIZATION_GAP not assessed: permit exited via '(?P<status>[^']+)', which is not", raw_gap)
+    if m:
+        status = plain_status_desc(m.group("status"))
+        return (
+            f"We didn't score how long closing out took, because this permit didn't finalize the "
+            f"usual way -- it exited as \u201c{status}\u201d instead."
+            if lang != "es"
+            else f"No evaluamos cuánto tardó el cierre, porque este permiso no se finalizó de la manera "
+            f"habitual -- salió como \u201c{status}\u201d en su lugar."
+        )
+
+    m = re.match(
+        r"(?P<category>[a-z_]+) not assessed: insufficient inspection exposure "
+        r"\((?P<n>\d+) substantive inspection\(s\) observed so far, minimum (?P<min>\d+)\)\.",
+        raw_gap,
+    )
+    if m:
+        category_phrase = _FRICTION_CATEGORY_PHRASES.get(m.group("category"), {}).get(lang)
+        n, minimum = m.group("n"), m.group("min")
+        if category_phrase:
+            return (
+                f"We haven't checked whether {category_phrase} an unusual number of times yet -- only "
+                f"{n} inspection(s) have happened so far, and we wait for at least {minimum} before "
+                f"judging that."
+                if lang != "es"
+                else f"Aún no hemos revisado si {category_phrase} un número inusual de veces -- solo se "
+                f"han realizado {n} inspección(es) hasta ahora, y esperamos al menos {minimum} antes de "
+                f"evaluar eso."
+            )
+
+    m = re.match(r"NO_INSPECTION_SINCE_ISSUANCE not assessed for [^:]+: (?P<rest>.+)", raw_gap)
+    if m:
+        prefix = (
+            "We didn't flag the lack of an inspection as unusual for this permit"
+            if lang != "es"
+            else "No marcamos la falta de una inspección como inusual para este permiso"
+        )
+        return f"{prefix} -- {m.group('rest')}"
+
+    return raw_gap
+
+
 def plain_status_desc(raw_status: str | None) -> str:
     """LADBS's own status_desc, in plain words instead of internal
     abbreviations -- falls back to the raw value unchanged for anything
@@ -472,19 +563,19 @@ _STRINGS: dict[str, dict[str, str]] = {
     "zip_prefix": {"en": "ZIP", "es": "Código postal"},
     # coverage_gaps.py
     "coverage_notes_header": {
-        "en": "Coverage & data-quality notes",
-        "es": "Notas de cobertura y calidad de datos",
+        "en": "What we couldn't check",
+        "es": "Lo que no pudimos revisar",
     },
     "coverage_notes_warning": {
-        "en": "Parts of this permit could not be fully assessed, or the underlying data has "
-        "known limitations. This is separate from -- and does not confirm or rule out -- "
-        "a stall.",
-        "es": "Algunas partes de este permiso no se pudieron evaluar por completo, o los datos "
-        "subyacentes tienen limitaciones conocidas. Esto es independiente de -- y no confirma "
-        "ni descarta -- un estancamiento.",
+        "en": "A few checks below couldn't be completed for this permit, or the city's data has "
+        "some known gaps. That doesn't mean there is or isn't a delay -- it just means we can't "
+        "say, for those specific checks.",
+        "es": "Algunas revisiones no se pudieron completar para este permiso, o los datos de la "
+        "ciudad tienen algunos vacíos conocidos. Eso no significa que haya o no haya un retraso -- "
+        "solo significa que no podemos saberlo para esas revisiones en particular.",
     },
-    "coverage_gaps_label": {"en": "Coverage gaps", "es": "Vacíos de cobertura"},
-    "data_quality_notes_label": {"en": "Data-quality notes", "es": "Notas de calidad de datos"},
+    "coverage_gaps_label": {"en": "Checks we skipped", "es": "Revisiones que omitimos"},
+    "data_quality_notes_label": {"en": "About the data", "es": "Sobre los datos"},
     # permit_journey.py
     "permit_journey_header": {"en": "Permit journey", "es": "Trayecto del permiso"},
     "no_journey_record": {

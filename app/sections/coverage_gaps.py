@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from i18n import data_quality_flag_label, t
+from i18n import data_quality_flag_label, plain_coverage_gap, t
 from permit_stall_finder.schema.journey import DataQualityFlag
 
 
@@ -25,7 +25,7 @@ def render(coverage_gaps: list[str], data_quality_flags: list[DataQualityFlag]) 
     if coverage_gaps:
         st.markdown(f"**{t('coverage_gaps_label')}**")
         for gap in coverage_gaps:
-            st.markdown(f"- {gap}")
+            st.markdown(f"- {plain_coverage_gap(gap)}")
 
     if data_quality_flags:
         st.markdown(f"**{t('data_quality_notes_label')}**")
