@@ -4,10 +4,7 @@ Permits/Resources/the map. Every field is read directly off an
 already-complete PermitAnalysisResult (address/type/status/issuance/last-
 update via portfolio.summarize_result(), the same computation the results
 table's own columns already use, so this block can't drift out of sync
-with what the table shows for the same permit); this module composes no
-new interpretation of its own beyond wrapping each finding's own
-already-computed severity/category/percentile/count into one bullet line
-via i18n.top_finding_bullet().
+with what the table shows for the same permit).
 
 Was previously a horizontal st.columns(6) strip; the severity-count blue
 banner that used to sit near the top of the tab (section B,
@@ -15,6 +12,14 @@ top_level_result.py) is now rendered once, above both panels, by
 drill_down.py directly -- this block only repeats the identifying facts
 plus the full list of this permit's own findings, not the tab-wide
 severity summary.
+
+Phase 13: the "Top Findings" bullets deliberately show only
+severity + category (via i18n.top_finding_bullet()), not the underlying
+elapsed_days/observed_count/percentile numbers -- those already appear in
+the matching finding card's own metric row and "what the data shows"
+prose in the right panel, and including them here too was flagged as a
+third repeat of the same numbers. This list is a fast-scan index into
+those cards, not a restatement of their content.
 """
 
 from __future__ import annotations

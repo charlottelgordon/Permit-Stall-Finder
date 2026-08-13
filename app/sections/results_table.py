@@ -2,7 +2,7 @@
 after any search, whether one permit or many resolved (Phase 10
 redesign). Replaces both the earlier worst-first portfolio.render_table()
 and the two-permit portfolio.render_two_panel() layout: every search
-outcome now lands in the same 9-column table, with row selection driving
+outcome now lands in the same 8-column table, with row selection driving
 the tabbed drill-down section below (see app/drill_down.py) instead of a
 separate "view full detail" selectbox.
 
@@ -34,7 +34,6 @@ def render(rows: list[PortfolioRow], *, key: str = "results_table") -> list[str]
             t("col_permit_number"): r.permit_number,
             t("col_top_finding"): severity_label(r.top_severity) if r.top_severity else "—",
             t("col_submitted_date"): r.submitted_date.isoformat() if r.submitted_date else "—",
-            t("col_time_since_submission"): r.time_since_submission,
             t("col_permit_type"): r.permit_type,
             t("col_issuance_status"): r.issuance_status,
             t("col_permit_status"): r.raw_status_desc,

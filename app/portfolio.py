@@ -32,7 +32,6 @@ from i18n import (
     issuance_status_text,
     outcome_headline,
     plain_status_desc,
-    relative_days_ago,
     status_updated_phrase,
 )
 from permit_stall_finder.orchestration.pipeline import (
@@ -139,7 +138,6 @@ class PortfolioRow:
     sort_key: tuple
     # --- added for the unified results table (Phase 10 redesign) ---
     submitted_date: date | None = None
-    time_since_submission: str = "—"
     issuance_status: str = "—"
     raw_status_desc: str = "—"
     delay_status: str = "—"
@@ -169,9 +167,6 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
     submitted_date = snapshot.submitted_date if snapshot else None
     status_date = snapshot.status_date if snapshot else None
 
-    time_since_submission = (
-        relative_days_ago((as_of_date - submitted_date).days) if submitted_date else "—"
-    )
     last_status_update = (
         status_updated_phrase((as_of_date - status_date).days) if status_date else "—"
     )
@@ -200,7 +195,6 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
         has_actionable_step=_has_actionable_step(result),
         sort_key=sort_key,
         submitted_date=submitted_date,
-        time_since_submission=time_since_submission,
         issuance_status=issuance_status,
         raw_status_desc=raw_status_desc,
         delay_status=delay_status,

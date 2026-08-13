@@ -36,7 +36,6 @@ from permit_stall_finder.schema.journey import DataQualityFlag, MatchStatus
 from permit_stall_finder.schema.stall_detection import (
     BenchmarkSemantics,
     CohortConfidence,
-    DelayStallDetection,
     IntervalState,
     Severity,
     StallCategory,
@@ -122,21 +121,6 @@ SEVERITY_LABELS_ES: dict[Severity, str] = {
     Severity.UNSCORED: "Sin calificar",
 }
 
-DELAY_FINDING_DESCRIPTORS_ES: dict[StallCategory, str] = {
-    StallCategory.PRE_ISSUANCE_STATUS_DWELL: "días en el estado actual previo a la emisión",
-    StallCategory.ISSUANCE_TO_FIRST_INSPECTION_GAP: "días desde la emisión sin una primera inspección",
-    StallCategory.NO_INSPECTION_SINCE_ISSUANCE: "días desde la emisión sin ninguna inspección registrada",
-    StallCategory.INTER_INSPECTION_GAP: "días desde la última inspección",
-    StallCategory.INACTIVITY_SINCE_LAST_INSPECTION: "días desde la última inspección",
-    StallCategory.FINALIZATION_GAP: "días desde la última inspección sin finalización",
-}
-
-FRICTION_FINDING_DESCRIPTORS_ES: dict[StallCategory, str] = {
-    StallCategory.REPEATED_CORRECTIONS: "correcciones repetidas observadas",
-    StallCategory.REPEATED_NOT_READY_OUTCOMES: "resultados de inspección 'no listo' observados",
-    StallCategory.REPEATED_CANCELLATIONS: "inspecciones canceladas repetidas",
-}
-
 MATCH_STATUS_LABELS_ES: dict[MatchStatus, str] = {
     MatchStatus.UNISSUED: "Aún no emitido",
     MatchStatus.ISSUED_WITH_INSPECTIONS: "Emitido, con inspecciones registradas",
@@ -198,20 +182,6 @@ def severity_label(severity: Severity) -> str:
 
 def category_label(category: StallCategory) -> str:
     d = CATEGORY_LABELS_ES if get_language() == "es" else formatting.CATEGORY_LABELS
-    return d[category]
-
-
-def delay_finding_descriptor(category: StallCategory) -> str:
-    d = DELAY_FINDING_DESCRIPTORS_ES if get_language() == "es" else formatting.DELAY_FINDING_DESCRIPTORS
-    return d[category]
-
-
-def friction_finding_descriptor(category: StallCategory) -> str:
-    d = (
-        FRICTION_FINDING_DESCRIPTORS_ES
-        if get_language() == "es"
-        else formatting.FRICTION_FINDING_DESCRIPTORS
-    )
     return d[category]
 
 
@@ -278,30 +248,16 @@ def unusualness_phrase(percentile_rank: float) -> str:
 
 def top_finding_bullet(detection) -> str:
     """One line for the quick-glance "Top Findings" bullet list, e.g.
-    "SEVERE Gap between inspections (slower than 97 of 100 similar
-    permits with 96 days since the last inspection)". Every value in it
-    -- severity, category, percentile_rank, elapsed_days/observed_count
-    -- is already Agent 2's own, read straight off the detection; the
-    only new text is the fixed connecting words and the per-category
-    noun phrase from delay_finding_descriptor()/friction_finding_descriptor()
-    above, the same kind of fixed phrasing wrapped around already-computed
-    numbers as delay_status_phrase() elsewhere in this module."""
+    "SEVERE Gap between inspections". Severity + category only -- the
+    elapsed_days/observed_count/percentile_rank numbers deliberately
+    stay out of this line (Phase 13): they already appear in the
+    matching finding card's own metric row and "what the data shows"
+    prose in the right panel, and repeating them a third time here was
+    flagged as redundant. This is meant as a fast-scan index into those
+    cards, not a restatement of their numbers."""
     severity_text = severity_label(detection.severity).upper()
     category_text = category_label(detection.category)
-
-    if isinstance(detection, DelayStallDetection):
-        descriptor = delay_finding_descriptor(detection.category)
-        count_phrase = f"{detection.elapsed_days} {descriptor}"
-    else:
-        descriptor = friction_finding_descriptor(detection.category)
-        count_phrase = f"{detection.observed_count} {descriptor}"
-
-    if detection.percentile_rank is None:
-        return f"{severity_text} {category_text} ({count_phrase})"
-
-    rank_phrase = unusualness_phrase(detection.percentile_rank)
-    rank_phrase = rank_phrase[:1].lower() + rank_phrase[1:]
-    return f"{severity_text} {category_text} ({rank_phrase} with {count_phrase})"
+    return f"{severity_text} {category_text}"
 
 
 def days_vs_typical_phrase(excess_days: float) -> str:
@@ -737,7 +693,6 @@ _STRINGS: dict[str, dict[str, str]] = {
     "col_permit_number": {"en": "Permit number", "es": "Número de permiso"},
     "col_top_finding": {"en": "Top finding", "es": "Hallazgo principal"},
     "col_submitted_date": {"en": "Permit submission", "es": "Presentación del permiso"},
-    "col_time_since_submission": {"en": "Time since submission", "es": "Tiempo desde la presentación"},
     "col_permit_type": {"en": "Permit type", "es": "Tipo de permiso"},
     "col_issuance_status": {"en": "Issuance status", "es": "Estado de emisión"},
     "col_permit_status": {"en": "Permit status", "es": "Estado del permiso"},
