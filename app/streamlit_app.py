@@ -27,6 +27,7 @@ that history back -- kept for a possible future quick-access affordance.
 from __future__ import annotations
 
 import base64
+import html
 from pathlib import Path
 
 import streamlit as st
@@ -146,6 +147,58 @@ st.markdown(
         0% { background-position: 0% 50%; }
         100% { background-position: 100% 50%; }
     }
+    .search-tooltip-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.6rem;
+    }
+    .search-tooltip-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        border: 1.5px solid #052D49;
+        color: #052D49;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: help;
+        user-select: none;
+    }
+    .search-tooltip-content {
+        visibility: hidden;
+        opacity: 0;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 0.5rem;
+        width: 320px;
+        max-width: 80vw;
+        background: #052D49;
+        color: #FFFFFF;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        text-align: left;
+        z-index: 9999;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+        transition: opacity 0.15s ease-in-out;
+        pointer-events: none;
+    }
+    .search-tooltip-content p {
+        margin: 0 0 0.6rem 0;
+    }
+    .search-tooltip-content p:last-child {
+        margin-bottom: 0;
+    }
+    .search-tooltip-wrap:hover .search-tooltip-content {
+        visibility: visible;
+        opacity: 1;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -200,17 +253,24 @@ with search_col:
             label_visibility="collapsed",
         )
     with tip_col:
-        # A click-triggered st.popover rather than text_input's own
-        # help= parameter (Streamlit drops that help icon entirely when
-        # label_visibility="collapsed" is set, since there's no label row
-        # for it to attach to) or a manual title-attribute hover tooltip
-        # (unreliable -- native title tooltips have an inconsistent
-        # per-browser delay, are easy to miss, and don't work at all on
-        # touch/mobile since there's no hover state there). A popover is
-        # a real widget: click to open, guaranteed visible, works the
-        # same everywhere.
-        with st.popover("❓"):
-            st.markdown(t("unified_search_help"))
+        # A custom circular "?" icon with a CSS-only hover tooltip --
+        # not text_input's own help= (Streamlit drops that help icon
+        # entirely when label_visibility="collapsed" is set, since
+        # there's no label row for it to attach to) and not the browser's
+        # native title= attribute (unreliable: inconsistent per-browser
+        # delay, easy to miss, no hover state at all on touch/mobile).
+        # This is a real :hover-driven CSS reveal, so it doesn't depend
+        # on native tooltip timing/rendering the way title= did.
+        _help_paragraphs = "".join(
+            f"<p>{html.escape(p)}</p>" for p in t("unified_search_help").split("\n\n")
+        )
+        st.markdown(
+            '<div class="search-tooltip-wrap">'
+            '<div class="search-tooltip-icon">?</div>'
+            f'<div class="search-tooltip-content">{_help_paragraphs}</div>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
     # Search + Clear, centered as a pair below the search bar.
     _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])
