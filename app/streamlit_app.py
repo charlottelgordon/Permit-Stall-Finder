@@ -93,19 +93,29 @@ st.markdown(
     div.block-container {
         padding-top: 1.5rem !important;
     }
-    .header-guide-link {
-        text-align: right;
+    .app-header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         margin-top: -2.9rem;
         margin-bottom: 1.75rem;
-        padding-right: 0.5rem;
+        padding: 0 0.5rem 0 1rem;
         /* Streamlit's own header bar (stHeader) is position: fixed with
-           z-index 999990, so without this the link renders underneath
+           z-index 999990, so without this the row renders underneath
            it -- present in the DOM but visually invisible, since the
            negative margin above pulls it up into that same fixed strip. */
         position: relative;
         z-index: 999991;
     }
-    .header-guide-link a {
+    .app-header-bar h1 {
+        margin: 0;
+    }
+    .app-header-bar img {
+        height: 2.2rem;
+        width: auto;
+        display: block;
+    }
+    .app-header-bar a {
         display: inline-block;
         background-color: #FFFFFF;
         color: #052D49;
@@ -114,19 +124,11 @@ st.markdown(
         padding: 0.4rem 0.9rem;
         border-radius: 6px;
         border: 1px solid #052D49;
+        white-space: nowrap;
     }
-    .header-guide-link a:hover {
+    .app-header-bar a:hover {
         background-color: #052D49;
         color: #FFFFFF;
-    }
-    .app-logo-heading {
-        text-align: center;
-        margin: 0;
-    }
-    .app-logo-heading img {
-        max-width: 420px;
-        width: 100%;
-        height: auto;
     }
     .search-loading-track {
         width: 100%;
@@ -166,26 +168,25 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Far right of the header bar: a real, clickable button out to LADBS's own
+# The header bar itself: logo on the left (wrapped in a real <h1> so
+# assistive tech still gets a heading, announced via the image's alt
+# text), and on the right a real, clickable button out to LADBS's own
 # Homeowner Step-by-Step guide -- Nielsen Norman's Help and Documentation
 # heuristic, pointing at the city's own authoritative walkthrough rather
-# than this tool trying to re-explain the permitting process itself.
-st.markdown(
-    f'<div class="header-guide-link"><a href="{HOMEOWNER_GUIDE_URL}" target="_blank" '
-    f'rel="noopener noreferrer">{t("homeowner_guide_link")}</a></div>',
-    unsafe_allow_html=True,
-)
-
-# App logo, centered, wrapped in a real <h1> so assistive tech still gets
-# a heading (announced via the image's alt text) even though the visible
-# content is now an image rather than text.
+# than this tool trying to re-explain the permitting process itself. Both
+# sit inside the colored bar itself (not a separate row below it), so the
+# logo doesn't cost its own line of vertical space.
 _logo_b64 = base64.b64encode((Path(__file__).parent / "assets" / "logo.png").read_bytes()).decode()
 st.markdown(
-    f'<h1 class="app-logo-heading"><img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></h1>',
+    '<div class="app-header-bar">'
+    f'<h1><img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></h1>'
+    f'<a href="{HOMEOWNER_GUIDE_URL}" target="_blank" rel="noopener noreferrer">'
+    f'{t("homeowner_guide_link")}</a>'
+    "</div>",
     unsafe_allow_html=True,
 )
 
-# Language toggle, centered directly below the logo.
+# Language toggle, centered directly below the header bar.
 _, toggle_col, _ = st.columns([2, 1, 2])
 with toggle_col:
     render_language_toggle()
