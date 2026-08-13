@@ -1,21 +1,26 @@
 """Section C — permit journey. Renders only what Agent 1 actually
 observed: no fabricated intermediate pre-issuance stages, no progress
-stepper implying a known sequence between snapshots. Observed milestones,
-observed inspection events, derived elapsed-time metrics, and explicit
-not-observed notes are kept in visually distinct groups (UI_DESIGN.md §2,
-decision 1).
+stepper implying a known sequence between snapshots. Observed inspection
+events, derived elapsed-time metrics, and explicit not-observed notes are
+kept in visually distinct groups (UI_DESIGN.md §2, decision 1).
+
+Phase 12: the observed-milestones bullet list (submitted/status/issued/
+CofO dates) was dropped from this view -- that's already covered by the
+quick-glance overview's own Status field, and this section's own call
+site (drill_down.py) now wraps it in an st.expander titled "Permit
+Journey", so the st.subheader() this render() used to open with is
+dropped too (it would just repeat that same title immediately below it).
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
-from i18n import match_status_label, plain_status_desc, t
+from i18n import match_status_label, t
 from permit_stall_finder.schema.journey import PermitJourney
 
 
 def render(journey: PermitJourney) -> None:
-    st.subheader(t("permit_journey_header"))
     st.caption(match_status_label(journey.match_status))
 
     snapshot = journey.latest_snapshot
@@ -29,19 +34,6 @@ def render(journey: PermitJourney) -> None:
     )
     if snapshot.work_description:
         st.caption(snapshot.work_description)
-
-    st.markdown(f"**{t('observed_milestones')}**")
-    milestones = []
-    if snapshot.submitted_date:
-        milestones.append((t("submitted"), snapshot.submitted_date))
-    milestones.append((f"{t('current_status_prefix')} — {plain_status_desc(snapshot.status_desc)}", snapshot.status_date))
-    if snapshot.issue_date:
-        milestones.append((t("issued"), snapshot.issue_date))
-    if snapshot.cofo_date:
-        milestones.append((t("cofo_issued"), snapshot.cofo_date))
-    for label, dt in milestones:
-        if dt is not None:
-            st.markdown(f"- **{label}** — {dt.isoformat()}")
 
     if journey.inspection_events:
         st.markdown(f"**{t('observed_inspections')}**")

@@ -42,6 +42,27 @@ CATEGORY_LABELS: dict[StallCategory, str] = {
     StallCategory.REPEATED_CANCELLATIONS: "Repeated cancelled inspections",
 }
 
+# Noun phrases following a raw count in the quick-glance "Top Findings"
+# bullets, e.g. "96 " + DELAY_FINDING_DESCRIPTORS[INTER_INSPECTION_GAP]
+# -> "96 days since the last inspection". Only the six DelayStallDetection
+# categories appear here; the three FrictionStallDetection categories are
+# in FRICTION_FINDING_DESCRIPTORS below, since the two detection types
+# report a different raw number (elapsed_days vs. observed_count).
+DELAY_FINDING_DESCRIPTORS: dict[StallCategory, str] = {
+    StallCategory.PRE_ISSUANCE_STATUS_DWELL: "days in the current pre-issuance status",
+    StallCategory.ISSUANCE_TO_FIRST_INSPECTION_GAP: "days since issuance without a first inspection",
+    StallCategory.NO_INSPECTION_SINCE_ISSUANCE: "days since issuance with no inspection on record",
+    StallCategory.INTER_INSPECTION_GAP: "days since the last inspection",
+    StallCategory.INACTIVITY_SINCE_LAST_INSPECTION: "days since the last inspection",
+    StallCategory.FINALIZATION_GAP: "days since the last inspection without finalization",
+}
+
+FRICTION_FINDING_DESCRIPTORS: dict[StallCategory, str] = {
+    StallCategory.REPEATED_CORRECTIONS: "observed repeated corrections",
+    StallCategory.REPEATED_NOT_READY_OUTCOMES: "observed 'not ready' inspection outcomes",
+    StallCategory.REPEATED_CANCELLATIONS: "repeated cancelled inspections",
+}
+
 SEVERITY_LABELS: dict[Severity, str] = {
     Severity.WATCH: "Watch",
     Severity.ELEVATED: "Elevated",

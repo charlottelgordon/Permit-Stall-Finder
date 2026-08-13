@@ -1,25 +1,29 @@
 """Quick-glance overview -- the left-panel summary block of the two-panel
-drill-down layout (Phase 11 redesign), stacked above the map. Every field
-is read directly off an already-complete PermitAnalysisResult; this module
-composes no new interpretation, only lays out facts Agent 1/2/3 already
-produced as a vertical list of labeled facts.
+drill-down layout (Phase 11 redesign), stacked above Permit Journey/Other
+Permits/Resources/the map. Every field is read directly off an
+already-complete PermitAnalysisResult (address/type/status/issuance/last-
+update via portfolio.summarize_result(), the same computation the results
+table's own columns already use, so this block can't drift out of sync
+with what the table shows for the same permit); this module composes no
+new interpretation of its own beyond wrapping each finding's own
+already-computed severity/category/percentile/count into one bullet line
+via i18n.top_finding_bullet().
 
 Was previously a horizontal st.columns(6) strip; the severity-count blue
 banner that used to sit near the top of the tab (section B,
 top_level_result.py) is now rendered once, above both panels, by
 drill_down.py directly -- this block only repeats the identifying facts
-(permit, address, type, status, days in status) plus this permit's own
-top finding, not the tab-wide severity summary.
+plus the full list of this permit's own findings, not the tab-wide
+severity summary.
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
-from formatting import SEVERITY_COLORS
-from i18n import outcome_headline, plain_status_desc, severity_label, t
+import portfolio
+from i18n import outcome_headline, t, top_finding_bullet
 from permit_stall_finder.orchestration.pipeline import AnalysisOutcome, PermitAnalysisResult
-from permit_stall_finder.schema.stall_detection import Severity
 
 _OUTCOME_ICONS = {
     AnalysisOutcome.NO_MATERIAL_STALL_DETECTED: "✅",
@@ -27,52 +31,22 @@ _OUTCOME_ICONS = {
     AnalysisOutcome.STALL_DETECTED: "📋",
 }
 
-_SEVERITY_RANK: dict[Severity, int] = {
-    Severity.SEVERE: 3,
-    Severity.ELEVATED: 2,
-    Severity.WATCH: 1,
-    Severity.UNSCORED: 0,
-}
-
-
-def _top_severity(result: PermitAnalysisResult) -> Severity | None:
-    """Same plain max()-over-already-assigned-labels approach as
-    portfolio._max_severity() -- kept as a small local copy rather than a
-    cross-import so this card has no dependency on the portfolio module
-    (it's also used from the single-permit view, which doesn't otherwise
-    need portfolio.py at all)."""
-    severities = [d.severity for d in result.stall_assessment.detections]
-    if not severities:
-        return None
-    return max(severities, key=lambda s: _SEVERITY_RANK[s])
-
 
 def render(result: PermitAnalysisResult) -> None:
-    snapshot = result.journey.latest_snapshot
-    address = (snapshot.raw.get("primary_address") if snapshot else None) or "—"
-    permit_type = snapshot.permit_type if snapshot else "—"
-    status_desc = plain_status_desc(snapshot.status_desc) if snapshot else "—"
-    days = (
-        result.journey.derived.days_submitted_to_current_status
-        if result.journey.derived is not None
-        else None
-    )
-    severity = _top_severity(result)
+    row = portfolio.summarize_result(result)
+    detections = result.stall_assessment.detections
 
     with st.container(border=True):
-        st.markdown(f"**{t('qg_permit')}**  \n{result.permit_number}")
-        st.markdown(f"**{t('qg_address')}**  \n{address}")
-        st.markdown(f"**{t('qg_type')}**  \n{permit_type}")
-        st.markdown(f"**{t('qg_status')}**  \n{status_desc}")
-        st.markdown(f"**{t('qg_days_in_status')}**  \n{days if days is not None else '—'}")
+        st.markdown(f"**{t('qg_address')}**  \n{row.address}")
+        st.markdown(f"**{t('qg_type')}**  \n{row.permit_type}")
+        st.markdown(f"**{t('qg_status')}**  \n{row.status_desc}")
+        st.markdown(f"**{t('qg_issuance_status')}**  \n{row.issuance_status}")
+        st.markdown(f"**{t('qg_last_update')}**  \n{row.last_status_update}")
 
-        if severity is not None:
-            color = SEVERITY_COLORS[severity]
-            badge = (
-                f'<span style="background-color:{color};color:white;padding:2px 10px;'
-                f'border-radius:4px;font-weight:600">{severity_label(severity)}</span>'
-            )
-            st.markdown(f"**{t('qg_top_finding')}**  \n{badge}", unsafe_allow_html=True)
+        if detections:
+            st.markdown(f"**{t('qg_top_findings')}**")
+            for detection in detections:
+                st.markdown(f"- {top_finding_bullet(detection)}")
         else:
             icon = _OUTCOME_ICONS[result.outcome]
             st.markdown(f"**{t('qg_result')}**  \n{icon} {outcome_headline(result)}")

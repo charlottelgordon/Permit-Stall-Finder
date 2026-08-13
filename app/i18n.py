@@ -36,6 +36,7 @@ from permit_stall_finder.schema.journey import DataQualityFlag, MatchStatus
 from permit_stall_finder.schema.stall_detection import (
     BenchmarkSemantics,
     CohortConfidence,
+    DelayStallDetection,
     IntervalState,
     Severity,
     StallCategory,
@@ -121,6 +122,21 @@ SEVERITY_LABELS_ES: dict[Severity, str] = {
     Severity.UNSCORED: "Sin calificar",
 }
 
+DELAY_FINDING_DESCRIPTORS_ES: dict[StallCategory, str] = {
+    StallCategory.PRE_ISSUANCE_STATUS_DWELL: "días en el estado actual previo a la emisión",
+    StallCategory.ISSUANCE_TO_FIRST_INSPECTION_GAP: "días desde la emisión sin una primera inspección",
+    StallCategory.NO_INSPECTION_SINCE_ISSUANCE: "días desde la emisión sin ninguna inspección registrada",
+    StallCategory.INTER_INSPECTION_GAP: "días desde la última inspección",
+    StallCategory.INACTIVITY_SINCE_LAST_INSPECTION: "días desde la última inspección",
+    StallCategory.FINALIZATION_GAP: "días desde la última inspección sin finalización",
+}
+
+FRICTION_FINDING_DESCRIPTORS_ES: dict[StallCategory, str] = {
+    StallCategory.REPEATED_CORRECTIONS: "correcciones repetidas observadas",
+    StallCategory.REPEATED_NOT_READY_OUTCOMES: "resultados de inspección 'no listo' observados",
+    StallCategory.REPEATED_CANCELLATIONS: "inspecciones canceladas repetidas",
+}
+
 MATCH_STATUS_LABELS_ES: dict[MatchStatus, str] = {
     MatchStatus.UNISSUED: "Aún no emitido",
     MatchStatus.ISSUED_WITH_INSPECTIONS: "Emitido, con inspecciones registradas",
@@ -185,6 +201,20 @@ def category_label(category: StallCategory) -> str:
     return d[category]
 
 
+def delay_finding_descriptor(category: StallCategory) -> str:
+    d = DELAY_FINDING_DESCRIPTORS_ES if get_language() == "es" else formatting.DELAY_FINDING_DESCRIPTORS
+    return d[category]
+
+
+def friction_finding_descriptor(category: StallCategory) -> str:
+    d = (
+        FRICTION_FINDING_DESCRIPTORS_ES
+        if get_language() == "es"
+        else formatting.FRICTION_FINDING_DESCRIPTORS
+    )
+    return d[category]
+
+
 def match_status_label(status: MatchStatus) -> str:
     d = MATCH_STATUS_LABELS_ES if get_language() == "es" else formatting.MATCH_STATUS_LABELS
     return d.get(status, status.value)
@@ -244,6 +274,34 @@ def unusualness_phrase(percentile_rank: float) -> str:
     """'Slower than 97 out of 100 similar permits' instead of a bare
     percentile number -- same underlying value, just spelled out."""
     return t("slower_than_out_of_100").format(rank=round(percentile_rank))
+
+
+def top_finding_bullet(detection) -> str:
+    """One line for the quick-glance "Top Findings" bullet list, e.g.
+    "SEVERE Gap between inspections (slower than 97 of 100 similar
+    permits with 96 days since the last inspection)". Every value in it
+    -- severity, category, percentile_rank, elapsed_days/observed_count
+    -- is already Agent 2's own, read straight off the detection; the
+    only new text is the fixed connecting words and the per-category
+    noun phrase from delay_finding_descriptor()/friction_finding_descriptor()
+    above, the same kind of fixed phrasing wrapped around already-computed
+    numbers as delay_status_phrase() elsewhere in this module."""
+    severity_text = severity_label(detection.severity).upper()
+    category_text = category_label(detection.category)
+
+    if isinstance(detection, DelayStallDetection):
+        descriptor = delay_finding_descriptor(detection.category)
+        count_phrase = f"{detection.elapsed_days} {descriptor}"
+    else:
+        descriptor = friction_finding_descriptor(detection.category)
+        count_phrase = f"{detection.observed_count} {descriptor}"
+
+    if detection.percentile_rank is None:
+        return f"{severity_text} {category_text} ({count_phrase})"
+
+    rank_phrase = unusualness_phrase(detection.percentile_rank)
+    rank_phrase = rank_phrase[:1].lower() + rank_phrase[1:]
+    return f"{severity_text} {category_text} ({rank_phrase} with {count_phrase})"
 
 
 def days_vs_typical_phrase(excess_days: float) -> str:
@@ -512,13 +570,14 @@ _STRINGS: dict[str, dict[str, str]] = {
         "corta o con otro formato.",
     },
     # quick_glance.py
-    "qg_permit": {"en": "Permit", "es": "Permiso"},
     "qg_address": {"en": "Address", "es": "Dirección"},
     "qg_type": {"en": "Type", "es": "Tipo"},
     "qg_status": {"en": "Status", "es": "Estado"},
-    "qg_days_in_status": {"en": "Days in status", "es": "Días en este estado"},
-    "qg_top_finding": {"en": "Top finding", "es": "Hallazgo principal"},
+    "qg_issuance_status": {"en": "Issuance status", "es": "Estado de emisión"},
+    "qg_last_update": {"en": "Last status update", "es": "Última actualización de estado"},
+    "qg_top_findings": {"en": "Top Findings", "es": "Principales hallazgos"},
     "qg_result": {"en": "Result", "es": "Resultado"},
+    "resources_header": {"en": "Resources", "es": "Recursos"},
     # location_map.py
     "city_label": {"en": "City of Los Angeles", "es": "Ciudad de Los Ángeles"},
     "county_label": {"en": "Los Angeles County", "es": "Condado de Los Ángeles"},
@@ -544,16 +603,10 @@ _STRINGS: dict[str, dict[str, str]] = {
     "coverage_gaps_label": {"en": "Checks we skipped", "es": "Revisiones que omitimos"},
     "data_quality_notes_label": {"en": "About the data", "es": "Sobre los datos"},
     # permit_journey.py
-    "permit_journey_header": {"en": "Permit journey", "es": "Trayecto del permiso"},
     "no_journey_record": {
         "en": "No permit record was found to reconstruct a journey from.",
         "es": "No se encontró ningún registro de permiso a partir del cual reconstruir un trayecto.",
     },
-    "observed_milestones": {"en": "Observed milestones", "es": "Hitos observados"},
-    "submitted": {"en": "Submitted", "es": "Presentado"},
-    "current_status_prefix": {"en": "Current status", "es": "Estado actual"},
-    "issued": {"en": "Issued", "es": "Emitido"},
-    "cofo_issued": {"en": "Certificate of Occupancy issued", "es": "Certificado de ocupación emitido"},
     "observed_inspections": {"en": "Observed inspection events", "es": "Inspecciones observadas"},
     "col_date": {"en": "Date", "es": "Fecha"},
     "col_type": {"en": "Type", "es": "Tipo"},
@@ -708,7 +761,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "en": "status updated {rel}",
         "es": "estado actualizado {rel}",
     },
-    "drill_down_header": {"en": "Permit detail", "es": "Detalle del permiso"},
+    "drill_down_header": {"en": "Permit Details", "es": "Detalles del permiso"},
     "drill_down_permit_journey": {"en": "Permit Journey", "es": "Trayectoria del permiso"},
     "drill_down_other_permits": {
         "en": "Other permits at this address",

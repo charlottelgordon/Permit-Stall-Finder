@@ -96,7 +96,7 @@ def render(result: PermitAnalysisResult, kb: KnowledgeBase) -> None:
             )
 
     if source_links:
-        with st.expander(f"{t('learn_more_prefix')} {len(source_links)} {t('grounded_findings_suffix')}"):
-            for category_label_text, title, url in source_links:
-                st.markdown(f"- **{category_label_text}**: [{title}]({url})")
+        st.markdown(f"**{t('learn_more_prefix')} {len(source_links)} {t('grounded_findings_suffix')}**")
+        for category_label_text, title, url in source_links:
+            st.markdown(f"- **{category_label_text}**: [{title}]({url})")
 
