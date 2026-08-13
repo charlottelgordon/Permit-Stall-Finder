@@ -24,6 +24,7 @@ from dataclasses import dataclass
 
 import streamlit as st
 
+from formatting import SEVERITY_COLORS
 from i18n import outcome_headline, plain_status_desc, severity_label, t
 from permit_stall_finder.orchestration.pipeline import (
     AnalysisOutcome,
@@ -214,4 +215,53 @@ def render_table(rows: list[PortfolioRow]) -> None:
 
     options = [r.permit_number for r in rows]
     st.selectbox(t("portfolio_view_detail_for"), options, key="selected_permit")
+
+
+_OUTCOME_ICONS: dict[AnalysisOutcome, str] = {
+    AnalysisOutcome.NO_MATERIAL_STALL_DETECTED: "✅",
+    AnalysisOutcome.INSUFFICIENT_EVIDENCE: "🔍",
+    AnalysisOutcome.STALL_DETECTED: "📋",
+}
+
+
+def render_two_panel(rows: list[PortfolioRow]) -> None:
+    """Side-by-side comparison cards for the common two-permit case --
+    e.g. comparing your own permit against a neighbor's, or tracking two
+    active projects at once. streamlit_app.py calls this instead of
+    render_table() only when exactly two permit numbers were entered;
+    three or more still go to the table, which scales better past two
+    items. Every field here is the same already-computed PortfolioRow
+    data render_table() uses -- this is a different layout, not a
+    different computation.
+
+    'View full detail' sets the same session_state['selected_permit']
+    key render_table()'s selectbox sets, so streamlit_app.py's existing
+    'load the selected permit's cached result' logic below doesn't need
+    to know which of the two layouts produced the selection."""
+    st.subheader(t("two_panel_header"))
+    cols = st.columns(2)
+    for col, row in zip(cols, rows):
+        with col:
+            with st.container(border=True):
+                st.markdown(f"**{row.permit_number}**")
+                st.caption(f"{row.address} · {row.permit_type}")
+                st.markdown(f"**{t('qg_status')}:** {row.status_desc}")
+                if row.days_in_current_status is not None:
+                    st.caption(f"{t('qg_days_in_status')}: {row.days_in_current_status} {t('days_suffix')}")
+
+                if row.top_severity is not None:
+                    color = SEVERITY_COLORS[row.top_severity]
+                    badge = (
+                        f'<span style="background-color:{color};color:white;padding:2px 10px;'
+                        f'border-radius:4px;font-weight:600">{severity_label(row.top_severity)}</span>'
+                    )
+                    st.markdown(badge, unsafe_allow_html=True)
+                    st.caption(row.headline)
+                else:
+                    icon = _OUTCOME_ICONS[row.outcome]
+                    st.markdown(f"{icon} {row.headline}")
+
+                if st.button(t("view_full_detail"), key=f"two_panel_detail_{row.permit_number}"):
+                    st.session_state["selected_permit"] = row.permit_number
+                    st.rerun()
 

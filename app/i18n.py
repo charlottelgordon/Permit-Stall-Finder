@@ -594,6 +594,8 @@ _STRINGS: dict[str, dict[str, str]] = {
     },
     "portfolio_view_detail_for": {"en": "View full detail for:", "es": "Ver detalle completo de:"},
     "yes": {"en": "Yes", "es": "Sí"},
+    "two_panel_header": {"en": "Comparing 2 permits", "es": "Comparando 2 permisos"},
+    "view_full_detail": {"en": "View full detail", "es": "Ver detalle completo"},
 }
 
 

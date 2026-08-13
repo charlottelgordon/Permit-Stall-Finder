@@ -281,7 +281,14 @@ st.divider()
 
 # --- Portfolio table, if a batch has been run ----------------------------
 if st.session_state.portfolio_rows:
-    portfolio.render_table(st.session_state.portfolio_rows)
+    # Exactly two permits gets the side-by-side comparison cards --
+    # the common case of checking your own permit against a neighbor's,
+    # or tracking two active projects at once. Three or more still go to
+    # the table, which scales better past two items.
+    if len(st.session_state.portfolio_rows) == 2:
+        portfolio.render_two_panel(st.session_state.portfolio_rows)
+    else:
+        portfolio.render_table(st.session_state.portfolio_rows)
 
     selected_permit = st.session_state.get("selected_permit")
     cached_results = st.session_state.portfolio_results or {}
