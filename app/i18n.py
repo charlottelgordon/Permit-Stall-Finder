@@ -258,20 +258,52 @@ def top_finding_bullet(detection) -> str:
     return f"{severity_text} {category_text}"
 
 
-def days_vs_typical_phrase(excess_days: float) -> str:
+def extra_time_metric_label(benchmark_semantics: BenchmarkSemantics) -> str:
+    if benchmark_semantics == BenchmarkSemantics.ACTIVE_PEER_DWELL:
+        return t("extra_time_metric_active")
+    return t("extra_time_metric")
+
+
+def days_vs_typical_phrase(excess_days: float, benchmark_semantics: BenchmarkSemantics) -> str:
     """'{n} days longer/shorter than typical' instead of a signed
     '+79 days vs. median' -- same number, phrased as a comparison rather
-    than a signed statistic."""
+    than a signed statistic.
+
+    COMPLETED_INTERVAL is an unbiased sample of concluded intervals, so
+    calling its median "typical" is a fair description. ACTIVE_PEER_DWELL
+    is a length-biased sample of permits still in progress -- the same
+    reason schema/stall_detection.py's render_dwell_statement() never
+    lets that cohort type produce "permits normally take N days"
+    language (see its own docstring and test_dwell_language.py's
+    test_active_peer_dwell_never_produces_normally_take_language). This
+    mirrors that rule here: for ACTIVE_PEER_DWELL the comparison is
+    phrased against "other active permits," never "typical."
+    """
     rounded = round(excess_days)
+    if benchmark_semantics == BenchmarkSemantics.ACTIVE_PEER_DWELL:
+        if rounded >= 0:
+            return t("days_longer_than_others_active").format(days=rounded)
+        return t("days_shorter_than_others_active").format(days=abs(rounded))
     if rounded >= 0:
         return t("days_longer_than_typical").format(days=rounded)
     return t("days_shorter_than_typical").format(days=abs(rounded))
 
 
-def count_vs_typical_phrase(excess_count: float) -> str:
+def extra_count_metric_label(benchmark_semantics: BenchmarkSemantics) -> str:
+    if benchmark_semantics == BenchmarkSemantics.ACTIVE_PEER_DWELL:
+        return t("extra_count_metric_active")
+    return t("extra_count_metric")
+
+
+def count_vs_typical_phrase(excess_count: float, benchmark_semantics: BenchmarkSemantics) -> str:
     """Same idea as days_vs_typical_phrase() for count-based (friction)
-    detections, e.g. repeated corrections."""
+    detections, e.g. repeated corrections -- see that function's
+    docstring for why benchmark_semantics gates the wording."""
     rounded = round(excess_count, 1)
+    if benchmark_semantics == BenchmarkSemantics.ACTIVE_PEER_DWELL:
+        if rounded >= 0:
+            return t("more_than_others_active").format(n=rounded)
+        return t("fewer_than_others_active").format(n=abs(rounded))
     if rounded >= 0:
         return t("more_than_typical").format(n=rounded)
     return t("fewer_than_typical").format(n=abs(rounded))
@@ -532,6 +564,33 @@ _STRINGS: dict[str, dict[str, str]] = {
     "extra_count_metric": {"en": "Extra vs. typical", "es": "Extra vs. lo típico"},
     "more_than_typical": {"en": "{n} more than typical", "es": "{n} más que lo típico"},
     "fewer_than_typical": {"en": "{n} fewer than typical", "es": "{n} menos que lo típico"},
+    # ACTIVE_PEER_DWELL-safe variants of the four keys above -- this cohort is a
+    # length-biased sample of permits still in progress, so it must never be
+    # described as "typical" (see days_vs_typical_phrase()'s docstring).
+    "extra_time_metric_active": {
+        "en": "Extra time vs. other active permits",
+        "es": "Tiempo extra vs. otros permisos activos",
+    },
+    "days_longer_than_others_active": {
+        "en": "{days} days more than other permits at this step",
+        "es": "{days} días más que otros permisos en este paso",
+    },
+    "days_shorter_than_others_active": {
+        "en": "{days} days less than other permits at this step",
+        "es": "{days} días menos que otros permisos en este paso",
+    },
+    "extra_count_metric_active": {
+        "en": "Extra vs. other active permits",
+        "es": "Extra vs. otros permisos activos",
+    },
+    "more_than_others_active": {
+        "en": "{n} more than other permits at this step",
+        "es": "{n} más que otros permisos en este paso",
+    },
+    "fewer_than_others_active": {
+        "en": "{n} fewer than other permits at this step",
+        "es": "{n} menos que otros permisos en este paso",
+    },
     "based_on_n_similar": {"en": "Based on {n} similar permits", "es": "Basado en {n} permisos similares"},
     "info_no_permits_found": {
         "en": "No permits found for that address. Try a shorter or differently formatted address.",
