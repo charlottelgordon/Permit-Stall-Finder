@@ -86,8 +86,19 @@ st.markdown(
         padding-top: 1.5rem !important;
     }
     .app-header-bar {
-        text-align: center;
-        margin-top: -3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* Exactly the header bar's own height (see [data-testid="stHeader"]
+           above), with a margin-top of the same magnitude -- normal flow
+           would place this row right after the header, at
+           document-y = header height; a margin-top equal to that height
+           cancels it out exactly, so this box starts at y=0 and spans the
+           header's full height 1:1. That's what makes align-items: center
+           (for the logo) and the link's own top: 50% (below) land on the
+           header's true vertical center, not an approximation. */
+        height: 5.5rem;
+        margin-top: -2.5rem;
         margin-bottom: 1.75rem;
         padding: 0 1rem;
         /* Streamlit's own header bar (stHeader) is position: fixed with
@@ -97,19 +108,22 @@ st.markdown(
         position: relative;
         z-index: 999991;
     }
-    .app-header-bar h1 {
+    .app-header-bar [role="heading"] {
+        display: flex;
+        align-items: center;
         margin: 0;
     }
     .app-header-bar img {
         height: 4rem;
         width: auto;
         display: block;
-        margin: 0 auto;
     }
     .app-header-bar a {
         /* A plain hyperlink, not a button -- positioned in the header
            bar's top-right corner without disturbing the logo's own
-           centering (text-align: center on the shared container). */
+           centering. Absolutely positioned, so it's out of the flex flow
+           above and top: 50% resolves against .app-header-bar's own
+           (now header-height-exact) box. */
         position: absolute;
         top: 50%;
         right: 1rem;
@@ -204,10 +218,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# The header bar itself: logo centered (wrapped in a real <h1> so
-# assistive tech still gets a heading, announced via the image's alt
-# text), and in the top-right corner a plain hyperlink out to LADBS's own
-# Homeowner Step-by-Step guide -- Nielsen Norman's Help and Documentation
+# The header bar itself: logo centered (a div with role="heading"
+# aria-level="1" rather than a real <h1> -- Streamlit auto-wraps every
+# actual h1-h6 it finds in rendered markdown with its own hover "anchor
+# link" chrome, which comes with padding that broke this row's vertical
+# centering math and can't be fully overridden; an ARIA heading gets
+# assistive tech the same "level-1 heading, announced via the image's
+# alt text" treatment without Streamlit's own instrumentation), and in
+# the top-right corner a plain hyperlink out to LADBS's own Homeowner
+# Step-by-Step guide -- Nielsen Norman's Help and Documentation
 # heuristic, pointing at the city's own authoritative walkthrough rather
 # than this tool trying to re-explain the permitting process itself. Both
 # sit inside the colored bar itself (not a separate row below it), so the
@@ -215,17 +234,12 @@ st.markdown(
 _logo_b64 = base64.b64encode((Path(__file__).parent / "assets" / "logo.png").read_bytes()).decode()
 st.markdown(
     '<div class="app-header-bar">'
-    f'<h1><img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></h1>'
+    f'<div role="heading" aria-level="1"><img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></div>'
     f'<a href="{HOMEOWNER_GUIDE_URL}" target="_blank" rel="noopener noreferrer">'
     f'{t("homeowner_guide_link")}</a>'
     "</div>",
     unsafe_allow_html=True,
 )
-
-# Language toggle, centered directly below the header bar.
-_, toggle_col, _ = st.columns([2, 1, 2])
-with toggle_col:
-    render_language_toggle()
 
 # --- Session state defaults --------------------------------------------
 if "table_rows" not in st.session_state:
@@ -244,7 +258,7 @@ conn = get_connection()
 # --- Search: one bar, permit number(s) or address ------------------------
 _, search_col, _ = st.columns([1, 3, 1])
 with search_col:
-    input_col, tip_col = st.columns([11, 1])
+    input_col, toggle_col, tip_col = st.columns([9, 2, 1])
     with input_col:
         raw_query = st.text_input(
             t("unified_search_placeholder"),
@@ -252,6 +266,10 @@ with search_col:
             key="unified_search_input",
             label_visibility="collapsed",
         )
+    with toggle_col:
+        # Language toggle, moved here (left of the search-bar tooltip)
+        # from its own centered row below the header.
+        render_language_toggle()
     with tip_col:
         # A custom circular "?" icon with a CSS-only hover tooltip --
         # not text_input's own help= (Streamlit drops that help icon
