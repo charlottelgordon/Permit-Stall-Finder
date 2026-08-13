@@ -35,7 +35,6 @@ from sections import (
     location_map,
     next_best_action,
     permit_journey,
-    quick_access,
     quick_glance,
     stall_findings,
 )
@@ -122,14 +121,12 @@ def _render_findings_banner(result: PermitAnalysisResult) -> None:
     st.caption(t("stall_findings_banner_subtext"))
 
 
-def _render_one(conn, result: PermitAnalysisResult, kb) -> None:
+def _render_one(result: PermitAnalysisResult, kb) -> None:
     _render_findings_banner(result)
 
     left_col, right_col = st.columns([2, 3])
     with left_col:
         quick_glance.render(result)
-        st.caption(f"{t('permit_caption')} {result.permit_number}")
-        quick_access.render_star_toggle(conn, "permit_number", result.permit_number)
         location_map.render(result)
 
     with right_col:
@@ -177,4 +174,4 @@ def render(conn, permit_numbers: list[str], results_cache: dict, kb) -> None:
             elif cached is None:
                 st.error(translate_error_message(GENERIC_ERROR_MESSAGE))
             else:
-                _render_one(conn, cached, kb)
+                _render_one(cached, kb)

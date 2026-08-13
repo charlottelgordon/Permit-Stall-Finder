@@ -17,25 +17,16 @@ that permit as a tab in the drill-down section below (drill_down.py);
 picking an "other permit at this address" from inside a drill-down tab
 opens it as another tab the same way, rather than navigating away.
 
-Starred items and recent searches (storage/user_state.py, laid out by
-sections/quick_access.py) exist for a return user who checks the same
-permit(s) or address every day for their job, and now sit directly below
-the search bar as a row of pills. A pill click sets the search bar's own
-session_state value and re-runs the script (the standard Streamlit
-pattern for programmatically driving a widget you've already rendered
-this pass -- you can't reassign a widget's session_state key after it's
-already run in the *same* pass, but setting it and calling st.rerun()
-means the very next pass's instantiation of that same widget picks the
-new value up naturally), with a one-shot "pending_pill_search" flag so
-that rerun also re-triggers the search immediately -- a pill click
-behaves exactly like typing that value and clicking Search. "Clear
-results" follows the same rerun pattern in reverse.
+Recent searches are still recorded to storage/user_state.py on every
+successful search (a return user checking the same permit(s) or address
+every day for their job), even though nothing in the UI currently reads
+that history back -- kept for a possible future quick-access affordance.
+"Clear results" resets the search state and re-runs the script.
 """
 
 from __future__ import annotations
 
 import base64
-import html
 from pathlib import Path
 
 import streamlit as st
@@ -52,7 +43,7 @@ from i18n import (
     translate_error_message,
 )
 from errors import GENERIC_ERROR_MESSAGE, validate_permit_number
-from sections import quick_access, results_table
+from sections import results_table
 
 from permit_stall_finder import config
 from permit_stall_finder.ingestion.permits import fetch_permits_by_address
@@ -81,8 +72,8 @@ st.markdown(
         font-weight: 700;
     }
     [data-testid="stHeader"] {
-        background-color: #99AFD7 !important;
-        height: 3.25rem !important;
+        background-color: #F5760A !important;
+        height: 5.5rem !important;
     }
     [data-testid="stToolbar"], [data-testid="stMainMenu"], [data-testid="stAppDeployButton"] {
         display: none;
@@ -94,12 +85,10 @@ st.markdown(
         padding-top: 1.5rem !important;
     }
     .app-header-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-top: -2.9rem;
+        text-align: center;
+        margin-top: -3rem;
         margin-bottom: 1.75rem;
-        padding: 0 0.5rem 0 1rem;
+        padding: 0 1rem;
         /* Streamlit's own header bar (stHeader) is position: fixed with
            z-index 999990, so without this the row renders underneath
            it -- present in the DOM but visually invisible, since the
@@ -111,23 +100,25 @@ st.markdown(
         margin: 0;
     }
     .app-header-bar img {
-        height: 2.2rem;
+        height: 4rem;
         width: auto;
         display: block;
+        margin: 0 auto;
     }
     .app-header-bar a {
-        display: inline-block;
-        background-color: #FFFFFF;
+        /* A plain hyperlink, not a button -- positioned in the header
+           bar's top-right corner without disturbing the logo's own
+           centering (text-align: center on the shared container). */
+        position: absolute;
+        top: 50%;
+        right: 1rem;
+        transform: translateY(-50%);
         color: #052D49;
         font-weight: 600;
-        text-decoration: none;
-        padding: 0.4rem 0.9rem;
-        border-radius: 6px;
-        border: 1px solid #052D49;
+        text-decoration: underline;
         white-space: nowrap;
     }
     .app-header-bar a:hover {
-        background-color: #052D49;
         color: #FFFFFF;
     }
     .search-loading-track {
@@ -155,22 +146,14 @@ st.markdown(
         0% { background-position: 0% 50%; }
         100% { background-position: 100% 50%; }
     }
-    .search-tooltip-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 2.6rem;
-        font-size: 1.2rem;
-        cursor: help;
-    }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# The header bar itself: logo on the left (wrapped in a real <h1> so
+# The header bar itself: logo centered (wrapped in a real <h1> so
 # assistive tech still gets a heading, announced via the image's alt
-# text), and on the right a real, clickable button out to LADBS's own
+# text), and in the top-right corner a plain hyperlink out to LADBS's own
 # Homeowner Step-by-Step guide -- Nielsen Norman's Help and Documentation
 # heuristic, pointing at the city's own authoritative walkthrough rather
 # than this tool trying to re-explain the permitting process itself. Both
@@ -217,23 +200,17 @@ with search_col:
             label_visibility="collapsed",
         )
     with tip_col:
-        # A manual tooltip icon rather than text_input's own help=
-        # parameter: Streamlit drops the help icon entirely when
-        # label_visibility="collapsed" is set (no label row for it to
-        # attach to), so help= silently never rendered anything here.
-        # This uses the browser's own native title-attribute tooltip
-        # instead, positioned to the right of the search bar. The help
-        # text's own blank line (between the permit-number and address
-        # paragraphs) is swapped for &#10; -- a literal newline inside an
-        # HTML attribute reads as a blank line to Streamlit's CommonMark
-        # parser, which terminates an inline HTML block at the first
-        # blank line and dumps the rest as a stray paragraph instead of
-        # parsing it as part of the tag.
-        tooltip_text = html.escape(t("unified_search_help")).replace("\n", "&#10;")
-        st.markdown(
-            f'<div class="search-tooltip-icon" title="{tooltip_text}">❓</div>',
-            unsafe_allow_html=True,
-        )
+        # A click-triggered st.popover rather than text_input's own
+        # help= parameter (Streamlit drops that help icon entirely when
+        # label_visibility="collapsed" is set, since there's no label row
+        # for it to attach to) or a manual title-attribute hover tooltip
+        # (unreliable -- native title tooltips have an inconsistent
+        # per-browser delay, are easy to miss, and don't work at all on
+        # touch/mobile since there's no hover state there). A popover is
+        # a real widget: click to open, guaranteed visible, works the
+        # same everywhere.
+        with st.popover("❓"):
+            st.markdown(t("unified_search_help"))
 
     # Search + Clear, centered as a pair below the search bar.
     _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])
@@ -254,16 +231,6 @@ with search_col:
         )
 
     loading_bar_slot = st.empty()
-
-    if st.session_state.pop("pending_pill_search", False):
-        search_clicked = True
-
-    # Starred searches, directly below the search bar.
-    qa_selection = quick_access.render(conn)
-    if qa_selection is not None:
-        st.session_state["unified_search_input"] = qa_selection.value
-        st.session_state["pending_pill_search"] = True
-        st.rerun()
 
 if clear_clicked:
     st.session_state.table_rows = None

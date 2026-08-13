@@ -461,7 +461,6 @@ _STRINGS: dict[str, dict[str, str]] = {
     "tab_address": {"en": "Search by address", "es": "Buscar por dirección"},
     "permit_numbers_label": {"en": "Permit number(s)", "es": "Número(s) de permiso"},
     "analyze_button": {"en": "Analyze", "es": "Analizar"},
-    "analyzing_button": {"en": "Analyzing...", "es": "Analizando..."},
     "searching_button": {"en": "Searching...", "es": "Buscando..."},
     "permit_number_help": {
         "en": (
@@ -476,16 +475,6 @@ _STRINGS: dict[str, dict[str, str]] = {
             "\u201cBuscar por dirección\u201d."
         ),
     },
-    "street_address_help": {
-        "en": (
-            "Enter the property's street address as it's filed with LADBS, e.g. 200 N Spring "
-            "St. No need to include city, state, or ZIP code."
-        ),
-        "es": (
-            "Ingrese la dirección de la propiedad tal como está registrada en LADBS, por "
-            "ejemplo 200 N Spring St. No es necesario incluir ciudad, estado ni código postal."
-        ),
-    },
     "warning_enter_permit_number": {
         "en": "Enter at least one permit number.",
         "es": "Ingrese al menos un número de permiso.",
@@ -497,7 +486,6 @@ _STRINGS: dict[str, dict[str, str]] = {
         "es": "permiso(s) no se pudieron analizar en este momento (el servicio de datos "
         "abiertos de la ciudad podría no estar disponible temporalmente) y se omiten abajo:",
     },
-    "permit_caption": {"en": "Permit", "es": "Permiso"},
     "show_full_analysis": {
         "en": "Show full analysis (permit journey, finding-by-finding explanations, coverage notes)",
         "es": "Mostrar análisis completo (trayecto del permiso, explicaciones de cada hallazgo, "
@@ -518,36 +506,11 @@ _STRINGS: dict[str, dict[str, str]] = {
     "more_than_typical": {"en": "{n} more than typical", "es": "{n} más que lo típico"},
     "fewer_than_typical": {"en": "{n} fewer than typical", "es": "{n} menos que lo típico"},
     "based_on_n_similar": {"en": "Based on {n} similar permits", "es": "Basado en {n} permisos similares"},
-    # quick_access.py
-    "starred": {"en": "⭐ Starred", "es": "⭐ Destacados"},
-    "manage_starred": {"en": "Manage starred", "es": "Administrar destacados"},
-    "unstar": {"en": "Unstar", "es": "Quitar destacado"},
-    "starred_button": {"en": "★ Starred", "es": "★ Destacado"},
-    "star_this_button": {"en": "☆ Star this", "es": "☆ Destacar"},
-    # address_search.py
-    "address_search_caption": {
-        "en": "Don't know the permit number? Search by street address and pick the permit(s) "
-        "you want analyzed.",
-        "es": "¿No sabe el número de permiso? Busque por dirección y seleccione el o los "
-        "permisos que desea analizar.",
-    },
-    "street_address_label": {"en": "Street address", "es": "Dirección"},
-    "street_address_placeholder": {"en": "e.g. 200 N Spring St", "es": "p. ej. 200 N Spring St"},
-    "search_by_address_button": {"en": "Search by address", "es": "Buscar por dirección"},
-    "warning_enter_address": {
-        "en": "Enter a street address to search.",
-        "es": "Ingrese una dirección para buscar.",
-    },
     "info_no_permits_found": {
         "en": "No permits found for that address. Try a shorter or differently formatted address.",
         "es": "No se encontraron permisos para esa dirección. Intente con una dirección más "
         "corta o con otro formato.",
     },
-    "permits_found_caption": {
-        "en": "permit(s) found -- select which to analyze:",
-        "es": "permiso(s) encontrado(s) -- seleccione cuál(es) analizar:",
-    },
-    "analyze_selected_button": {"en": "Analyze selected", "es": "Analizar seleccionados"},
     # quick_glance.py
     "qg_permit": {"en": "Permit", "es": "Permiso"},
     "qg_address": {"en": "Address", "es": "Dirección"},
@@ -683,8 +646,8 @@ _STRINGS: dict[str, dict[str, str]] = {
 
     # --- Phase 10 redesign: header, unified search, results table, drill-down ---
     "homeowner_guide_link": {
-        "en": "Homeowner Step-by-Step Guide",
-        "es": "Guía paso a paso para propietarios",
+        "en": "Homeowner Permit Step by Step Guide",
+        "es": "Guía paso a paso de permisos para propietarios",
     },
     "unified_search_placeholder": {
         "en": "Search permits by permit number or address",
