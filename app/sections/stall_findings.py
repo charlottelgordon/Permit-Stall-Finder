@@ -35,6 +35,8 @@ from i18n import (
     cohort_basis_caption,
     count_vs_typical_phrase,
     days_vs_typical_phrase,
+    extra_count_metric_label,
+    extra_time_metric_label,
     grounding_strength_label,
     interval_state_label,
     severity_label,
@@ -86,7 +88,9 @@ def _render_metrics(detection: DelayStallDetection | FrictionStallDetection) -> 
         if detection.percentile_rank is not None:
             cols[1].markdown(f"**{t('how_unusual_metric')}**  \n{unusualness_phrase(detection.percentile_rank)}")
         if detection.excess_days_vs_median is not None:
-            cols[2].markdown(f"**{t('extra_time_metric')}**  \n{days_vs_typical_phrase(detection.excess_days_vs_median)}")
+            label = extra_time_metric_label(detection.cohort.benchmark_semantics)
+            phrase = days_vs_typical_phrase(detection.excess_days_vs_median, detection.cohort.benchmark_semantics)
+            cols[2].markdown(f"**{label}**  \n{phrase}")
         st.caption(
             f"{interval_state_label(detection.interval_state)} · "
             f"{benchmark_semantics_label(detection.cohort.benchmark_semantics)} "
@@ -97,7 +101,9 @@ def _render_metrics(detection: DelayStallDetection | FrictionStallDetection) -> 
         if detection.percentile_rank is not None:
             cols[1].markdown(f"**{t('how_unusual_metric')}**  \n{unusualness_phrase(detection.percentile_rank)}")
         if detection.excess_count_vs_median is not None:
-            cols[2].markdown(f"**{t('extra_count_metric')}**  \n{count_vs_typical_phrase(detection.excess_count_vs_median)}")
+            label = extra_count_metric_label(detection.cohort.benchmark_semantics)
+            phrase = count_vs_typical_phrase(detection.excess_count_vs_median, detection.cohort.benchmark_semantics)
+            cols[2].markdown(f"**{label}**  \n{phrase}")
         st.caption(
             f"{benchmark_semantics_label(detection.cohort.benchmark_semantics)} "
             f"({cohort_basis_caption(detection.cohort.n, detection.cohort.confidence)})"
