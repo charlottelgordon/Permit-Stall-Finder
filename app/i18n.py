@@ -58,6 +58,34 @@ def set_language(lang: str) -> None:
     st.session_state["language"] = lang
 
 
+AUDIENCES = ("developer", "government", "other")
+
+
+def get_audience() -> str | None:
+    """None until the landing screen's persona picker is used. Purely a
+    welcome-copy choice (see audience_subtitle() below) -- nothing else
+    in the app reads this, and it never changes what data, functionality,
+    or disclaimer any audience sees. A government/city visitor gets the
+    same tool, the same caveats, and the same "informational only, not
+    an official determination" disclaimer as everyone else; the persona
+    only picks which welcome sentence is shown."""
+    return st.session_state.get("audience")
+
+
+def set_audience(audience: str | None) -> None:
+    assert audience in AUDIENCES or audience is None, f"unknown audience {audience!r}"
+    st.session_state["audience"] = audience
+
+
+def audience_subtitle() -> str:
+    audience = get_audience()
+    if audience == "developer":
+        return t("landing_subtitle_developer")
+    if audience == "government":
+        return t("landing_subtitle_government")
+    return t("landing_subtitle_default")
+
+
 def _sync_html_lang(lang: str) -> None:
     """Keeps the page's own <html lang> attribute in step with the
     selected UI language -- WCAG 3.1.1 Language of Page requires this so
@@ -727,6 +755,48 @@ _STRINGS: dict[str, dict[str, str]] = {
     },
     "yes": {"en": "Yes", "es": "Sí"},
 
+    # --- landing screen (persona-flavored welcome copy only -- see
+    # get_audience()/audience_subtitle() below for why this never changes
+    # what data or functionality anyone sees, only the welcome wording) ---
+    "landing_title": {"en": "Welcome to {app}", "es": "Bienvenido a {app}"},
+    "landing_subtitle_default": {
+        "en": (
+            "Look up any LA building permit to see its observable history, spot unusual "
+            "delays, and get grounded guidance on what tends to help move things along."
+        ),
+        "es": (
+            "Busque cualquier permiso de construcción de Los Ángeles para ver su historial "
+            "observable, detectar retrasos inusuales y obtener orientación fundamentada "
+            "sobre qué suele ayudar a avanzar."
+        ),
+    },
+    "landing_subtitle_developer": {
+        "en": (
+            "Track your own projects, search several permits at once, and see exactly "
+            "where -- and for how long -- each one may be stuck."
+        ),
+        "es": (
+            "Dé seguimiento a sus propios proyectos, busque varios permisos a la vez y vea "
+            "exactamente dónde -- y por cuánto tiempo -- cada uno podría estar detenido."
+        ),
+    },
+    "landing_subtitle_government": {
+        "en": (
+            "Look up any permit's observable history and status, the same way any member "
+            "of the public can. This tool is informational only and does not replace "
+            "official confirmation from LADBS."
+        ),
+        "es": (
+            "Consulte el historial observable y el estado de cualquier permiso, tal como "
+            "puede hacerlo cualquier miembro del público. Esta herramienta es solo "
+            "informativa y no reemplaza la confirmación oficial de LADBS."
+        ),
+    },
+    "landing_persona_prompt": {"en": "Which best describes you?", "es": "¿Cuál lo describe mejor?"},
+    "landing_persona_developer": {"en": "Developer / Contractor", "es": "Desarrollador / Contratista"},
+    "landing_persona_government": {"en": "City / Government", "es": "Ciudad / Gobierno"},
+    "landing_persona_other": {"en": "Just looking something up", "es": "Solo estoy consultando algo"},
+    "landing_persona_change": {"en": "Change", "es": "Cambiar"},
     # --- Phase 10 redesign: header, unified search, results table, drill-down ---
     "site_welcome_intro": {
         "en": (

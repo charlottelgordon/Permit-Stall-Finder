@@ -33,6 +33,7 @@ from pathlib import Path
 import streamlit as st
 
 import drill_down
+import landing
 import portfolio
 import search_input
 from db import get_connection, get_knowledge_base
@@ -132,6 +133,26 @@ st.markdown(
         margin-left: auto !important;
         margin-right: auto !important;
         color: #444;
+    }
+    .landing-title {
+        text-align: center;
+        font-size: 2.4rem;
+        font-weight: 700;
+        color: #052D49;
+        margin: 0.5rem 0 0.25rem 0 !important;
+    }
+    .landing-subtitle {
+        text-align: center;
+        max-width: 640px;
+        margin: 0 auto 1rem auto !important;
+        color: #444;
+        font-size: 1.05rem;
+    }
+    .landing-persona-prompt {
+        text-align: center;
+        color: #666;
+        font-size: 0.9rem;
+        margin: 0 0 0.5rem 0 !important;
     }
     .search-loading-track {
         width: 100%;
@@ -398,10 +419,8 @@ if search_clicked:
         )
 
 if not st.session_state.table_rows:
-    welcome_slot.markdown(
-        f'<p class="site-welcome-intro">{t("site_welcome_intro")}</p>',
-        unsafe_allow_html=True,
-    )
+    with welcome_slot.container():
+        landing.render_landing()
 
 st.divider()
 
