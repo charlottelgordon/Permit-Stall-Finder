@@ -87,22 +87,14 @@ def test_full_redesign_flow(monkeypatch):
     at.run()
     assert not at.exception, f"initial render failed: {at.exception}"
 
-    # Onboarding paragraph visible before any search.
-    md_before = "\n".join(m.value for m in at.markdown)
-    assert "Check the status of your permit" in md_before
-
     # Type a single permit number and click Search.
     at.text_input(key="unified_search_input").set_value(PERMIT_A)
     at.button(key="unified_search_button").click().run()
     assert not at.exception, f"search failed: {at.exception}"
 
-    # Onboarding paragraph must now be gone.
-    md_after = "\n".join(m.value for m in at.markdown)
-    assert "Check the status of your permit" not in md_after
-
-    # Results table rendered with 8 columns worth of data, and the
+    # Results table rendered with 9 columns worth of data, and the
     # single-permit search auto-opened its drill-down tab.
-    assert at.get("dataframe"), "results table did not render"
+    assert at.dataframe, "results table did not render"
     tabs = at.tabs
     assert len(tabs) >= 1, "drill-down tab did not auto-open for single-permit search"
     assert PERMIT_A in [t.label for t in tabs]
@@ -132,7 +124,7 @@ def test_multi_permit_search_table_and_row_selection(monkeypatch):
     at.button(key="unified_search_button").click().run()
     assert not at.exception, f"multi search failed: {at.exception}"
 
-    assert at.get("dataframe"), "results table did not render for multi-permit search"
+    assert at.dataframe, "results table did not render for multi-permit search"
     # Nothing should be auto-opened for a multi-permit search until a row
     # is actually selected.
     assert len(at.tabs) == 0, f"expected no drill-down tabs yet, got {[t.label for t in at.tabs]}"
@@ -163,5 +155,5 @@ def test_header_and_language_toggle(monkeypatch):
 
     toggles[0].set_value(True).run()
     assert not at.exception, f"language toggle failed: {at.exception}"
-    md_es = "\n".join(m.value for m in at.markdown)
-    assert "Consulte el estado de su permiso" in md_es, "Spanish onboarding text not shown after toggle"
+    search_buttons = [b for b in at.button if b.label == "Buscar"]
+    assert search_buttons, "Spanish search button label not shown after toggle"

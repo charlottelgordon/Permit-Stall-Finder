@@ -92,7 +92,6 @@ def render_language_toggle() -> None:
         "EN  ·  ES",
         value=(current == "es"),
         key="language_picker",
-        help=t("language_toggle_help"),
     )
     new_lang = "es" if is_spanish else "en"
     if new_lang != current:
@@ -521,7 +520,6 @@ _STRINGS: dict[str, dict[str, str]] = {
     "based_on_n_similar": {"en": "Based on {n} similar permits", "es": "Basado en {n} permisos similares"},
     # quick_access.py
     "starred": {"en": "⭐ Starred", "es": "⭐ Destacados"},
-    "recent": {"en": "🕒 Recent", "es": "🕒 Recientes"},
     "manage_starred": {"en": "Manage starred", "es": "Administrar destacados"},
     "unstar": {"en": "Unstar", "es": "Quitar destacado"},
     "starred_button": {"en": "★ Starred", "es": "★ Destacado"},
@@ -684,10 +682,6 @@ _STRINGS: dict[str, dict[str, str]] = {
     "yes": {"en": "Yes", "es": "Sí"},
 
     # --- Phase 10 redesign: header, unified search, results table, drill-down ---
-    "language_toggle_help": {
-        "en": "Switch the page between English and Español.",
-        "es": "Cambie la página entre English y Español.",
-    },
     "homeowner_guide_link": {
         "en": "Homeowner Step-by-Step Guide",
         "es": "Guía paso a paso para propietarios",
@@ -715,29 +709,18 @@ _STRINGS: dict[str, dict[str, str]] = {
         ),
     },
     "search_button": {"en": "Search", "es": "Buscar"},
-    "onboarding_intro": {
-        "en": (
-            "Check the status of your permit and whether it is moving at a normal pace or "
-            "getting stuck and why. When you search, we'll compare your permit to hundreds "
-            "of similar ones, and when something's taking longer, we'll tell you how unusual "
-            "the delay is, why it might be happening, and what you or the city can do next."
-        ),
-        "es": (
-            "Consulte el estado de su permiso y si avanza a un ritmo normal o si se ha "
-            "estancado y por qué. Al buscar, compararemos su permiso con cientos de permisos "
-            "similares, y cuando algo esté tardando más de lo normal, le diremos qué tan "
-            "inusual es el retraso, por qué podría estar pasando, y qué puede hacer usted o "
-            "la ciudad al respecto."
-        ),
+    "results_table_header": {
+        "en": "Permit Search Results",
+        "es": "Resultados de la búsqueda de permisos",
     },
-    "results_table_header": {"en": "Your permits", "es": "Sus permisos"},
     "results_table_caption_suffix": {"en": "permit(s) found", "es": "permiso(s) encontrado(s)"},
     "results_table_hint": {
         "en": "Click a row to see its full detail below.",
         "es": "Haga clic en una fila para ver su detalle completo abajo.",
     },
     "col_permit_number": {"en": "Permit number", "es": "Número de permiso"},
-    "col_submitted_date": {"en": "Submitted", "es": "Presentado"},
+    "col_top_finding": {"en": "Top finding", "es": "Hallazgo principal"},
+    "col_submitted_date": {"en": "Permit submission", "es": "Presentación del permiso"},
     "col_time_since_submission": {"en": "Time since submission", "es": "Tiempo desde la presentación"},
     "col_permit_type": {"en": "Permit type", "es": "Tipo de permiso"},
     "col_issuance_status": {"en": "Issuance status", "es": "Estado de emisión"},
@@ -774,7 +757,23 @@ _STRINGS: dict[str, dict[str, str]] = {
         "es": "No se encontraron otros permisos en esta dirección.",
     },
     "open_permit_tab_button": {"en": "Open", "es": "Abrir"},
-    "recent_searches_label": {"en": "Recent searches", "es": "Búsquedas recientes"},
+    "stall_findings_banner_subtext": {
+        "en": (
+            "These are patterns our analysis found by comparing this permit to hundreds of "
+            "similar ones -- where it's taking longer or hitting more friction than typical. "
+            "Expand the section below for what each one usually means and what tends to help."
+        ),
+        "es": (
+            "Estos son patrones que nuestro análisis encontró al comparar este permiso con "
+            "cientos de permisos similares -- donde está tardando más o encontrando más "
+            "fricción de lo típico. Expanda la sección de abajo para ver qué suele significar "
+            "cada uno y qué suele ayudar."
+        ),
+    },
+    "drill_down_more_detail_header": {
+        "en": "Understand these findings",
+        "es": "Comprenda estos hallazgos",
+    },
 }
 
 

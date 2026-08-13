@@ -34,6 +34,10 @@ results" follows the same rerun pattern in reverse.
 
 from __future__ import annotations
 
+import base64
+import html
+from pathlib import Path
+
 import streamlit as st
 
 import drill_down
@@ -56,11 +60,11 @@ from permit_stall_finder.storage import user_state
 
 st.set_page_config(page_title=APP_NAME, page_icon="🏗️", layout="wide")
 
-# A real, solid-color header bar carrying the app's own name as an actual
-# <h1> heading just below it (rendered further down), rather than the
-# earlier gradient bar's ::after pseudo-element title -- that text was
-# never a real heading for assistive tech. This CSS only recolors
-# Streamlit's own header chrome and removes its default toolbar icons.
+# A real, solid-color header bar carrying the app's own logo just below it
+# (rendered further down), rather than the earlier gradient bar's ::after
+# pseudo-element title -- that text was never a real heading for assistive
+# tech. This CSS only recolors Streamlit's own header chrome and removes
+# its default toolbar icons.
 st.markdown(
     """
     <style>
@@ -94,26 +98,75 @@ st.markdown(
         margin-top: -2.9rem;
         margin-bottom: 1.75rem;
         padding-right: 0.5rem;
+        /* Streamlit's own header bar (stHeader) is position: fixed with
+           z-index 999990, so without this the link renders underneath
+           it -- present in the DOM but visually invisible, since the
+           negative margin above pulls it up into that same fixed strip. */
+        position: relative;
+        z-index: 999991;
     }
     .header-guide-link a {
+        display: inline-block;
+        background-color: #FFFFFF;
         color: #052D49;
         font-weight: 600;
         text-decoration: none;
+        padding: 0.4rem 0.9rem;
+        border-radius: 6px;
+        border: 1px solid #052D49;
     }
     .header-guide-link a:hover {
-        text-decoration: underline;
+        background-color: #052D49;
+        color: #FFFFFF;
     }
-    .onboarding-intro {
+    .app-logo-heading {
         text-align: center;
-        max-width: 640px;
-        margin: 0.5rem auto 1.5rem auto;
+        margin: 0;
+    }
+    .app-logo-heading img {
+        max-width: 420px;
+        width: 100%;
+        height: auto;
+    }
+    .search-loading-track {
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: #E4E9F2;
+        overflow: hidden;
+        margin: 0.5rem 0 1rem 0;
+    }
+    .search-loading-bar {
+        height: 100%;
+        width: 40%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #99AFD7, #052D49, #E08A3C, #99AFD7);
+        background-size: 300% 100%;
+        animation: search-loading-slide 1.1s ease-in-out infinite,
+            search-loading-color 2s linear infinite;
+    }
+    @keyframes search-loading-slide {
+        0% { margin-left: -40%; }
+        100% { margin-left: 100%; }
+    }
+    @keyframes search-loading-color {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 100% 50%; }
+    }
+    .search-tooltip-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.6rem;
+        font-size: 1.2rem;
+        cursor: help;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# Far right of the header bar: a real, clickable link out to LADBS's own
+# Far right of the header bar: a real, clickable button out to LADBS's own
 # Homeowner Step-by-Step guide -- Nielsen Norman's Help and Documentation
 # heuristic, pointing at the city's own authoritative walkthrough rather
 # than this tool trying to re-explain the permitting process itself.
@@ -123,9 +176,16 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown(f"<h1 style='text-align:center'>{APP_NAME}</h1>", unsafe_allow_html=True)
+# App logo, centered, wrapped in a real <h1> so assistive tech still gets
+# a heading (announced via the image's alt text) even though the visible
+# content is now an image rather than text.
+_logo_b64 = base64.b64encode((Path(__file__).parent / "assets" / "logo.png").read_bytes()).decode()
+st.markdown(
+    f'<h1 class="app-logo-heading"><img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></h1>',
+    unsafe_allow_html=True,
+)
 
-# Language toggle, centered directly below the title.
+# Language toggle, centered directly below the logo.
 _, toggle_col, _ = st.columns([2, 1, 2])
 with toggle_col:
     render_language_toggle()
@@ -141,51 +201,68 @@ if "extra_drilldown_permits" not in st.session_state:
     st.session_state.extra_drilldown_permits = []
 if "error" not in st.session_state:
     st.session_state.error = None
-if "has_searched" not in st.session_state:
-    st.session_state.has_searched = False
 
 conn = get_connection()
 
 # --- Search: one bar, permit number(s) or address ------------------------
 _, search_col, _ = st.columns([1, 3, 1])
 with search_col:
-    search_row = st.columns([5, 1])
-    with search_row[0]:
+    input_col, tip_col = st.columns([11, 1])
+    with input_col:
         raw_query = st.text_input(
             t("unified_search_placeholder"),
             placeholder=t("unified_search_placeholder"),
             key="unified_search_input",
-            help=t("unified_search_help"),
             label_visibility="collapsed",
         )
-    with search_row[1]:
+    with tip_col:
+        # A manual tooltip icon rather than text_input's own help=
+        # parameter: Streamlit drops the help icon entirely when
+        # label_visibility="collapsed" is set (no label row for it to
+        # attach to), so help= silently never rendered anything here.
+        # This uses the browser's own native title-attribute tooltip
+        # instead, positioned to the right of the search bar. The help
+        # text's own blank line (between the permit-number and address
+        # paragraphs) is swapped for &#10; -- a literal newline inside an
+        # HTML attribute reads as a blank line to Streamlit's CommonMark
+        # parser, which terminates an inline HTML block at the first
+        # blank line and dumps the rest as a stray paragraph instead of
+        # parsing it as part of the tag.
+        tooltip_text = html.escape(t("unified_search_help")).replace("\n", "&#10;")
+        st.markdown(
+            f'<div class="search-tooltip-icon" title="{tooltip_text}">❓</div>',
+            unsafe_allow_html=True,
+        )
+
+    # Search + Clear, centered as a pair below the search bar.
+    _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])
+    with btn_search_col:
         # Placeholder-swap loading state (Nielsen Norman heuristic #1,
         # Visibility of System Status): the button becomes a disabled
-        # "Searching..." the instant it's clicked, so the user never
+        # "Searching..." the instant it's clicked, and an animated
+        # loading bar appears immediately below, so the user never
         # wonders whether the click registered while the network-bound
         # pipeline call below is still running.
         search_button_slot = st.empty()
         search_clicked = search_button_slot.button(
             t("search_button"), type="primary", key="unified_search_button", width="stretch"
         )
+    with btn_clear_col:
+        clear_clicked = st.button(
+            t("clear_results"), key="clear_results_button", width="stretch"
+        )
+
+    loading_bar_slot = st.empty()
 
     if st.session_state.pop("pending_pill_search", False):
         search_clicked = True
 
-    clear_clicked = st.button(t("clear_results"), key="clear_results_button")
-
-    # Recent/starred searches, directly below the search bar.
+    # Starred searches, directly below the search bar.
     qa_selection = quick_access.render(conn)
     if qa_selection is not None:
         st.session_state["unified_search_input"] = qa_selection.value
         st.session_state["pending_pill_search"] = True
         st.rerun()
-
-    if not st.session_state.has_searched:
-        st.markdown(
-            f'<div class="onboarding-intro">{t("onboarding_intro")}</div>',
-            unsafe_allow_html=True,
-        )
 
 if clear_clicked:
     st.session_state.table_rows = None
@@ -194,7 +271,6 @@ if clear_clicked:
     st.session_state.extra_drilldown_permits = []
     st.session_state.error = None
     st.session_state.batch_errors = []
-    st.session_state.has_searched = False
     st.session_state.unified_search_input = ""
     st.rerun()
 
@@ -205,6 +281,10 @@ if search_clicked:
     else:
         search_button_slot.button(
             t("searching_button"), type="primary", disabled=True, key="unified_search_button_loading"
+        )
+        loading_bar_slot.markdown(
+            '<div class="search-loading-track"><div class="search-loading-bar"></div></div>',
+            unsafe_allow_html=True,
         )
         kind, values = search_input.classify(query)
         permit_numbers: list[str] = []
@@ -233,7 +313,7 @@ if search_clicked:
 
         if permit_numbers:
             batch = portfolio.run_batch(
-                conn, permit_numbers, sample_size=config.DEFAULT_COHORT_SAMPLE_SIZE
+                conn, permit_numbers, sample_size=config.DEFAULT_COHORT_SAMPLE_SIZE, progress=False
             )
             for permit_number, result in batch.results_by_permit.items():
                 st.session_state.results_cache[permit_number] = result
@@ -244,18 +324,19 @@ if search_clicked:
                 [batch.rows[0].permit_number] if len(batch.rows) == 1 else []
             )
             st.session_state.extra_drilldown_permits = []
-            st.session_state.has_searched = True
             st.session_state.batch_errors = batch.errors
 
-            # Force an immediate second pass rather than letting this run
-            # finish rendering: the onboarding paragraph above and the
-            # results table/drill-down below were already laid out earlier
-            # in *this* script pass (Streamlit runs top-to-bottom once per
-            # interaction), so has_searched only actually hides the
-            # onboarding text starting next pass -- st.rerun() makes that
-            # next pass happen immediately instead of waiting for the
-            # user's next click.
-            st.rerun()
+        # Swap the button and loading bar back to their idle state in
+        # place, rather than a full st.rerun(): the results table/
+        # drill-down below still render later in this same script pass
+        # regardless (table_rows is already set above), so a rerun would
+        # only add a redundant round trip -- and would also wipe out the
+        # st.info/st.warning messages above (e.g. "no permits found")
+        # before the user had a chance to read them.
+        loading_bar_slot.empty()
+        search_button_slot.button(
+            t("search_button"), type="primary", key="unified_search_button_done", width="stretch"
+        )
 
 st.divider()
 

@@ -23,6 +23,7 @@ link sits underneath in case a user's browser blocks third-party iframes.
 from __future__ import annotations
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from i18n import t
 from permit_stall_finder.orchestration.pipeline import PermitAnalysisResult
@@ -71,7 +72,7 @@ def render(result: PermitAnalysisResult) -> None:
         st.caption(t("map_unavailable"))
     else:
         lat, lon = coords
-        st.iframe(google_maps_embed_url(lat, lon), height=280)
+        components.iframe(google_maps_embed_url(lat, lon), height=280)
         st.caption(f"[{t('open_in_google_maps')}]({google_maps_link_url(lat, lon)})")
 
     location_bits = [t("city_label"), t("county_label")]

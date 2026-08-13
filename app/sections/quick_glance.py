@@ -1,16 +1,15 @@
-"""Quick-glance horizontal summary card -- shown once at the top of a
-completed single-permit analysis (below the persona switcher and any
-portfolio table) so the highest-value facts are visible without
-scrolling. Every field is read directly off an already-complete
-PermitAnalysisResult; this module composes no new interpretation, only
-lays out facts Agent 1/2/3 already produced across one row of
-st.columns.
+"""Quick-glance overview -- the left-panel summary block of the two-panel
+drill-down layout (Phase 11 redesign), stacked above the map. Every field
+is read directly off an already-complete PermitAnalysisResult; this module
+composes no new interpretation, only lays out facts Agent 1/2/3 already
+produced as a vertical list of labeled facts.
 
-Deliberately separate from top_level_result.py (section B): that section
-keeps the neutral, no-outcome-color-coding treatment UI_DESIGN.md decision
-3 requires for the full-page summary. This card is a denser at-a-glance
-strip meant to sit above it, not replace it -- the full section B/C/D/E/F/G
-sequence still renders below for anyone who wants the complete picture.
+Was previously a horizontal st.columns(6) strip; the severity-count blue
+banner that used to sit near the top of the tab (section B,
+top_level_result.py) is now rendered once, above both panels, by
+drill_down.py directly -- this block only repeats the identifying facts
+(permit, address, type, status, days in status) plus this permit's own
+top finding, not the tab-wide severity summary.
 """
 
 from __future__ import annotations
@@ -61,12 +60,11 @@ def render(result: PermitAnalysisResult) -> None:
     severity = _top_severity(result)
 
     with st.container(border=True):
-        cols = st.columns(6)
-        cols[0].markdown(f"**{t('qg_permit')}**  \n{result.permit_number}")
-        cols[1].markdown(f"**{t('qg_address')}**  \n{address}")
-        cols[2].markdown(f"**{t('qg_type')}**  \n{permit_type}")
-        cols[3].markdown(f"**{t('qg_status')}**  \n{status_desc}")
-        cols[4].markdown(f"**{t('qg_days_in_status')}**  \n{days if days is not None else '—'}")
+        st.markdown(f"**{t('qg_permit')}**  \n{result.permit_number}")
+        st.markdown(f"**{t('qg_address')}**  \n{address}")
+        st.markdown(f"**{t('qg_type')}**  \n{permit_type}")
+        st.markdown(f"**{t('qg_status')}**  \n{status_desc}")
+        st.markdown(f"**{t('qg_days_in_status')}**  \n{days if days is not None else '—'}")
 
         if severity is not None:
             color = SEVERITY_COLORS[severity]
@@ -74,8 +72,8 @@ def render(result: PermitAnalysisResult) -> None:
                 f'<span style="background-color:{color};color:white;padding:2px 10px;'
                 f'border-radius:4px;font-weight:600">{severity_label(severity)}</span>'
             )
-            cols[5].markdown(f"**{t('qg_top_finding')}**  \n{badge}", unsafe_allow_html=True)
+            st.markdown(f"**{t('qg_top_finding')}**  \n{badge}", unsafe_allow_html=True)
         else:
             icon = _OUTCOME_ICONS[result.outcome]
-            cols[5].markdown(f"**{t('qg_result')}**  \n{icon} {outcome_headline(result)}")
+            st.markdown(f"**{t('qg_result')}**  \n{icon} {outcome_headline(result)}")
 

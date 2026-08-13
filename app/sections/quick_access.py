@@ -1,13 +1,12 @@
-"""Quick access -- starred permits/addresses and recent searches, shown
-above the search tabs so a return user (someone checking the same
-permit(s) every day for their job) can re-run yesterday's search in one
-click instead of retyping it. Every value here comes straight from
-storage/user_state.py; this module only lays out clickable pills and
-reports which one (if any) was just clicked -- it never decides what to
-do about that click. That decision (run a single permit directly, or
-pre-fill and re-run an address search) belongs to streamlit_app.py, the
-same "return the user's intent, let the entrypoint act on it" pattern
-address_search.render() already follows.
+"""Quick access -- starred permits/addresses, shown above the search tabs
+so a return user (someone checking the same permit(s) every day for their
+job) can re-run yesterday's search in one click instead of retyping it.
+Every value here comes straight from storage/user_state.py; this module
+only lays out clickable pills and reports which one (if any) was just
+clicked -- it never decides what to do about that click. That decision
+(run a single permit directly, or pre-fill and re-run an address search)
+belongs to streamlit_app.py, the same "return the user's intent, let the
+entrypoint act on it" pattern address_search.render() already follows.
 
 render_star_toggle() is the other half of the same feature -- a small
 star/unstar button placed next to whatever a user is currently looking
@@ -54,47 +53,32 @@ def _render_pill_row(
 
 
 def render(conn: duckdb.DuckDBPyConnection) -> QuickAccessSelection | None:
-    """Renders the starred + recent panel and returns the pill the user
-    just clicked (if any) so streamlit_app.py can run it. Starred and
-    recent are read fresh from storage on every run -- cheap local
-    queries, not a network call, so there's no reason to cache them."""
+    """Renders the starred panel and returns the pill the user just
+    clicked (if any) so streamlit_app.py can run it. Starred items are
+    read fresh from storage on every run -- a cheap local query, not a
+    network call, so there's no reason to cache it."""
     starred = user_state.read_starred_items(conn)
-    recent = user_state.read_recent_searches(conn)
 
-    # Don't repeat something in "recent" that's already pinned in
-    # "starred" -- one line per thing a user is tracking, not two.
-    starred_keys = {(item.kind, item.value) for item in starred}
-    recent = [r for r in recent if (r.kind, r.value) not in starred_keys]
-
-    if not starred and not recent:
+    if not starred:
         return None
 
     selection: QuickAccessSelection | None = None
 
-    if starred:
-        st.caption(t("starred"))
-        clicked = _render_pill_row(
-            [(item.kind, item.value) for item in starred], key_prefix="qa_star"
-        )
-        selection = clicked or selection
+    st.caption(t("starred"))
+    clicked = _render_pill_row(
+        [(item.kind, item.value) for item in starred], key_prefix="qa_star"
+    )
+    selection = clicked or selection
 
-        with st.expander(t("manage_starred")):
-            for item in starred:
-                label_col, action_col = st.columns([4, 1])
-                label_col.write(_pill_label(item.kind, item.value))
-                if action_col.button(t("unstar"), key=f"qa_unstar_{item.kind}_{item.value}"):
-                    user_state.unstar_item(conn, item.kind, item.value)
-                    st.rerun()
+    with st.expander(t("manage_starred")):
+        for item in starred:
+            label_col, action_col = st.columns([4, 1])
+            label_col.write(_pill_label(item.kind, item.value))
+            if action_col.button(t("unstar"), key=f"qa_unstar_{item.kind}_{item.value}"):
+                user_state.unstar_item(conn, item.kind, item.value)
+                st.rerun()
 
-    if recent:
-        st.caption(t("recent"))
-        clicked = _render_pill_row(
-            [(entry.kind, entry.value) for entry in recent], key_prefix="qa_recent"
-        )
-        selection = clicked or selection
-
-    if starred or recent:
-        st.divider()
+    st.divider()
 
     return selection
 
