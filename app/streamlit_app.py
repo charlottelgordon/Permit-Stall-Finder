@@ -99,27 +99,48 @@ st.markdown(
         padding-top: 1.5rem !important;
     }
     .app-header-bar {
-        display: flex;
+        /* Grid, not flex: a 3-column left/center/right split keeps the
+           logo truly centered regardless of how wide the home icon vs.
+           the LADBS link are -- flex's justify-content: space-between
+           would instead shift the center item off-true whenever the two
+           side items differ in width. */
+        display: grid;
+        /* minmax(0, 1fr), not a bare 1fr -- grid items default to
+           min-width: auto, which refuses to shrink a column below its
+           content's natural width. Without the explicit 0 floor here,
+           the right column couldn't shrink below the LADBS link's full
+           text width on a narrow viewport, and the text wrapped across
+           multiple lines instead, overflowing the header's fixed height
+           (confirmed on a 375px-wide mobile viewport). */
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
-        justify-content: center;
         /* Exactly the header bar's own height (see [data-testid="stHeader"]
            above), with a margin-top of the same magnitude -- normal flow
            would place this row right after the header, at
            document-y = header height; a margin-top equal to that height
            cancels it out exactly, so this box starts at y=0 and spans the
            header's full height 1:1. That's what makes align-items: center
-           (for the logo) and the link's own top: 50% (below) land on the
-           header's true vertical center, not an approximation. */
+           land the logo/icon/link on the header's true vertical center,
+           not an approximation. */
         height: 5.5rem;
         margin-top: -2.5rem;
         margin-bottom: 1.75rem;
-        padding: 0 1rem;
+        padding: 0 1.25rem;
         /* Streamlit's own header bar (stHeader) is position: fixed with
            z-index 999990, so without this the row renders underneath
            it -- present in the DOM but visually invisible, since the
            negative margin above pulls it up into that same fixed strip. */
         position: relative;
         z-index: 999991;
+    }
+    .app-header-left {
+        justify-self: start;
+        min-width: 0;
+    }
+    .app-header-right {
+        justify-self: end;
+        min-width: 0;
+        max-width: 100%;
     }
     .app-header-bar [role="heading"] {
         display: flex;
@@ -130,6 +151,46 @@ st.markdown(
         height: 4rem;
         width: auto;
         display: block;
+    }
+    .header-home-link {
+        display: flex;
+        align-items: center;
+        font-size: 1.75rem;
+        line-height: 1;
+        text-decoration: none;
+    }
+    .header-external-link {
+        display: block;
+        color: #052D49;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.15s ease-in-out;
+        /* Truncates with an ellipsis on a narrow viewport instead of
+           wrapping across multiple lines and overflowing the header's
+           fixed height -- needs the min-width: 0 on .app-header-right
+           above to actually be allowed to shrink that far. */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .header-external-link:hover {
+        border-bottom-color: #052D49;
+    }
+    @media (max-width: 640px) {
+        .app-header-bar {
+            padding: 0 0.5rem;
+        }
+        .app-header-bar img {
+            height: 2.75rem;
+        }
+        .header-home-link {
+            font-size: 1.3rem;
+        }
+        .header-external-link {
+            font-size: 0.65rem;
+        }
     }
     .site-welcome-intro {
         /* !important on the margins: Streamlit's own default <p> margin
@@ -150,7 +211,7 @@ st.markdown(
     .persona-picker-heading {
         text-align: center;
         font-weight: 700;
-        font-size: 1.1rem;
+        font-size: 1.4rem;
         margin: 0.5rem 0 1.25rem 0;
         color: #052D49;
     }
@@ -212,6 +273,21 @@ st.markdown(
     div[class*="st-key-persona_card_"] div[data-testid="stButton"] button:focus-visible {
         outline: 2px solid #052D49;
         outline-offset: 2px;
+    }
+    /* Desktop: larger tiles, tighter row -- the base 150px width above is
+       the mobile/narrow-viewport size; !important is needed to win over
+       the inline width Streamlit sets from st.image's own width= arg.
+       Gap is tightened on the persona row specifically (scoped via the
+       "persona_picker_row" container key) rather than globally, so it
+       doesn't affect the page's other st.columns rows. */
+    @media (min-width: 900px) {
+        div[class*="st-key-persona_card_"] img {
+            width: 220px !important;
+            height: 220px !important;
+        }
+        div[class*="st-key-persona_picker_row"] div[data-testid="stHorizontalBlock"] {
+            gap: 0.5rem;
+        }
     }
     .search-loading-track {
         width: 100%;
@@ -307,7 +383,13 @@ st.markdown(
 _logo_b64 = base64.b64encode((Path(__file__).parent / "assets" / "logo.png").read_bytes()).decode()
 st.markdown(
     '<div class="app-header-bar">'
-    f'<div role="heading" aria-level="1"><img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></div>'
+    f'<div class="app-header-left"><a href="/" class="header-home-link" '
+    f'aria-label="{t("header_home_aria_label")}" title="{t("header_home_aria_label")}">🏠</a></div>'
+    f'<div class="app-header-center" role="heading" aria-level="1">'
+    f'<img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></div>'
+    '<div class="app-header-right">'
+    f'<a href="https://dbs.lacity.gov/services/plan-review-permitting/building-permits" '
+    f'target="_blank" rel="noopener noreferrer" class="header-external-link">{t("header_ladbs_link")}</a></div>'
     "</div>",
     unsafe_allow_html=True,
 )

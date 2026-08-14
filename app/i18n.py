@@ -739,10 +739,15 @@ _STRINGS: dict[str, dict[str, str]] = {
         "en": "See where your Los Angeles City building permit's stuck, why, and what usually gets it moving.",
         "es": "Vea dónde se ha detenido su permiso de construcción de la Ciudad de Los Ángeles, por qué, y qué suele ponerlo en marcha de nuevo.",
     },
+    "header_home_aria_label": {"en": "Home", "es": "Inicio"},
+    "header_ladbs_link": {
+        "en": "LADBS Building Permit Info",
+        "es": "Información de permisos de construcción de LADBS",
+    },
     # persona_picker.py
     "persona_picker_heading": {
-        "en": "Let us know your role, so you can get the most out of this experience",
-        "es": "Cuéntenos su rol, para que pueda aprovechar al máximo esta experiencia",
+        "en": "Let us know your role, so you can get the most out of this experience.",
+        "es": "Cuéntenos su rol, para que pueda aprovechar al máximo esta experiencia.",
     },
     "persona_contractor": {"en": "Contractor", "es": "Contratista"},
     "persona_developer": {"en": "Developer", "es": "Desarrollador"},

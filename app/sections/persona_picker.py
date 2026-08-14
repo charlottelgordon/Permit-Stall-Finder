@@ -29,9 +29,11 @@ import streamlit as st
 from i18n import t
 
 _ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
-_IMAGE_WIDTH = 130
-"""Square-button sizing per explicit request -- small enough to read as
-a row of buttons, not a row of full photos."""
+_IMAGE_WIDTH = 150
+"""Base square-button size (mobile/narrow default) -- streamlit_app.py's
+stylesheet sizes them up further, and tightens the gap between them, on
+wider (desktop) viewports via a min-width media query targeting the
+"persona_picker_row" container key below."""
 
 # (session-state value, image filename, i18n label key)
 _PERSONAS = [
@@ -49,14 +51,15 @@ def render() -> None:
         f'<p class="persona-picker-heading">{t("persona_picker_heading")}</p>',
         unsafe_allow_html=True,
     )
-    cols = st.columns(4)
-    for col, (persona_key, filename, label_key) in zip(cols, _PERSONAS):
-        with col:
-            with st.container(key=f"persona_card_{persona_key}"):
-                st.image(str(_ASSETS_DIR / filename), width=_IMAGE_WIDTH)
-                if st.button(t(label_key), key=f"persona_select_{persona_key}"):
-                    st.session_state.selected_persona = persona_key
-                    st.rerun()
+    with st.container(key="persona_picker_row"):
+        cols = st.columns(4, gap="small")
+        for col, (persona_key, filename, label_key) in zip(cols, _PERSONAS):
+            with col:
+                with st.container(key=f"persona_card_{persona_key}"):
+                    st.image(str(_ASSETS_DIR / filename), width=_IMAGE_WIDTH)
+                    if st.button(t(label_key), key=f"persona_select_{persona_key}"):
+                        st.session_state.selected_persona = persona_key
+                        st.rerun()
 
 
 def render_switch_button() -> None:
