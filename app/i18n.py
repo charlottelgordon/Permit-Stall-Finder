@@ -857,14 +857,13 @@ _STRINGS: dict[str, dict[str, str]] = {
     "stall_findings_banner_subtext": {
         "en": (
             "These are patterns our analysis found by comparing this permit to hundreds of "
-            "similar ones -- where it's taking longer or hitting more friction than typical. "
-            "Expand the section below for what each one usually means and what tends to help."
+            "similar ones using City of Los Angeles Department of Building and Safety's "
+            "publicly accessible data."
         ),
         "es": (
             "Estos son patrones que nuestro análisis encontró al comparar este permiso con "
-            "cientos de permisos similares -- donde está tardando más o encontrando más "
-            "fricción de lo típico. Expanda la sección de abajo para ver qué suele significar "
-            "cada uno y qué suele ayudar."
+            "cientos de permisos similares, utilizando los datos de acceso público del "
+            "Departamento de Edificación y Seguridad de la Ciudad de Los Ángeles."
         ),
     },
 }
