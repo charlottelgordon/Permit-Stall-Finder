@@ -79,13 +79,26 @@ def apply_patches(monkeypatch):
     monkeypatch.setattr(portfolio, "address_of", lambda result: "123 Test St")
 
 
+def _select_persona(at, persona_key="contractor"):
+    """The search bar stays hidden behind a persona-selection gate until
+    one of the four persona buttons is clicked -- every test that needs
+    the search bar must pick one first."""
+    at.button(key=f"persona_select_{persona_key}").click().run()
+    assert not at.exception, f"persona selection failed: {at.exception}"
+
+
 def test_full_redesign_flow(monkeypatch):
     apply_patches(monkeypatch)
     from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file(str(REPO / "app" / "streamlit_app.py"))
+    # default_timeout raised from 3s -- the persona picker now loads four
+    # real image files on first render, which has been observed to
+    # occasionally brush against the tight default under pytest's own
+    # collection overhead (a harness-timing artifact, not an app hang).
+    at = AppTest.from_file(str(REPO / "app" / "streamlit_app.py"), default_timeout=15)
     at.run()
     assert not at.exception, f"initial render failed: {at.exception}"
+    _select_persona(at)
 
     # Type a single permit number and click Search.
     at.text_input(key="unified_search_input").set_value(PERMIT_A)
@@ -117,8 +130,13 @@ def test_multi_permit_search_table_and_row_selection(monkeypatch):
     apply_patches(monkeypatch)
     from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file(str(REPO / "app" / "streamlit_app.py"))
+    # default_timeout raised from 3s -- the persona picker now loads four
+    # real image files on first render, which has been observed to
+    # occasionally brush against the tight default under pytest's own
+    # collection overhead (a harness-timing artifact, not an app hang).
+    at = AppTest.from_file(str(REPO / "app" / "streamlit_app.py"), default_timeout=15)
     at.run()
+    _select_persona(at)
 
     at.text_input(key="unified_search_input").set_value(f"{PERMIT_A}, {PERMIT_B}")
     at.button(key="unified_search_button").click().run()
@@ -140,7 +158,11 @@ def test_header_and_language_toggle(monkeypatch):
     apply_patches(monkeypatch)
     from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file(str(REPO / "app" / "streamlit_app.py"))
+    # default_timeout raised from 3s -- the persona picker now loads four
+    # real image files on first render, which has been observed to
+    # occasionally brush against the tight default under pytest's own
+    # collection overhead (a harness-timing artifact, not an app hang).
+    at = AppTest.from_file(str(REPO / "app" / "streamlit_app.py"), default_timeout=15)
     at.run()
     assert not at.exception
 
@@ -153,5 +175,6 @@ def test_header_and_language_toggle(monkeypatch):
 
     toggles[0].set_value(True).run()
     assert not at.exception, f"language toggle failed: {at.exception}"
+    _select_persona(at)
     search_buttons = [b for b in at.button if b.label == "Buscar"]
     assert search_buttons, "Spanish search button label not shown after toggle"

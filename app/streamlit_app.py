@@ -43,7 +43,7 @@ from i18n import (
     translate_error_message,
 )
 from errors import GENERIC_ERROR_MESSAGE, validate_permit_number
-from sections import report_export, results_table
+from sections import persona_picker, report_export, results_table
 
 from permit_stall_finder import config
 from permit_stall_finder.ingestion.permits import fetch_permits_by_address
@@ -147,6 +147,13 @@ st.markdown(
         margin-right: auto !important;
         color: #444;
     }
+    .persona-picker-heading {
+        text-align: center;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin: 0.5rem 0 1rem 0;
+        color: #052D49;
+    }
     .search-loading-track {
         width: 100%;
         height: 6px;
@@ -247,6 +254,8 @@ st.markdown(
 )
 
 # --- Session state defaults --------------------------------------------
+if "selected_persona" not in st.session_state:
+    st.session_state.selected_persona = None
 if "table_rows" not in st.session_state:
     st.session_state.table_rows = None
 if "results_cache" not in st.session_state:
@@ -292,130 +301,136 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- Search: one bar, permit number(s) or address ------------------------
-_, search_col, _ = st.columns([1, 3, 1])
-with search_col:
-    input_col, tip_col = st.columns([9, 1])
-    with input_col:
-        raw_query = st.text_input(
-            t("unified_search_placeholder"),
-            placeholder=t("unified_search_placeholder"),
-            key="unified_search_input",
-            label_visibility="collapsed",
-        )
-    with tip_col:
-        # A custom circular "?" icon with a CSS-only hover tooltip --
-        # not text_input's own help= (Streamlit drops that help icon
-        # entirely when label_visibility="collapsed" is set, since
-        # there's no label row for it to attach to) and not the browser's
-        # native title= attribute (unreliable: inconsistent per-browser
-        # delay, easy to miss, no hover state at all on touch/mobile).
-        # This is a real :hover-driven CSS reveal, so it doesn't depend
-        # on native tooltip timing/rendering the way title= did.
-        _help_paragraphs = "".join(
-            f"<p>{html.escape(p)}</p>" for p in t("unified_search_help").split("\n\n")
-        )
-        st.markdown(
-            '<div class="search-tooltip-wrap">'
-            '<div class="search-tooltip-icon">?</div>'
-            f'<div class="search-tooltip-content">{_help_paragraphs}</div>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
+# --- Persona gate: the search bar stays hidden until a persona is picked -
+if not st.session_state.selected_persona:
+    persona_picker.render()
+else:
+    persona_picker.render_change_link()
 
-    # Search + Clear, centered as a pair below the search bar.
-    _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])
-    with btn_search_col:
-        # Placeholder-swap loading state (Nielsen Norman heuristic #1,
-        # Visibility of System Status): the button becomes a disabled
-        # "Searching..." the instant it's clicked, and an animated
-        # loading bar appears immediately below, so the user never
-        # wonders whether the click registered while the network-bound
-        # pipeline call below is still running.
-        search_button_slot = st.empty()
-        search_clicked = search_button_slot.button(
-            t("search_button"), type="primary", key="unified_search_button", width="stretch"
-        )
-    with btn_clear_col:
-        clear_clicked = st.button(
-            t("clear_results"), key="clear_results_button", width="stretch"
-        )
+    # --- Search: one bar, permit number(s) or address ---------------------
+    _, search_col, _ = st.columns([1, 3, 1])
+    with search_col:
+        input_col, tip_col = st.columns([9, 1])
+        with input_col:
+            raw_query = st.text_input(
+                t("unified_search_placeholder"),
+                placeholder=t("unified_search_placeholder"),
+                key="unified_search_input",
+                label_visibility="collapsed",
+            )
+        with tip_col:
+            # A custom circular "?" icon with a CSS-only hover tooltip --
+            # not text_input's own help= (Streamlit drops that help icon
+            # entirely when label_visibility="collapsed" is set, since
+            # there's no label row for it to attach to) and not the browser's
+            # native title= attribute (unreliable: inconsistent per-browser
+            # delay, easy to miss, no hover state at all on touch/mobile).
+            # This is a real :hover-driven CSS reveal, so it doesn't depend
+            # on native tooltip timing/rendering the way title= did.
+            _help_paragraphs = "".join(
+                f"<p>{html.escape(p)}</p>" for p in t("unified_search_help").split("\n\n")
+            )
+            st.markdown(
+                '<div class="search-tooltip-wrap">'
+                '<div class="search-tooltip-icon">?</div>'
+                f'<div class="search-tooltip-content">{_help_paragraphs}</div>'
+                "</div>",
+                unsafe_allow_html=True,
+            )
 
-    loading_bar_slot = st.empty()
+        # Search + Clear, centered as a pair below the search bar.
+        _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])
+        with btn_search_col:
+            # Placeholder-swap loading state (Nielsen Norman heuristic #1,
+            # Visibility of System Status): the button becomes a disabled
+            # "Searching..." the instant it's clicked, and an animated
+            # loading bar appears immediately below, so the user never
+            # wonders whether the click registered while the network-bound
+            # pipeline call below is still running.
+            search_button_slot = st.empty()
+            search_clicked = search_button_slot.button(
+                t("search_button"), type="primary", key="unified_search_button", width="stretch"
+            )
+        with btn_clear_col:
+            clear_clicked = st.button(
+                t("clear_results"), key="clear_results_button", width="stretch"
+            )
 
-if clear_clicked:
-    st.session_state.pending_clear = True
-    st.rerun()
+        loading_bar_slot = st.empty()
 
-if search_clicked:
-    query = raw_query.strip()
-    if not query:
-        st.warning(t("warning_enter_permit_number"))
-    else:
-        search_button_slot.button(
-            t("searching_button"),
-            type="primary",
-            disabled=True,
-            key="unified_search_button_loading",
-            width="stretch",
-        )
-        loading_bar_slot.markdown(
-            '<div class="search-loading-track"><div class="search-loading-bar"></div></div>',
-            unsafe_allow_html=True,
-        )
-        kind, values = search_input.classify(query)
-        permit_numbers: list[str] = []
-        st.session_state.error = None
-        st.session_state.batch_errors = []
+    if clear_clicked:
+        st.session_state.pending_clear = True
+        st.rerun()
 
-        if kind == "permit_numbers":
-            permit_numbers = values
+    if search_clicked:
+        query = raw_query.strip()
+        if not query:
+            st.warning(t("warning_enter_permit_number"))
         else:
-            try:
-                matches = fetch_permits_by_address(values[0])
-                permit_numbers = [m["permit_nbr"] for m in matches if m.get("permit_nbr")]
-                user_state.record_search(conn, "address", values[0])
-            except Exception:
-                st.session_state.error = translate_error_message(GENERIC_ERROR_MESSAGE)
-            if not permit_numbers and st.session_state.error is None:
-                st.info(t("info_no_permits_found"))
+            search_button_slot.button(
+                t("searching_button"),
+                type="primary",
+                disabled=True,
+                key="unified_search_button_loading",
+                width="stretch",
+            )
+            loading_bar_slot.markdown(
+                '<div class="search-loading-track"><div class="search-loading-bar"></div></div>',
+                unsafe_allow_html=True,
+            )
+            kind, values = search_input.classify(query)
+            permit_numbers: list[str] = []
+            st.session_state.error = None
+            st.session_state.batch_errors = []
 
-        if len(permit_numbers) == 1:
-            permit_number, validation_error = validate_permit_number(permit_numbers[0])
-            if validation_error:
-                st.session_state.error = validation_error
-                permit_numbers = []
+            if kind == "permit_numbers":
+                permit_numbers = values
             else:
-                permit_numbers = [permit_number]
+                try:
+                    matches = fetch_permits_by_address(values[0])
+                    permit_numbers = [m["permit_nbr"] for m in matches if m.get("permit_nbr")]
+                    user_state.record_search(conn, "address", values[0])
+                except Exception:
+                    st.session_state.error = translate_error_message(GENERIC_ERROR_MESSAGE)
+                if not permit_numbers and st.session_state.error is None:
+                    st.info(t("info_no_permits_found"))
 
-        if permit_numbers:
-            batch = portfolio.run_batch(
-                conn, permit_numbers, sample_size=config.DEFAULT_COHORT_SAMPLE_SIZE, progress=False
+            if len(permit_numbers) == 1:
+                permit_number, validation_error = validate_permit_number(permit_numbers[0])
+                if validation_error:
+                    st.session_state.error = validation_error
+                    permit_numbers = []
+                else:
+                    permit_numbers = [permit_number]
+
+            if permit_numbers:
+                batch = portfolio.run_batch(
+                    conn, permit_numbers, sample_size=config.DEFAULT_COHORT_SAMPLE_SIZE, progress=False
+                )
+                for permit_number, result in batch.results_by_permit.items():
+                    st.session_state.results_cache[permit_number] = result
+                    user_state.record_search(conn, "permit_number", permit_number)
+
+                st.session_state.table_rows = batch.rows
+                st.session_state.drilldown_permits = (
+                    [batch.rows[0].permit_number] if len(batch.rows) == 1 else []
+                )
+                st.session_state.extra_drilldown_permits = []
+                st.session_state.batch_errors = batch.errors
+
+            # Swap the button and loading bar back to their idle state in
+            # place, rather than a full st.rerun(): the results table/
+            # drill-down below still render later in this same script pass
+            # regardless (table_rows is already set above), so a rerun would
+            # only add a redundant round trip -- and would also wipe out the
+            # st.info/st.warning messages above (e.g. "no permits found")
+            # before the user had a chance to read them.
+            loading_bar_slot.empty()
+            search_button_slot.button(
+                t("search_button"), type="primary", key="unified_search_button_done", width="stretch"
             )
-            for permit_number, result in batch.results_by_permit.items():
-                st.session_state.results_cache[permit_number] = result
-                user_state.record_search(conn, "permit_number", permit_number)
 
-            st.session_state.table_rows = batch.rows
-            st.session_state.drilldown_permits = (
-                [batch.rows[0].permit_number] if len(batch.rows) == 1 else []
-            )
-            st.session_state.extra_drilldown_permits = []
-            st.session_state.batch_errors = batch.errors
-
-        # Swap the button and loading bar back to their idle state in
-        # place, rather than a full st.rerun(): the results table/
-        # drill-down below still render later in this same script pass
-        # regardless (table_rows is already set above), so a rerun would
-        # only add a redundant round trip -- and would also wipe out the
-        # st.info/st.warning messages above (e.g. "no permits found")
-        # before the user had a chance to read them.
-        loading_bar_slot.empty()
-        search_button_slot.button(
-            t("search_button"), type="primary", key="unified_search_button_done", width="stretch"
-        )
-
-st.divider()
+    st.divider()
 
 if st.session_state.error:
     st.error(translate_error_message(st.session_state.error))
