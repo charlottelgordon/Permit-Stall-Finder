@@ -161,7 +161,7 @@ st.markdown(
     .header-home-link {
         display: inline-flex;
         align-items: center;
-        color: #052D49;
+        color: #FFFFFF;
         font-weight: 600;
         font-size: 0.85rem;
         /* !important: Streamlit's own base anchor styling sets
@@ -173,12 +173,12 @@ st.markdown(
         padding: 0.35rem 0.9rem;
         border: 1.5px solid #052D49;
         border-radius: 999px;
-        background-color: transparent;
+        background-color: #052D49;
         transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
     }
     .header-home-link:hover {
-        background-color: #052D49;
-        color: #FFFFFF;
+        background-color: transparent;
+        color: #052D49;
     }
     .header-external-link {
         display: block;
