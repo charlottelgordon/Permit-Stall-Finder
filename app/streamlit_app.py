@@ -152,12 +152,22 @@ st.markdown(
         width: auto;
         display: block;
     }
+    /* A plain text link, not a house-picture icon -- a literal house
+       glyph read as confusing/ambiguous on a page whose own subject
+       matter is building permits (easy to mistake for content about a
+       home, not a "go to the homepage" control). Styled to match
+       header-external-link below, as a matched pair. */
     .header-home-link {
-        display: flex;
-        align-items: center;
-        font-size: 1.75rem;
-        line-height: 1;
+        display: block;
+        color: #052D49;
+        font-weight: 600;
+        font-size: 0.9rem;
         text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.15s ease-in-out;
+    }
+    .header-home-link:hover {
+        border-bottom-color: #052D49;
     }
     .header-external-link {
         display: block;
@@ -185,9 +195,7 @@ st.markdown(
         .app-header-bar img {
             height: 2.75rem;
         }
-        .header-home-link {
-            font-size: 1.3rem;
-        }
+        .header-home-link,
         .header-external-link {
             font-size: 0.65rem;
         }
@@ -384,7 +392,7 @@ _logo_b64 = base64.b64encode((Path(__file__).parent / "assets" / "logo.png").rea
 st.markdown(
     '<div class="app-header-bar">'
     f'<div class="app-header-left"><a href="/" class="header-home-link" '
-    f'aria-label="{t("header_home_aria_label")}" title="{t("header_home_aria_label")}">🏠</a></div>'
+    f'title="{t("header_home_aria_label")}">{t("header_home_aria_label")}</a></div>'
     f'<div class="app-header-center" role="heading" aria-level="1">'
     f'<img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></div>'
     '<div class="app-header-right">'
