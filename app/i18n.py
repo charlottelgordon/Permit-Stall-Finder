@@ -525,6 +525,10 @@ _STRINGS: dict[str, dict[str, str]] = {
     "permit_numbers_label": {"en": "Permit number(s)", "es": "Número(s) de permiso"},
     "analyze_button": {"en": "Analyze", "es": "Analizar"},
     "searching_button": {"en": "Searching...", "es": "Buscando..."},
+    "search_loading_caption": {
+        "en": "We promise this won't take as long as your permit approval!",
+        "es": "¡Prometemos que esto no tardará tanto como la aprobación de su permiso!",
+    },
     "permit_number_help": {
         "en": (
             "LADBS permit numbers look like 21030-20000-00256 (year - plan check number - "
@@ -628,7 +632,8 @@ _STRINGS: dict[str, dict[str, str]] = {
     },
     "open_in_google_maps": {"en": "Open in Google Maps", "es": "Abrir en Google Maps"},
     "zip_prefix": {"en": "ZIP", "es": "Código postal"},
-    # coverage_gaps.py
+    # report_export.py -- coverage/data-quality notes are downloadable-report-only now
+    # (removed from the on-screen drill-down per explicit request; see drill_down.py)
     "coverage_notes_header": {
         "en": "What we couldn't check",
         "es": "Lo que no pudimos revisar",

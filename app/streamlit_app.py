@@ -308,6 +308,22 @@ st.markdown(
         0% { background-position: 0% 50%; }
         100% { background-position: 100% 50%; }
     }
+    .search-loading-gif-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        margin: 0.25rem 0 0.75rem 0;
+    }
+    .search-loading-gif-wrap img {
+        width: 96px;
+        height: auto;
+    }
+    .search-loading-gif-caption {
+        font-size: 0.85rem;
+        color: #5B6472;
+        text-align: center;
+    }
     .search-tooltip-wrap {
         position: relative;
         display: flex;
@@ -375,6 +391,13 @@ st.markdown(
 # instrumentation). Sits inside the colored bar itself (not a separate
 # row below it), so the logo doesn't cost its own line of vertical space.
 _logo_b64 = base64.b64encode((Path(__file__).parent / "assets" / "logo.png").read_bytes()).decode()
+# Same raw-<img>-as-data-URI approach as the logo above -- a GIF embedded
+# this way still animates in the browser (the <img> tag doesn't care that
+# the bytes underneath happen to be an animated GIF rather than a static
+# PNG), so no extra JS is needed to keep it moving.
+_search_loader_gif_b64 = base64.b64encode(
+    (Path(__file__).parent / "assets" / "house_building_loader (3).gif").read_bytes()
+).decode()
 st.markdown(
     '<div class="app-header-bar">'
     f'<div class="app-header-left"><a href="javascript:void(0)" class="header-home-link" '
@@ -528,9 +551,10 @@ else:
             # Placeholder-swap loading state (Nielsen Norman heuristic #1,
             # Visibility of System Status): the button becomes a disabled
             # "Searching..." the instant it's clicked, and an animated
-            # loading bar appears immediately below, so the user never
-            # wonders whether the click registered while the network-bound
-            # pipeline call below is still running.
+            # loading bar plus a small looping gif + caption appear
+            # immediately below, so the user never wonders whether the
+            # click registered while the network-bound pipeline call below
+            # is still running.
             search_button_slot = st.empty()
             search_clicked = search_button_slot.button(
                 t("search_button"), type="primary", key="unified_search_button", width="stretch"
@@ -541,6 +565,7 @@ else:
             )
 
         loading_bar_slot = st.empty()
+        loading_gif_slot = st.empty()
 
     if clear_clicked:
         st.session_state.pending_clear = True
@@ -560,6 +585,13 @@ else:
             )
             loading_bar_slot.markdown(
                 '<div class="search-loading-track"><div class="search-loading-bar"></div></div>',
+                unsafe_allow_html=True,
+            )
+            loading_gif_slot.markdown(
+                '<div class="search-loading-gif-wrap">'
+                f'<img src="data:image/gif;base64,{_search_loader_gif_b64}" alt="">'
+                f'<div class="search-loading-gif-caption">{t("search_loading_caption")}</div>'
+                "</div>",
                 unsafe_allow_html=True,
             )
             kind, values = search_input.classify(query)
@@ -610,6 +642,7 @@ else:
             # st.info/st.warning messages above (e.g. "no permits found")
             # before the user had a chance to read them.
             loading_bar_slot.empty()
+            loading_gif_slot.empty()
             search_button_slot.button(
                 t("search_button"), type="primary", key="unified_search_button_done", width="stretch"
             )

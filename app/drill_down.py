@@ -19,9 +19,14 @@ two panels:
   next_best_action.py's links/contacts.
 - Right: the finding detail cards (stall_findings.py), each its own
   always-visible header (category, severity, metrics) with small
-  per-explanation expanders underneath, plus "Data Limitations"
-  (coverage_gaps.py, renamed) -- no outer wrapping expander anymore,
-  so a user sees every finding's headline at a glance.
+  per-explanation expanders underneath -- no outer wrapping expander
+  anymore, so a user sees every finding's headline at a glance.
+
+The "What we couldn't check" / "About the data" section
+(coverage_gaps.py) is no longer shown here at all, per explicit
+request -- coverage gaps and data-quality flags still exist on
+PermitAnalysisResult and are still listed in the downloadable report
+(report_export.py), just not on screen.
 
 The informational disclaimer stays outside both panels, always visible,
 per UI_DESIGN.md decision 4 ("never inside an expander").
@@ -40,7 +45,6 @@ import portfolio
 from errors import GENERIC_ERROR_MESSAGE, safe_error_message
 from i18n import plain_status_desc, t, translate_error_message
 from sections import (
-    coverage_gaps,
     disclaimer,
     location_map,
     next_best_action,
@@ -132,9 +136,6 @@ def _render_one(result: PermitAnalysisResult, kb) -> None:
         # header with its own small expanders underneath, so a user can
         # scan every finding at a glance without a click.
         stall_findings.render(result.stall_assessment, result.developer_explanations, kb)
-
-        if result.coverage_gaps or result.data_quality_flags:
-            coverage_gaps.render(result.coverage_gaps, result.data_quality_flags)
 
     disclaimer.render(result.developer_explanations.disclaimer)
 
