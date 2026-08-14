@@ -2,7 +2,7 @@
 after any search, whether one permit or many resolved (Phase 10
 redesign). Replaces both the earlier worst-first portfolio.render_table()
 and the two-permit portfolio.render_two_panel() layout: every search
-outcome now lands in the same 8-column table, with row selection driving
+outcome now lands in the same 7-column table, with row selection driving
 the tabbed drill-down section below (see app/drill_down.py) instead of a
 separate "view full detail" selectbox.
 
@@ -18,6 +18,11 @@ attention without reading every cell. Plain dict rows can't carry
 per-cell styling, so this now goes through a pandas DataFrame + Styler
 instead -- st.dataframe still accepts on_select/selection_mode the same
 way on a Styler as it does on a plain list of dicts.
+
+Every column header carries a plain-language hover explanation via
+st.column_config's own `help=` (a small (i) icon Streamlit renders next
+to the header text) -- someone unfamiliar with a term like "Issuance
+status" can hover it instead of having to guess or ask.
 """
 
 from __future__ import annotations
@@ -50,7 +55,6 @@ def render(rows: list[PortfolioRow], *, key: str = "results_table") -> list[str]
             t("col_permit_type"): r.permit_type,
             t("col_issuance_status"): r.issuance_status,
             t("col_permit_status"): r.raw_status_desc,
-            t("col_delay_status"): r.delay_status,
             t("col_last_update"): r.last_status_update,
         }
         for r in rows
@@ -62,12 +66,23 @@ def render(rows: list[PortfolioRow], *, key: str = "results_table") -> list[str]
 
     styled = pd.DataFrame(table_data).style.apply(_highlight_severe, axis=1)
 
+    column_config = {
+        t("col_permit_number"): st.column_config.TextColumn(help=t("col_permit_number_help")),
+        findings_col: st.column_config.TextColumn(help=t("col_findings_help")),
+        t("col_submitted_date"): st.column_config.TextColumn(help=t("col_submitted_date_help")),
+        t("col_permit_type"): st.column_config.TextColumn(help=t("col_permit_type_help")),
+        t("col_issuance_status"): st.column_config.TextColumn(help=t("col_issuance_status_help")),
+        t("col_permit_status"): st.column_config.TextColumn(help=t("col_permit_status_help")),
+        t("col_last_update"): st.column_config.TextColumn(help=t("col_last_update_help")),
+    }
+
     event = st.dataframe(
         styled,
         hide_index=True,
         width="stretch",
         on_select="rerun",
         selection_mode="multi-row",
+        column_config=column_config,
         key=key,
     )
 

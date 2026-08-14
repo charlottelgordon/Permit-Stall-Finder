@@ -28,7 +28,6 @@ from datetime import date
 import streamlit as st
 
 from i18n import (
-    delay_status_phrase,
     issuance_status_text,
     outcome_headline,
     plain_status_desc,
@@ -41,7 +40,7 @@ from permit_stall_finder.orchestration.pipeline import (
     PipelineExecutionError,
     run_pipeline,
 )
-from permit_stall_finder.schema.stall_detection import DelayStallDetection, Severity
+from permit_stall_finder.schema.stall_detection import Severity
 
 _SEVERITY_RANK: dict[Severity, int] = {
     Severity.SEVERE: 3,
@@ -116,36 +115,6 @@ def address_of(result: PermitAnalysisResult) -> str:
     return _address(result)
 
 
-def _top_delay_detection(result: PermitAnalysisResult) -> DelayStallDetection | None:
-    """Highest-severity *delay* (day-count) detection, if any -- a plain
-    max() over Agent 2's own severity labels restricted to
-    DelayStallDetection, the same pattern _max_severity() uses across all
-    detection types. FrictionStallDetection (inspection-outcome-based, not
-    day-count-based) is deliberately excluded: the results table's "Delay
-    status" column is specifically about elapsed time vs. a cohort, which
-    only DelayStallDetection carries."""
-    delay_detections = [
-        d for d in result.stall_assessment.detections if isinstance(d, DelayStallDetection)
-    ]
-    if not delay_detections:
-        return None
-    return max(delay_detections, key=lambda d: _SEVERITY_RANK[d.severity])
-
-
-def _delay_percent(detection: DelayStallDetection) -> float | None:
-    """Restates a DelayStallDetection's own already-computed
-    excess_days_vs_median as a percentage of its own cohort's own
-    median_days_or_count -- pure arithmetic on two numbers Agent 2 already
-    produced, never a new severity judgment. None whenever either input
-    Agent 2 left as None, or the median is non-positive (a percentage of
-    zero isn't meaningful)."""
-    median = detection.cohort.median_days_or_count
-    excess = detection.excess_days_vs_median
-    if median is None or excess is None or median <= 0:
-        return None
-    return (excess / median) * 100
-
-
 @dataclass(frozen=True)
 class PortfolioRow:
     permit_number: str
@@ -163,7 +132,6 @@ class PortfolioRow:
     submitted_date: date | None = None
     issuance_status: str = "—"
     raw_status_desc: str = "—"
-    delay_status: str = "—"
     last_status_update: str = "—"
     status_date: date | None = None
 
@@ -173,9 +141,8 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
     PermitAnalysisResult. Every field is read directly off the result or
     its nested journey/derived metrics -- no recomputation of anything
     Agent 1/2/3 didn't already compute; the only arithmetic done here is
-    day-count subtraction against "as of" (analyzed_at, when present) and
-    a percentage restatement in _delay_percent() above, both plain
-    re-expressions of already-observed dates/numbers, not new judgments."""
+    day-count subtraction against "as of" (analyzed_at, when present), a
+    plain re-expression of already-observed dates, not a new judgment."""
     snapshot = result.journey.latest_snapshot
     top_severity = _max_severity(result)
     days = (
@@ -195,10 +162,6 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
     )
     issuance_status = issuance_status_text(bool(snapshot and snapshot.issue_date))
     raw_status_desc = snapshot.status_desc if snapshot else "—"
-
-    delay_detection = _top_delay_detection(result)
-    delay_percent = _delay_percent(delay_detection) if delay_detection is not None else None
-    delay_status = delay_status_phrase(delay_percent, delay_detection is not None, result.outcome)
 
     sort_key = (
         _OUTCOME_RANK[result.outcome],
@@ -221,7 +184,6 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
         submitted_date=submitted_date,
         issuance_status=issuance_status,
         raw_status_desc=raw_status_desc,
-        delay_status=delay_status,
         last_status_update=last_status_update,
         status_date=status_date,
     )

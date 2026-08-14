@@ -49,19 +49,20 @@ def render() -> None:
 
 
 def render_switch_button() -> None:
-    """A single button, labeled with the currently-selected role's own
-    name plus a small down-caret (e.g. "Contractor ⌄") -- sits in the
-    same row as the EN/ES toggle once a role is picked. The caret isn't
-    functional (this doesn't open a dropdown, it clears the selection
-    and reopens the picker) but is the common visual shorthand for "this
-    shows your current choice and can be changed," which the bare name
-    alone didn't communicate. Wrapped in its own keyed container so
-    streamlit_app.py's stylesheet can give it the same pill-button
-    treatment as the header's Home link, distinct from a plain default
-    button. The caller controls outer layout/columns; this only renders
-    the button itself."""
+    """A small, low-key text control -- "Role: Contractor ⌄" -- sitting
+    in the same row as the EN/ES toggle once a role is picked,
+    deliberately sized/styled (see streamlit_app.py's stylesheet) to
+    match that toggle's own understated visual weight rather than
+    reading as a prominent button. The "Role:" prefix and the caret are
+    both there so the small text alone still communicates "this is your
+    current selection, click to change" -- neither one is functional on
+    its own (there's no literal dropdown; clicking anywhere clears the
+    selection and reopens the picker). Wrapped in its own keyed
+    container so the stylesheet can target just this control. The
+    caller controls outer layout/columns; this only renders the button
+    itself."""
     label_key = next(lk for pk, lk in _PERSONAS if pk == st.session_state.selected_persona)
     with st.container(key="persona_switch_wrap"):
-        if st.button(f"{t(label_key)} ⌄", key="persona_switch_button", width="stretch"):
+        if st.button(f"{t('persona_switch_prefix')} {t(label_key)} ⌄", key="persona_switch_button", width="stretch"):
             st.session_state.selected_persona = None
             st.rerun()

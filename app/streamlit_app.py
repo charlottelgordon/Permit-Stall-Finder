@@ -177,8 +177,8 @@ st.markdown(
         transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
     }
     .header-home-link:hover {
-        background-color: transparent;
-        color: #052D49;
+        background-color: #0A4066;
+        color: #FFFFFF;
     }
     .header-external-link {
         display: block;
@@ -269,22 +269,28 @@ st.markdown(
         outline-offset: 2px;
     }
     /* The role switcher (shown once a role is picked, next to the EN/ES
-       toggle) -- same small pill shape as the header's Home link, so the
-       two compact header-area buttons read as one consistent style.
-       The caret in its label (see persona_picker.py) is what signals
-       "current selection, click to change." */
+       toggle) -- deliberately NOT styled as a button (no border, no
+       fill): sized and weighted to match the plain "EN · ES" toggle
+       label beside it, so this stays a small, low-key indicator rather
+       than a second prominent control competing for attention in the
+       header area. The "Role:" prefix + caret in its label (see
+       persona_picker.py) are what signal "current selection, click to
+       change" at this small scale -- a subtle underline on hover is the
+       only other affordance. */
     div[class*="st-key-persona_switch_wrap"] div[data-testid="stButton"] button {
-        background-color: #FFFFFF;
+        background-color: transparent;
         color: #052D49;
-        font-weight: 600;
-        font-size: 0.85rem;
-        border: 1.5px solid #052D49;
-        border-radius: 999px;
-        padding: 0.35rem 0.9rem;
+        font-weight: 400;
+        font-size: 0.8rem;
+        border: none;
+        padding: 0.25rem 0.4rem;
+        border-bottom: 1px solid transparent;
+        border-radius: 0;
     }
     div[class*="st-key-persona_switch_wrap"] div[data-testid="stButton"] button:hover {
-        background-color: #052D49;
-        color: #FFFFFF;
+        background-color: transparent;
+        color: #052D49;
+        border-bottom-color: #052D49;
     }
     .search-loading-track {
         width: 100%;

@@ -753,6 +753,7 @@ _STRINGS: dict[str, dict[str, str]] = {
     "persona_developer": {"en": "Developer", "es": "Desarrollador"},
     "persona_government_employee": {"en": "Government Employee", "es": "Empleado de gobierno"},
     "persona_individual": {"en": "Individual", "es": "Particular"},
+    "persona_switch_prefix": {"en": "Role:", "es": "Rol:"},
     "unified_search_placeholder": {
         "en": "Search permits by permit number or address",
         "es": "Busque permisos por número de permiso o dirección",
@@ -790,24 +791,42 @@ _STRINGS: dict[str, dict[str, str]] = {
         "es": "⬇ Descargar permisos buscados",
     },
     "col_permit_number": {"en": "Permit number", "es": "Número de permiso"},
+    "col_permit_number_help": {
+        "en": "The LADBS permit number: year, plan check number, and permit number.",
+        "es": "El número de permiso de LADBS: año, número de revisión de planos y número de permiso.",
+    },
     "col_findings": {"en": "Findings", "es": "Hallazgos"},
+    "col_findings_help": {
+        "en": "How many stall findings this tool detected for this permit, grouped by severity.",
+        "es": "Cuántos hallazgos de estancamiento detectó esta herramienta para este permiso, agrupados por gravedad.",
+    },
     "col_submitted_date": {"en": "Permit submission", "es": "Presentación del permiso"},
+    "col_submitted_date_help": {
+        "en": "The date this permit application was submitted to LADBS.",
+        "es": "La fecha en que se presentó esta solicitud de permiso a LADBS.",
+    },
     "col_permit_type": {"en": "Permit type", "es": "Tipo de permiso"},
+    "col_permit_type_help": {
+        "en": "The category of work this permit covers, as classified by LADBS.",
+        "es": "La categoría de trabajo que cubre este permiso, según la clasificación de LADBS.",
+    },
     "col_issuance_status": {"en": "Issuance status", "es": "Estado de emisión"},
+    "col_issuance_status_help": {
+        "en": "Whether LADBS has issued this permit yet.",
+        "es": "Si LADBS ya ha emitido este permiso.",
+    },
     "col_permit_status": {"en": "Permit status", "es": "Estado del permiso"},
-    "col_delay_status": {"en": "Delay status", "es": "Estado de retraso"},
+    "col_permit_status_help": {
+        "en": "This permit's current status, as reported by LADBS.",
+        "es": "El estado actual de este permiso, según lo informado por LADBS.",
+    },
     "col_last_update": {"en": "Last status update", "es": "Última actualización de estado"},
+    "col_last_update_help": {
+        "en": "How long ago this permit's status was last reported as changed.",
+        "es": "Cuánto tiempo hace que se reportó por última vez un cambio en el estado de este permiso.",
+    },
     "issued_status_text": {"en": "Permit has been issued", "es": "El permiso ha sido emitido"},
     "not_issued_status_text": {"en": "Permit has not been issued", "es": "El permiso no ha sido emitido"},
-    "delayed_more_than_template": {
-        "en": "Permit delayed more than {pct}%",
-        "es": "Permiso retrasado más del {pct}%",
-    },
-    "no_delay_detected": {"en": "No delay detected", "es": "No se detectó retraso"},
-    "not_enough_data_delay": {
-        "en": "Not enough data to assess",
-        "es": "Datos insuficientes para evaluar",
-    },
     "today_label": {"en": "today", "es": "hoy"},
     "one_day_ago": {"en": "1 day ago", "es": "hace 1 día"},
     "days_ago_template": {"en": "{n} days ago", "es": "hace {n} días"},
@@ -905,30 +924,6 @@ def issuance_status_text(issued: bool) -> str:
     no new judgment, just wording an already-observed fact (issue_date is
     None or it isn't)."""
     return t("issued_status_text") if issued else t("not_issued_status_text")
-
-
-def delay_status_phrase(
-    delay_percent: float | None, has_delay_detection: bool, outcome
-) -> str:
-    """Words the results table's 'Delay status' column from values Agent 2
-    already computed: delay_percent is arithmetic on an existing
-    DelayStallDetection's excess_days_vs_median and its cohort's own
-    median_days_or_count (a percentage restatement of numbers Agent 2
-    already produced, not a new severity judgment). has_delay_detection
-    and outcome are Agent 2/the orchestrator's own already-assigned
-    labels, read the same way portfolio.py's other summarize_result()
-    fields are."""
-    if delay_percent is not None and delay_percent > 0:
-        return t("delayed_more_than_template").format(pct=round(delay_percent))
-    if has_delay_detection:
-        # A delay detection exists but a percentage couldn't be computed
-        # (e.g. a zero-variance cohort) -- distinct from "no delay found".
-        return t("not_enough_data_delay")
-    from permit_stall_finder.orchestration.pipeline import AnalysisOutcome
-
-    if outcome == AnalysisOutcome.INSUFFICIENT_EVIDENCE:
-        return t("not_enough_data_delay")
-    return t("no_delay_detected")
 
 
 def translate_error_message(message: str) -> str:
