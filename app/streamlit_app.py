@@ -152,29 +152,40 @@ st.markdown(
         width: auto;
         display: block;
     }
-    /* A plain text link, not a house-picture icon -- a literal house
-       glyph read as confusing/ambiguous on a page whose own subject
-       matter is building permits (easy to mistake for content about a
-       home, not a "go to the homepage" control). Styled to match
-       header-external-link below, as a matched pair. */
+    /* An in-app pill button, not an underlined text link -- it doesn't
+       navigate away from the site (unlike header-external-link below),
+       so it shouldn't carry that same "external link" visual signal.
+       A house-picture icon was tried first and read as confusing on a
+       page whose own subject matter is building permits; a bordered
+       button reads unambiguously as a nav control either way. */
     .header-home-link {
-        display: block;
+        display: inline-flex;
+        align-items: center;
         color: #052D49;
         font-weight: 600;
-        font-size: 0.9rem;
-        text-decoration: none;
-        border-bottom: 1px solid transparent;
-        transition: border-color 0.15s ease-in-out;
+        font-size: 0.85rem;
+        /* !important: Streamlit's own base anchor styling sets
+           text-decoration: underline with higher specificity than a
+           bare class selector here otherwise beats -- confirmed via
+           computed-style inspection, the same class of bug the
+           site-welcome-intro margin fix above ran into. */
+        text-decoration: none !important;
+        padding: 0.35rem 0.9rem;
+        border: 1.5px solid #052D49;
+        border-radius: 999px;
+        background-color: transparent;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
     }
     .header-home-link:hover {
-        border-bottom-color: #052D49;
+        background-color: #052D49;
+        color: #FFFFFF;
     }
     .header-external-link {
         display: block;
         color: #052D49;
         font-weight: 600;
         font-size: 0.9rem;
-        text-decoration: none;
+        text-decoration: none !important;
         border-bottom: 1px solid transparent;
         transition: border-color 0.15s ease-in-out;
         /* Truncates with an ellipsis on a narrow viewport instead of
@@ -256,6 +267,24 @@ st.markdown(
     div[class*="st-key-persona_picker_row"] div[data-testid="stButton"] button:focus-visible {
         outline: 2px solid #052D49;
         outline-offset: 2px;
+    }
+    /* The role switcher (shown once a role is picked, next to the EN/ES
+       toggle) -- same small pill shape as the header's Home link, so the
+       two compact header-area buttons read as one consistent style.
+       The caret in its label (see persona_picker.py) is what signals
+       "current selection, click to change." */
+    div[class*="st-key-persona_switch_wrap"] div[data-testid="stButton"] button {
+        background-color: #FFFFFF;
+        color: #052D49;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border: 1.5px solid #052D49;
+        border-radius: 999px;
+        padding: 0.35rem 0.9rem;
+    }
+    div[class*="st-key-persona_switch_wrap"] div[data-testid="stButton"] button:hover {
+        background-color: #052D49;
+        color: #FFFFFF;
     }
     .search-loading-track {
         width: 100%;

@@ -50,11 +50,18 @@ def render() -> None:
 
 def render_switch_button() -> None:
     """A single button, labeled with the currently-selected role's own
-    name (e.g. "Contractor") -- sits in the same row as the EN/ES toggle
-    once a role is picked. Clicking it clears the selection and reopens
-    the picker, so a wrong/accidental choice isn't a dead end. The caller
-    controls layout/columns; this just renders the button itself."""
+    name plus a small down-caret (e.g. "Contractor ⌄") -- sits in the
+    same row as the EN/ES toggle once a role is picked. The caret isn't
+    functional (this doesn't open a dropdown, it clears the selection
+    and reopens the picker) but is the common visual shorthand for "this
+    shows your current choice and can be changed," which the bare name
+    alone didn't communicate. Wrapped in its own keyed container so
+    streamlit_app.py's stylesheet can give it the same pill-button
+    treatment as the header's Home link, distinct from a plain default
+    button. The caller controls outer layout/columns; this only renders
+    the button itself."""
     label_key = next(lk for pk, lk in _PERSONAS if pk == st.session_state.selected_persona)
-    if st.button(t(label_key), key="persona_switch_button", width="stretch"):
-        st.session_state.selected_persona = None
-        st.rerun()
+    with st.container(key="persona_switch_wrap"):
+        if st.button(f"{t(label_key)} ⌄", key="persona_switch_button", width="stretch"):
+            st.session_state.selected_persona = None
+            st.rerun()
