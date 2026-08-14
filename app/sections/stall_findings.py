@@ -65,9 +65,21 @@ several caveats read as one continuous note rather than a formal list.
 render()'s mixed_grounding_caption line (a caption below the "Where
 this project has stalled" header noting that some findings are
 KB-backed and some aren't) is removed -- each card already states its
-own grounding status individually via _render_sources_section(), so
-the blanket caption above the cards was telling the user something
-every card already tells them itself.
+own grounding status individually (a GROUNDED card via
+_render_sources_section(), a NO_ENTRY_AVAILABLE one via its own
+heading below), so the blanket caption above the cards was telling the
+user something every card already tells them itself.
+
+_render_card() short-circuits after the "No authoritative guidance
+available" block for a NO_ENTRY_AVAILABLE explanation, skipping Steps
+you can take / Steps that depend on the city / Source & grounding
+entirely rather than rendering each of those as its own "no
+guidance"/"no entry" restatement -- explain_detection() guarantees all
+three are empty whenever there's no KB entry (see
+developer_explainer.py), so showing them added nothing past the first
+sentence. detection.caveats (a structural field, distinct from KB
+grounding) still renders when present, since those aren't guaranteed
+empty in this case.
 """
 
 from __future__ import annotations
@@ -246,13 +258,24 @@ def _render_card(
         _render_metrics(detection)
         st.divider()
 
-        what_means_heading = (
-            t("no_entry_heading")
-            if explanation.grounding_status == GroundingStatus.NO_ENTRY_AVAILABLE
-            else t("what_this_usually_means")
-        )
+        if explanation.grounding_status == GroundingStatus.NO_ENTRY_AVAILABLE:
+            # Steps you can take / Steps that depend on the city / Source &
+            # grounding are guaranteed empty whenever there's no KB entry
+            # (explain_detection() always returns [], [], None for these --
+            # see developer_explainer.py) -- each would just be its own
+            # "no guidance/no entry" restatement of the same fact this
+            # heading already states once. Say it once and stop.
+            st.markdown(f"**{t('no_entry_heading')}**")
+            st.write(explanation.what_this_usually_means)
 
-        st.markdown(f"**{what_means_heading}**")
+            if detection.caveats:
+                st.divider()
+                st.markdown(f"**{t('caveats')}**")
+                for caveat in detection.caveats:
+                    st.markdown(f"- {caveat}")
+            return
+
+        st.markdown(f"**{t('what_this_usually_means')}**")
         st.write(explanation.what_this_usually_means)
         st.divider()
 
