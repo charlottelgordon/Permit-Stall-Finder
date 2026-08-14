@@ -6,22 +6,39 @@ by iterating stall_assessment.detections directly, in order -- the two
 lists are guaranteed the same length and order (see UI_DESIGN.md §3).
 
 Every sentence a card shows is either a structured field displayed as-is
-(severity, elapsed_days, percentile_rank, ...) or one of Agent 3's five
+(severity, elapsed_days, percentile_rank, ...) or one of Agent 3's
 pre-composed section strings. This module never concatenates numbers into
 new prose of its own (UI_DESIGN.md decision "no UI-composed analytical
 sentences from raw numbers").
 
 Phase 18: each card is now one single st.expander, collapsed by default,
-labeled with just a severity dot + category + severity word (e.g. "🔴
-Gap between inspections — SEVERE") -- so a user sees every finding's
-headline and severity at a glance and opens only the ones they care
-about. Streamlit doesn't allow expanders nested inside expanders, so
-everything that used to be its own small expander inside the card
-(What the data shows / What this usually means / Steps.../ Source &
-grounding) is now plain content once a card itself is opened -- there's
-nothing left to additionally collapse one level down. The metrics row
-also switched from st.metric() (a large, bold stat display) to plain
-markdown text at normal body size.
+labeled with a severity dot + category + severity word + whether this
+specific finding is still ongoing (e.g. "🔴 Gap between inspections —
+SEVERE · Completed") -- so a user sees every finding's headline,
+severity, and ongoing/concluded status at a glance and opens only the
+ones they care about. Streamlit doesn't allow expanders nested inside
+expanders, so everything that used to be its own small expander inside
+the card (What the data shows / What this usually means / Steps.../
+Source & grounding) is now plain content once a card itself is opened
+-- there's nothing left to additionally collapse one level down. The
+metrics row also switched from st.metric() (a large, bold stat display)
+to plain markdown text at normal body size.
+
+"What the data shows" is no longer rendered here at all (removed as
+redundant with the metrics row above it) -- explanation.
+what_the_data_shows still exists and is still shown in the downloadable
+report (report_export.py), just not on this on-screen card. Where that
+removed prose named a specific inspection (e.g. "between two recorded
+inspections (Special/Order Compliance -> Interior/Exterior Lathing)"),
+the same information is now a small caption directly under the
+"Elapsed days" stat instead, read from detection.stage_label -- a
+structured field, not text parsed out of prose (see
+_stage_context_caption()).
+
+Cards are ordered ongoing-first, already-concluded-last (see
+_is_ongoing()/render()'s sort) -- someone checking in on an active
+project cares most about what's still actively stalled right now, not
+a gap between two inspections that both already happened.
 """
 
 from __future__ import annotations
@@ -54,8 +71,11 @@ from permit_stall_finder.schema.developer_explanation import (
 from permit_stall_finder.schema.stall_detection import (
     DelayStallDetection,
     FrictionStallDetection,
+    IntervalState,
+    LifecycleStage,
     Severity,
     StallAssessment,
+    StallCategory,
 )
 
 _SEVERITY_DOT = {
@@ -66,9 +86,51 @@ _SEVERITY_DOT = {
 }
 
 
+def _is_ongoing(detection: DelayStallDetection | FrictionStallDetection) -> bool:
+    """Whether this specific finding's own measurement window is still
+    open right now, not whether the permit as a whole is ongoing.
+    DelayStallDetection carries this directly as interval_state (e.g.
+    INTER_INSPECTION_GAP is always a COMPLETED, already-concluded gap
+    between two past inspections -- never ongoing, by definition of
+    what that category measures). FrictionStallDetection carries the
+    analogous concept as lifecycle_stage: whether the permit's own
+    lifecycle had already ended when the friction count was measured."""
+    if isinstance(detection, DelayStallDetection):
+        return detection.interval_state == IntervalState.ONGOING
+    return detection.lifecycle_stage == LifecycleStage.ONGOING
+
+
 def _card_label(detection: DelayStallDetection | FrictionStallDetection) -> str:
     dot = _SEVERITY_DOT[detection.severity]
-    return f"{dot} {category_label(detection.category)} — {severity_label(detection.severity).upper()}"
+    ongoing_label = t("card_label_ongoing") if _is_ongoing(detection) else t("card_label_completed")
+    return (
+        f"{dot} {category_label(detection.category)} — {severity_label(detection.severity).upper()} "
+        f"· {ongoing_label}"
+    )
+
+
+def _stage_context_caption(detection: DelayStallDetection | FrictionStallDetection) -> str | None:
+    """Small text under the "Elapsed days" stat naming exactly which
+    inspection(s) this gap sits between/since -- reads detection.
+    stage_label directly (a structured field Agent 2 already set, not
+    parsed out of the now-removed "What the data shows" prose that used
+    to be the only place this showed up). Only these two categories set
+    stage_label to something genuinely inspection-specific worth
+    surfacing this way -- ISSUANCE_TO_FIRST_INSPECTION_GAP and
+    NO_INSPECTION_SINCE_ISSUANCE set it to an internal category tag, not
+    a name (confirmed by reading stall_detector.py directly); PRE_
+    ISSUANCE_STATUS_DWELL's stage_label is the current status_desc,
+    already shown in quick_glance.py's own "Permit status" block, so
+    repeating it here would be exactly the duplication this whole app
+    has otherwise been careful to avoid. FrictionStallDetection has no
+    stage_label at all -- returns None for it unconditionally."""
+    if not isinstance(detection, DelayStallDetection):
+        return None
+    if detection.category == StallCategory.INTER_INSPECTION_GAP:
+        return t("stage_context_between").format(stage=detection.stage_label.replace(" -> ", " → "))
+    if detection.category == StallCategory.INACTIVITY_SINCE_LAST_INSPECTION:
+        return t("stage_context_most_recent").format(stage=detection.stage_label)
+    return None
 
 
 def _render_metrics(detection: DelayStallDetection | FrictionStallDetection) -> None:
@@ -85,6 +147,9 @@ def _render_metrics(detection: DelayStallDetection | FrictionStallDetection) -> 
     cols = st.columns(3)
     if isinstance(detection, DelayStallDetection):
         cols[0].markdown(f"**{t('elapsed_days_metric')}**  \n{detection.elapsed_days} {t('days_suffix')}")
+        stage_context = _stage_context_caption(detection)
+        if stage_context:
+            cols[0].caption(stage_context)
         if detection.percentile_rank is not None:
             cols[1].markdown(f"**{t('how_unusual_metric')}**  \n{unusualness_phrase(detection.percentile_rank)}")
         if detection.excess_days_vs_median is not None:
@@ -171,10 +236,6 @@ def _render_card(
             else t("what_this_usually_means")
         )
 
-        st.markdown(f"**{t('what_data_shows')}**")
-        st.write(explanation.what_the_data_shows)
-        st.divider()
-
         st.markdown(f"**{what_means_heading}**")
         st.write(explanation.what_this_usually_means)
         st.divider()
@@ -215,5 +276,18 @@ def render(
     if has_mixed_grounding(developer_explanations.explanations):
         st.caption(t("mixed_grounding_caption"))
 
-    for detection, explanation in zip(stall_assessment.detections, developer_explanations.explanations):
+    # Ongoing findings first, already-concluded ones last (e.g. a
+    # finished INTER_INSPECTION_GAP -- a gap between two inspections
+    # that already both happened -- sinks below anything still actively
+    # stalled right now). A stable sort on detection/explanation pairs
+    # together, not on detections alone, so explanations stay correctly
+    # paired with their own detection (the two lists are guaranteed
+    # same-length/order per this module's own docstring, but only if
+    # kept in lockstep through any reordering here too); within each
+    # group, the original pipeline order is preserved.
+    pairs = sorted(
+        zip(stall_assessment.detections, developer_explanations.explanations),
+        key=lambda pair: not _is_ongoing(pair[0]),
+    )
+    for detection, explanation in pairs:
         _render_card(detection, explanation, kb)

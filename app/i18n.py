@@ -674,6 +674,13 @@ _STRINGS: dict[str, dict[str, str]] = {
         "es": "Algunos hallazgos a continuación están respaldados por una entrada autorizada de "
         "la base de conocimiento; otros no -- esto se indica individualmente en cada hallazgo.",
     },
+    "card_label_ongoing": {"en": "Ongoing", "es": "En curso"},
+    "card_label_completed": {"en": "Completed", "es": "Completado"},
+    "stage_context_between": {"en": "Between {stage}", "es": "Entre {stage}"},
+    "stage_context_most_recent": {
+        "en": "Most recent inspection: {stage}",
+        "es": "Inspección más reciente: {stage}",
+    },
     "elapsed_days_metric": {"en": "Elapsed days", "es": "Días transcurridos"},
     "percentile_rank_metric": {"en": "Percentile rank", "es": "Percentil"},
     "excess_vs_median_metric": {"en": "Excess vs. median", "es": "Exceso vs. mediana"},
