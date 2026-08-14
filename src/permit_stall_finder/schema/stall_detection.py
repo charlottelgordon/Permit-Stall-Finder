@@ -116,6 +116,22 @@ class CohortDefinition:
 
 
 @dataclass(frozen=True)
+class RemainingDurationForecast:
+    """Conditioned on a permit already being elapsed_days into an ONGOING
+    interval, how much MORE time comparable permits took once they
+    concluded -- see analysis/forecast.py's conditional_remaining_duration()
+    for how this is computed, and render_remaining_duration_forecast()
+    below for the sanctioned way to turn it into a sentence. Never present
+    for an ACTIVE_PEER_DWELL cohort (see forecast.py's module docstring)."""
+
+    conditional_n: int
+    conditional_confidence: CohortConfidence
+    remaining_p50_days: float
+    remaining_p75_days: float
+    remaining_p90_days: float
+
+
+@dataclass(frozen=True)
 class EvidenceRef:
     kind: str  # "status_snapshot" | "inspection_event" | "inspection_event_pair" | "event_count"
     description: str
@@ -151,6 +167,7 @@ class DelayStallDetection:
     caveats: list[str]
     based_on_match_status: MatchStatus
     carried_data_quality_flags: list[str] = field(default_factory=list)
+    remaining_duration_forecast: RemainingDurationForecast | None = None
 
 
 @dataclass(frozen=True)
@@ -225,3 +242,23 @@ def render_dwell_statement(detection: DelayStallDetection) -> str:
     if detection.status_persistence_confirmed_by_repeated_observation:
         statement += " This status has been confirmed present across repeated observation."
     return statement
+
+
+def render_remaining_duration_forecast(detection: DelayStallDetection) -> str | None:
+    """The sanctioned way to turn a RemainingDurationForecast into a
+    sentence. Returns None when there is no forecast (thin conditional
+    sample, or a category this doesn't apply to) -- callers must render
+    nothing in that case, not an apologetic placeholder. Always frames the
+    number as a comparison to OTHER permits that were already this
+    delayed, never as a promise about this permit -- structurally cannot
+    produce "this permit will take/finish" phrasing, only "among
+    comparable permits already this delayed, ...".
+    """
+    forecast = detection.remaining_duration_forecast
+    if forecast is None:
+        return None
+    return (
+        "Among comparable permits that were already delayed this long, the middle half "
+        f"finished within {forecast.remaining_p50_days:.0f}-{forecast.remaining_p75_days:.0f} "
+        f"more days once they resumed (based on {forecast.conditional_n} comparable permits)."
+    )

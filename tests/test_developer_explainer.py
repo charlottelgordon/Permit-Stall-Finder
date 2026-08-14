@@ -147,3 +147,29 @@ def test_never_recomputes_severity_or_percentile_rank():
     explanation = explain_detection(d, kb, now=NOW)
     assert explanation.source_detection_severity == d.severity
     assert explanation.source_percentile_rank == d.percentile_rank
+
+
+def test_developer_explanation_has_no_forecast_field():
+    """The remaining-duration forecast (analysis/forecast.py) is
+    deliberately NOT routed through DeveloperExplanation at all -- unlike
+    severity/percentile_rank (which Agent 3 carries forward as
+    traceability-only fields), the UI reads remaining_duration_forecast
+    straight off the original DelayStallDetection, the same way it already
+    reads elapsed_days/percentile_rank for the metrics row. This is a
+    structural guarantee against Agent 3 ever duplicating or
+    recomputing an Agent-2-owned number in a second place: there is
+    simply no field here for that to happen to."""
+    from permit_stall_finder.schema.developer_explanation import DeveloperExplanation
+
+    assert "remaining_duration_forecast" not in DeveloperExplanation.__dataclass_fields__
+
+
+def test_explain_detection_does_not_touch_source_forecast():
+    """Agent 3 must not mutate or otherwise interfere with Agent 2's
+    forecast -- it doesn't even look at it, since DelayStallDetection is
+    a frozen dataclass and explain_detection() never reconstructs one."""
+    kb = default_knowledge_base()
+    d = _delay(StallCategory.NO_INSPECTION_SINCE_ISSUANCE)
+    original_forecast = d.remaining_duration_forecast
+    explain_detection(d, kb, now=NOW)
+    assert d.remaining_duration_forecast is original_forecast

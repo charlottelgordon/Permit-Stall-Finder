@@ -150,6 +150,11 @@ def test_pre_issuance_dwell_severe(monkeypatch):
     assert any("length-biased" in c or "currently sitting" in c for c in d.caveats)
     assert any("single occasion" in c for c in d.caveats)
     assert d.cannot_infer  # never empty
+    # PRE_ISSUANCE_STATUS_DWELL is the one ACTIVE_PEER_DWELL category --
+    # its cohort is length-biased, so it must never get a remaining-
+    # duration forecast even though the population here would otherwise
+    # be large enough to support one.
+    assert d.remaining_duration_forecast is None
 
 
 def test_pre_issuance_dwell_below_watch_produces_no_detection(monkeypatch):
@@ -229,6 +234,71 @@ def test_no_inspection_since_issuance_ineligible_type_is_coverage_gap(monkeypatc
     matching_gaps = [g for g in assessment.coverage_gaps if "not assessed for Bldg-New" in g]
     assert len(matching_gaps) == 1
     assert "not currently interpretable as evidence" in matching_gaps[0]
+
+
+def test_no_inspection_since_issuance_gets_remaining_duration_forecast(monkeypatch):
+    # elapsed_days = (2026-08-11 - 2025-07-17).days = 390. population is
+    # 0..399, so 390 sits at the 97th percentile (severe) while still
+    # leaving 10 members (390..399) >= elapsed_days for the conditional tail.
+    population = [float(i) for i in range(400)]
+    monkeypatch.setattr(
+        pop, "fetch_issuance_to_first_inspection_population",
+        lambda permit_type, exclude_permit_number=None, sample_size=200: list(population),
+    )
+    snapshot = _snapshot(permit_type="Bldg-Alter/Repair", status_desc="Issued", issue_date=date(2025, 7, 17))
+    journey = _journey(MatchStatus.ISSUED_NO_INSPECTIONS_FOUND, snapshot, inspection_events=[])
+
+    assessment = assess_stalls(journey, now=NOW)
+
+    d = assessment.detections[0]
+    assert d.category == StallCategory.NO_INSPECTION_SINCE_ISSUANCE
+    assert d.severity == Severity.SEVERE
+    forecast = d.remaining_duration_forecast
+    assert forecast is not None
+    assert forecast.conditional_n > 0
+    assert forecast.remaining_p50_days >= 0
+
+
+def test_no_inspection_since_issuance_forecast_none_when_conditional_sample_thin(monkeypatch):
+    # elapsed_days will exceed every population member (max is 49), so the
+    # conditional tail is empty and no forecast is possible.
+    monkeypatch.setattr(
+        pop, "fetch_issuance_to_first_inspection_population",
+        lambda permit_type, exclude_permit_number=None, sample_size=200: [float(i) for i in range(50)],
+    )
+    snapshot = _snapshot(permit_type="Bldg-Alter/Repair", status_desc="Issued", issue_date=date(2020, 1, 1))
+    journey = _journey(MatchStatus.ISSUED_NO_INSPECTIONS_FOUND, snapshot, inspection_events=[])
+
+    assessment = assess_stalls(journey, now=NOW)
+
+    d = assessment.detections[0]
+    assert d.category == StallCategory.NO_INSPECTION_SINCE_ISSUANCE
+    assert d.remaining_duration_forecast is None
+
+
+# --- inactivity since last inspection --------------------------------------
+
+
+def test_inactivity_since_last_inspection_gets_remaining_duration_forecast(monkeypatch):
+    # elapsed_days = (2026-08-11 - 2025-07-17).days = 390, same construction
+    # as the no-inspection-since-issuance forecast test above.
+    population = [float(i) for i in range(400)]
+    monkeypatch.setattr(
+        pop, "fetch_inter_inspection_gap_population",
+        lambda permit_type, exclude_permit_number=None, sample_size=200: list(population),
+    )
+    events = [_event(date(2025, 7, 17), "Approved", event_id="e1")]
+    # status_desc must not be a terminal status, or FINALIZATION_GAP fires instead.
+    snapshot = _snapshot(status_desc="Issued", issue_date=date(2024, 1, 1))
+    journey = _journey(MatchStatus.ISSUED_WITH_INSPECTIONS, snapshot, inspection_events=events)
+
+    assessment = assess_stalls(journey, now=NOW)
+
+    d = next(d for d in assessment.detections if d.category == StallCategory.INACTIVITY_SINCE_LAST_INSPECTION)
+    assert d.severity == Severity.SEVERE
+    forecast = d.remaining_duration_forecast
+    assert forecast is not None
+    assert forecast.conditional_n > 0
 
 
 def test_no_inspection_since_issuance_administrative_permit_no_false_positive(monkeypatch):
@@ -390,6 +460,10 @@ def test_friction_detected_carries_exposure_and_rate(monkeypatch):
     assert d.lifecycle_stage == LifecycleStage.COMPLETED
     assert d.meets_minimum_count is True
     assert d.meets_minimum_exposure is True
+    # FrictionStallDetection is a count-based detection, not a duration --
+    # it has no remaining_duration_forecast field at all (structural, not
+    # just an unset default).
+    assert not hasattr(d, "remaining_duration_forecast")
 
 
 # --- finalization gap -------------------------------------------------

@@ -4,7 +4,7 @@ one of them is a plain substring/regex test that can run in CI against
 both rendered output and the knowledge base itself, with no ambiguity
 about what "banned" means.
 
-Three independent gates:
+Four independent gates:
 1. No claim of normal/expected completion duration from an
    ACTIVE_PEER_DWELL comparison (must only say "longer than X% of
    currently observed peers," never "typically takes N days").
@@ -12,6 +12,11 @@ Three independent gates:
 3. No blame, causality, fault, or non-compliance language anywhere in
    Agent 3 output or the knowledge base -- Agent 2's severity is a
    percentile ranking, never a verdict.
+4. No point-estimate duration promise about THE PERMIT BEING RENDERED
+   from a conditional remaining-duration forecast (analysis/forecast.py)
+   -- that forecast is a distributional statement about OTHER,
+   comparable permits' already-concluded durations; it must never
+   collapse into an ETA for this one.
 """
 
 from __future__ import annotations
@@ -63,6 +68,27 @@ BLAME_CAUSALITY_PHRASES = [
 ]
 
 
+POINT_ESTIMATE_DURATION_PHRASES = [
+    "will take",
+    "will need",
+    "will finish",
+    "will be done",
+    "will be complete",
+    "will resume",
+    "should take about",
+    "should finish",
+    "should be done in",
+    "should be done by",
+    "is expected to need",
+    "is expected to take",
+    "expected to finish",
+    "expected total",
+    "estimated to take",
+    "estimated completion",
+    "eta",
+]
+
+
 class BannedPhraseError(ValueError):
     def __init__(self, context: str, text: str, hits: list[str]):
         self.context = context
@@ -88,6 +114,13 @@ def assert_no_known_total_duration_claim(text: str, context: str = "text") -> No
 
 def assert_no_blame_language(text: str, context: str = "text") -> None:
     _scan(text, BLAME_CAUSALITY_PHRASES, context)
+
+
+def assert_no_point_estimate_duration_claim(text: str, context: str = "text") -> None:
+    """A conditional remaining-duration forecast may describe how long
+    OTHER, comparable permits took once they resumed; it must never read
+    as a promise about the permit currently being rendered."""
+    _scan(text, POINT_ESTIMATE_DURATION_PHRASES, context)
 
 
 _LOOKS_LIKE_SPECIFIC_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")

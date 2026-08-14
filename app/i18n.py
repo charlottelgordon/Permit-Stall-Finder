@@ -37,6 +37,7 @@ from permit_stall_finder.schema.stall_detection import (
     BenchmarkSemantics,
     CohortConfidence,
     IntervalState,
+    RemainingDurationForecast,
     Severity,
     StallCategory,
 )
@@ -311,6 +312,21 @@ def count_vs_typical_phrase(excess_count: float, benchmark_semantics: BenchmarkS
     if rounded >= 0:
         return t("more_than_typical").format(n=rounded)
     return t("fewer_than_typical").format(n=abs(rounded))
+
+
+def remaining_duration_phrase(forecast: RemainingDurationForecast) -> str:
+    """Plain-language rendering of a RemainingDurationForecast -- always a
+    comparison to other, comparable permits' already-concluded durations,
+    never a promise about the permit being viewed. Mirrors
+    schema/stall_detection.py's render_remaining_duration_forecast() (the
+    single-language contract/test anchor for this same rule) but produces
+    the bilingual, UI-facing sentence, the same relationship
+    days_vs_typical_phrase() has to render_dwell_statement()."""
+    return t("remaining_duration_forecast_phrase").format(
+        p50=round(forecast.remaining_p50_days),
+        p75=round(forecast.remaining_p75_days),
+        n=forecast.conditional_n,
+    )
 
 
 _SEVERITY_ORDER = [Severity.SEVERE, Severity.ELEVATED, Severity.WATCH]
@@ -596,6 +612,18 @@ _STRINGS: dict[str, dict[str, str]] = {
         "es": "{n} menos que otros permisos en este paso",
     },
     "based_on_n_similar": {"en": "Based on {n} similar permits", "es": "Basado en {n} permisos similares"},
+    "remaining_duration_forecast_header": {
+        "en": "How much longer, once it moves",
+        "es": "Cuánto más, una vez que avance",
+    },
+    "remaining_duration_forecast_phrase": {
+        "en": "Among comparable permits that were already delayed this long, the middle half "
+        "finished within {p50}–{p75} more days once they resumed (based on {n} comparable "
+        "permits).",
+        "es": "Entre los permisos comparables que ya llevaban este mismo retraso, la mitad "
+        "intermedia terminó en {p50}–{p75} días más una vez que se reanudaron (basado en "
+        "{n} permisos comparables).",
+    },
     "info_no_permits_found": {
         "en": "No permits found for that address. Try a shorter or differently formatted address.",
         "es": "No se encontraron permisos para esa dirección. Intente con una dirección más "

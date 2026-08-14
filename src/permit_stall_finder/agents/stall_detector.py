@@ -56,6 +56,7 @@ from datetime import date, datetime, timezone
 from permit_stall_finder import config
 from permit_stall_finder.analysis import cohorts as cohort_lib
 from permit_stall_finder.analysis.coverage_eligibility import assess_eligibility
+from permit_stall_finder.analysis.forecast import conditional_remaining_duration
 from permit_stall_finder.analysis.inspection_exemption import assess_inspection_exemption
 from permit_stall_finder.analysis.severity import classify_severity, percentile_rank
 from permit_stall_finder.ingestion import cohort_populations as pop
@@ -449,6 +450,8 @@ def _detect_no_inspection_since_issuance(journey, permit_type, as_of, now, thres
     if severity is None:
         return None, None
 
+    forecast = conditional_remaining_duration(elapsed_days, population)
+
     return (
         DelayStallDetection(
             permit_number=journey.permit_number,
@@ -482,6 +485,7 @@ def _detect_no_inspection_since_issuance(journey, permit_type, as_of, now, thres
             caveats=[_ONGOING_CAVEAT, _ONGOING_VS_COMPLETED_COHORT_CAVEAT],
             based_on_match_status=journey.match_status,
             carried_data_quality_flags=data_quality_flags,
+            remaining_duration_forecast=forecast,
         ),
         None,
     )
@@ -581,6 +585,8 @@ def _detect_inactivity_since_last_inspection(
     if severity is None:
         return None, None
 
+    forecast = conditional_remaining_duration(elapsed_days, population)
+
     return (
         DelayStallDetection(
             permit_number=journey.permit_number,
@@ -611,6 +617,7 @@ def _detect_inactivity_since_last_inspection(
             caveats=[_ONGOING_CAVEAT, _ONGOING_VS_COMPLETED_COHORT_CAVEAT],
             based_on_match_status=journey.match_status,
             carried_data_quality_flags=data_quality_flags,
+            remaining_duration_forecast=forecast,
         ),
         None,
     )

@@ -39,6 +39,7 @@ from i18n import (
     extra_time_metric_label,
     grounding_strength_label,
     interval_state_label,
+    remaining_duration_phrase,
     severity_label,
     t,
     unusualness_phrase,
@@ -153,6 +154,22 @@ def _render_source_grounding(explanation: DeveloperExplanation, kb: KnowledgeBas
             st.markdown(f"- {caveat}")
 
 
+def _render_remaining_duration_forecast(detection: DelayStallDetection | FrictionStallDetection) -> bool:
+    """"How much longer, once it moves" -- only ever present on a
+    DelayStallDetection whose interval is still ONGOING and benchmarked
+    against a COMPLETED_INTERVAL cohort with an adequately-sized
+    conditional sample (analysis/forecast.py); every other detection
+    (FrictionStallDetection, an ACTIVE_PEER_DWELL dwell detection, or a
+    thin conditional sample) simply has no forecast to show. Returns
+    whether it rendered anything, so the card can decide whether a
+    divider belongs after it."""
+    if not isinstance(detection, DelayStallDetection) or detection.remaining_duration_forecast is None:
+        return False
+    st.markdown(f"**{t('remaining_duration_forecast_header')}**")
+    st.write(remaining_duration_phrase(detection.remaining_duration_forecast))
+    return True
+
+
 def _render_card(
     detection: DelayStallDetection | FrictionStallDetection,
     explanation: DeveloperExplanation,
@@ -178,6 +195,9 @@ def _render_card(
         st.markdown(f"**{what_means_heading}**")
         st.write(explanation.what_this_usually_means)
         st.divider()
+
+        if _render_remaining_duration_forecast(detection):
+            st.divider()
 
         st.markdown(f"**{t('steps_you_can_take')}**")
         _render_steps_content(explanation.developer_actionable_steps, t("no_developer_steps"))
