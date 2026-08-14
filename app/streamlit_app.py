@@ -346,8 +346,15 @@ conn = get_connection()
 
 # Language toggle, right-aligned above the welcome text (moved off the
 # search row -- next to the tooltip there, it was crowding that row's
-# spacing).
-_, toggle_col = st.columns([5, 1])
+# spacing). Once a role is picked, its own switch button sits in this
+# same row, immediately to the toggle's left -- no separate "Browsing
+# as" line taking up its own row.
+if st.session_state.selected_persona:
+    _, switch_col, toggle_col = st.columns([4, 1, 1])
+    with switch_col:
+        persona_picker.render_switch_button()
+else:
+    _, toggle_col = st.columns([5, 1])
 with toggle_col:
     render_language_toggle()
 
@@ -360,12 +367,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- Persona gate: the search bar stays hidden until a persona is picked -
+# --- Persona gate: the search bar stays hidden until a role is picked --
 if not st.session_state.selected_persona:
     persona_picker.render()
 else:
-    persona_picker.render_change_link()
-
     # --- Search: one bar, permit number(s) or address ---------------------
     _, search_col, _ = st.columns([1, 3, 1])
     with search_col:

@@ -7,13 +7,17 @@ is enough for the current request; a future personalization pass can
 read that value without any changes here.
 
 Each "card" is an st.image with a real st.button stretched over it via
-CSS (position: absolute, opacity: 0) so the image itself is the click
+CSS (see streamlit_app.py's stylesheet) so the image itself is the click
 target -- Streamlit has no native clickable-image widget. The button's
 own text stays as its accessible name (screen readers still get it) even
-though it's visually invisible; the image supplies the visible label.
+though it's visually transparent; the image supplies the visible label.
 st.container(key=...) is what makes this possible: it's the only way to
 get a stable, per-card CSS hook (a "st-key-<key>" class) to scope the
 overlay to just that one card instead of every button on the page.
+
+The word "persona" is internal terminology only -- never rendered in
+any user-facing string here (see i18n.py's persona_* keys, none of
+which say the word "persona" itself).
 """
 
 from __future__ import annotations
@@ -55,15 +59,13 @@ def render() -> None:
                     st.rerun()
 
 
-def render_change_link() -> None:
-    """Small "Browsing as: X -- Change" affordance shown above the search
-    bar once a persona is picked, so a wrong/accidental selection isn't a
-    dead end."""
+def render_switch_button() -> None:
+    """A single button, labeled with the currently-selected role's own
+    name (e.g. "Contractor") -- sits in the same row as the EN/ES toggle
+    once a role is picked. Clicking it clears the selection and reopens
+    the picker, so a wrong/accidental choice isn't a dead end. The caller
+    controls layout/columns; this just renders the button itself."""
     label_key = next(lk for pk, _, lk in _PERSONAS if pk == st.session_state.selected_persona)
-    left, right = st.columns([5, 1])
-    with left:
-        st.caption(t("persona_browsing_as").format(persona=t(label_key)))
-    with right:
-        if st.button(t("persona_change"), key="persona_change_button"):
-            st.session_state.selected_persona = None
-            st.rerun()
+    if st.button(t(label_key), key="persona_switch_button", width="stretch"):
+        st.session_state.selected_persona = None
+        st.rerun()

@@ -748,8 +748,6 @@ _STRINGS: dict[str, dict[str, str]] = {
     "persona_developer": {"en": "Developer", "es": "Desarrollador"},
     "persona_government_employee": {"en": "Government Employee", "es": "Empleado de gobierno"},
     "persona_individual": {"en": "Individual", "es": "Particular"},
-    "persona_browsing_as": {"en": "Browsing as: {persona}", "es": "Navegando como: {persona}"},
-    "persona_change": {"en": "Change", "es": "Cambiar"},
     "unified_search_placeholder": {
         "en": "Search permits by permit number or address",
         "es": "Busque permisos por número de permiso o dirección",
