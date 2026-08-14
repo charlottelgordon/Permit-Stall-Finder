@@ -5,8 +5,9 @@ dropped in Phase 14 since the results table's own "Findings" column now
 covers it, right-panel restructured to per-finding cards in Phase 15).
 One tab per selected permit, so a user can hold several open at once
 (e.g. their own permit plus a neighbor's, or several units on the same
-job). Each tab opens with a short orientation line explaining what a
-"finding" is, then splits into two panels:
+job). A short orientation line explaining what a "finding" is sits once
+above the tab set (not repeated per tab); each tab itself splits into
+two panels:
 
 - Left: the permit's at-a-glance facts and full "Top Findings" bullet
   list (quick_glance.render()), then three sections stacked above the
@@ -109,14 +110,6 @@ def _render_other_permits_at_address(result: PermitAnalysisResult) -> None:
 
 
 def _render_one(result: PermitAnalysisResult, kb) -> None:
-    # Phase 14: the blue severity-count banner that used to open every
-    # tab was removed -- the results table's own "Findings" column now
-    # shows the same "3 severe, 1 watch" tally (with a blue highlight on
-    # any row with a severe finding), so repeating it here was flagged as
-    # duplication. This orientation line stays: it's framing/context
-    # text, not a restatement of a number shown elsewhere.
-    st.caption(t("stall_findings_banner_subtext"))
-
     left_col, right_col = st.columns([2, 3])
     with left_col:
         quick_glance.render(result)
@@ -165,6 +158,16 @@ def render(conn, permit_numbers: list[str], results_cache: dict, kb) -> None:
         _ensure_cached(conn, permit_number, results_cache)
 
     st.subheader(t("drill_down_header"))
+    # Phase 14: the blue severity-count banner that used to open every tab
+    # was removed -- the results table's own "Findings" column now shows
+    # the same "3 severe, 1 watch" tally (with a blue highlight on any row
+    # with a severe finding), so repeating it here was flagged as
+    # duplication. This orientation line stays: it's framing/context text,
+    # not a restatement of a number shown elsewhere. Moved above the tabs
+    # (was inside each tab, above the two-column split) so it reads as
+    # framing for the whole "Permit Details" section rather than being
+    # re-shown once per tab.
+    st.caption(t("stall_findings_banner_subtext"))
     tabs = st.tabs(ordered_unique)
     for tab, permit_number in zip(tabs, ordered_unique):
         with tab:

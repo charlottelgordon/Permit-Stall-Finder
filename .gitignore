@@ -1,9 +1,11 @@
 __pycache__/
 *.pyc
 .venv/
+.venv-check/
 *.egg-info/
 build/
 dist/
+.DS_Store
 
 # local runtime state — never commit persisted snapshots or the working DB
 data/

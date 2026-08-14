@@ -49,7 +49,11 @@ from permit_stall_finder import config
 from permit_stall_finder.ingestion.permits import fetch_permits_by_address
 from permit_stall_finder.storage import user_state
 
-st.set_page_config(page_title=APP_NAME, page_icon="🏗️", layout="wide")
+st.set_page_config(
+    page_title=APP_NAME,
+    page_icon=str(Path(__file__).parent / "assets" / "favicon.jpeg"),
+    layout="wide",
+)
 
 # A real, solid-color header bar carrying the app's own logo just below it
 # (rendered further down), rather than the earlier gradient bar's ::after
@@ -74,12 +78,22 @@ st.markdown(
     [data-testid="stHeader"] {
         background-color: #F5760A !important;
         height: 5.5rem !important;
+        /* The navy band between the orange header strip and the page
+           body -- a border-bottom rather than a separate element so it's
+           guaranteed to sit exactly flush with the header's own edge,
+           full width, with no extra flow-space math needed. */
+        border-bottom: 6px solid #052D49;
     }
     [data-testid="stToolbar"], [data-testid="stMainMenu"], [data-testid="stAppDeployButton"] {
         display: none;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] {
+    div[data-testid="stVerticalBlockBorderWrapper"],
+    div[data-testid="stExpander"] {
         border-radius: 10px;
+        /* Cards sit white on top of the page's warmer off-white
+           background (see .streamlit/config.toml's backgroundColor) so
+           they read as distinct surfaces rather than blending in. */
+        background-color: #FFFFFF;
     }
     div.block-container {
         padding-top: 1.5rem !important;
@@ -262,6 +276,13 @@ if st.session_state.pop("pending_clear", False):
 
 conn = get_connection()
 
+# Language toggle, right-aligned above the welcome text (moved off the
+# search row -- next to the tooltip there, it was crowding that row's
+# spacing).
+_, toggle_col = st.columns([5, 1])
+with toggle_col:
+    render_language_toggle()
+
 # Welcome/intro text, centered under the logo -- always visible
 # (Phase: kept even after a search, per explicit request -- toggling it
 # on/off based on search state made the top of the page change on every
@@ -274,7 +295,7 @@ st.markdown(
 # --- Search: one bar, permit number(s) or address ------------------------
 _, search_col, _ = st.columns([1, 3, 1])
 with search_col:
-    input_col, tip_col, toggle_col = st.columns([9, 1, 2])
+    input_col, tip_col = st.columns([9, 1])
     with input_col:
         raw_query = st.text_input(
             t("unified_search_placeholder"),
@@ -290,9 +311,7 @@ with search_col:
         # native title= attribute (unreliable: inconsistent per-browser
         # delay, easy to miss, no hover state at all on touch/mobile).
         # This is a real :hover-driven CSS reveal, so it doesn't depend
-        # on native tooltip timing/rendering the way title= did. Right
-        # next to the search box, with the language toggle further
-        # right, per request.
+        # on native tooltip timing/rendering the way title= did.
         _help_paragraphs = "".join(
             f"<p>{html.escape(p)}</p>" for p in t("unified_search_help").split("\n\n")
         )
@@ -303,9 +322,6 @@ with search_col:
             "</div>",
             unsafe_allow_html=True,
         )
-    with toggle_col:
-        # Language toggle, to the right of the search-bar tooltip.
-        render_language_toggle()
 
     # Search + Clear, centered as a pair below the search bar.
     _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])

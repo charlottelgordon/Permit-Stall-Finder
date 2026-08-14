@@ -13,13 +13,10 @@ drill_down.py directly -- this block only repeats the identifying facts
 plus the full list of this permit's own findings, not the tab-wide
 severity summary.
 
-Phase 13: the "Top Findings" bullets deliberately show only
-severity + category (via i18n.top_finding_bullet()), not the underlying
-elapsed_days/observed_count/percentile numbers -- those already appear in
-the matching finding card's own metric row and "what the data shows"
-prose in the right panel, and including them here too was flagged as a
-third repeat of the same numbers. This list is a fast-scan index into
-those cards, not a restatement of their content.
+"Total Number of Findings" deliberately shows only a count, not a
+per-finding bullet list -- the individual findings are already fully
+covered by the finding cards in the right panel, and listing them here
+too was flagged as a third repeat of the same information.
 
 Phase 16: "Type" now also carries the match-status line and work
 description that used to open permit_journey.py's own view (moved, not
@@ -31,7 +28,7 @@ from __future__ import annotations
 import streamlit as st
 
 import portfolio
-from i18n import match_status_label, outcome_headline, t, top_finding_bullet
+from i18n import match_status_label, outcome_headline, t
 from permit_stall_finder.orchestration.pipeline import AnalysisOutcome, PermitAnalysisResult
 
 _OUTCOME_ICONS = {
@@ -70,9 +67,7 @@ def render(result: PermitAnalysisResult) -> None:
         st.markdown(f"**{t('qg_last_update')}**  \n{row.last_status_update}")
 
         if detections:
-            st.markdown(f"**{t('qg_top_findings')}**")
-            for detection in detections:
-                st.markdown(f"- {top_finding_bullet(detection)}")
+            st.markdown(f"**{t('qg_top_findings')}**  \n{len(detections)}")
         else:
             icon = _OUTCOME_ICONS[result.outcome]
             st.markdown(f"**{t('qg_result')}**  \n{icon} {outcome_headline(result)}")

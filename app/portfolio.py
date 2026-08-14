@@ -69,17 +69,38 @@ def _max_severity(result: PermitAnalysisResult) -> Severity | None:
 
 
 def _address(result: PermitAnalysisResult) -> str:
-    """Best-effort display address. PermitSnapshot (schema/journey.py)
+    """Best-effort raw street address, exactly as the source dataset's
+    primary_address column carries it -- no city/zip appended. This is the
+    form address_of() exposes for the "other permits at this address"
+    lookup, which matches against that same raw column
+    (permits.fetch_permits_by_address's LIKE '%...%' query); appending
+    anything here would break that match. PermitSnapshot (schema/journey.py)
     deliberately carries only permit-process facts, not a normalized
-    address field. This reads primary_address out of the raw source row
-    Agent 1 already preserved for exactly this kind of presentation-only
-    lookup -- the same pattern formatting.kb_entry_by_id() uses to resolve
-    something that already exists in already-fetched data, never deriving
-    anything new."""
+    address field, so this reads primary_address out of the raw source row
+    Agent 1 already preserved -- the same pattern formatting.kb_entry_by_id()
+    uses to resolve something that already exists in already-fetched data,
+    never deriving anything new."""
     snapshot = result.journey.latest_snapshot
     if snapshot is None:
         return "—"
     return snapshot.raw.get("primary_address") or "—"
+
+
+def _display_address(result: PermitAnalysisResult) -> str:
+    """Street address plus city/zip, for on-screen display only (quick
+    glance, the downloadable report) -- never for the address-lookup query,
+    which needs the bare _address() instead. The source dataset has no
+    separate city field (confirmed against its schema); "Los Angeles, CA"
+    is appended here as a fixed literal because this tool is scoped to City
+    of Los Angeles permits only (see CLAUDE.md scope boundaries), not read
+    off any row."""
+    street = _address(result)
+    if street == "—":
+        return street
+    snapshot = result.journey.latest_snapshot
+    zip_code = snapshot.raw.get("zip_code") if snapshot else None
+    city_state = f"Los Angeles, CA {zip_code}".strip() if zip_code else "Los Angeles, CA"
+    return f"{street}, {city_state}"
 
 
 def _has_actionable_step(result: PermitAnalysisResult) -> bool:
@@ -187,7 +208,7 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
 
     return PortfolioRow(
         permit_number=result.permit_number,
-        address=_address(result),
+        address=_display_address(result),
         permit_type=snapshot.permit_type if snapshot else "—",
         status_desc=plain_status_desc(snapshot.status_desc) if snapshot else "—",
         outcome=result.outcome,

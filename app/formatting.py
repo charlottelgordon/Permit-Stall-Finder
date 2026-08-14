@@ -68,15 +68,20 @@ MATCH_STATUS_LABELS: dict[MatchStatus, str] = {
 # no new claims, just shorter captions for display.
 DATA_QUALITY_FLAG_LABELS: dict[DataQualityFlag, str] = {
     DataQualityFlag.STATUS_ISSUE_DATE_INCONSISTENT: (
-        "The source record's status and issue date are internally inconsistent for this permit."
+        "The city's own permit record has a status and an issue date that don't quite line up "
+        "for this permit -- that's a mismatch in the source data itself, not something this tool "
+        "introduced."
     ),
     DataQualityFlag.INSPECTION_MATCH_UNCERTAIN_FOR_TYPE: (
-        "This permit type has a historically uncertain match rate against the public inspection "
-        "dataset -- a missing inspection record is less informative for this type."
+        "For this permit type, inspection records don't always link up reliably with permit "
+        "records in the city's data -- so if no inspection shows up here, that doesn't "
+        "necessarily mean one didn't happen."
     ),
     DataQualityFlag.FIRST_OBSERVATION: (
-        "This is the first time this tool has observed this permit -- status history before now "
-        "is not known."
+        "This is the first time Permit Check LA has looked up this permit number, so we can't "
+        "tell you about its history of stalls before today. This tool works by comparing "
+        "multiple Los Angeles Department of Building and Safety datasets each time a permit is "
+        "searched -- there's no earlier snapshot yet for this one to compare against."
     ),
 }
 

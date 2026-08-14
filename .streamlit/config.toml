@@ -9,7 +9,11 @@ base = "light"
 # decorative header gradient in streamlit_app.py, where it's exempt from
 # text-contrast rules as branding/logotype rather than functional UI text.
 primaryColor = "#052D49"
-backgroundColor = "#FAFAFA"
+# Warmer off-white than the previous neutral #FAFAFA, so the page
+# background doesn't read as a stark, cold contrast against the orange
+# header band -- cards (secondaryBackgroundColor, and the explicit white
+# overrides in streamlit_app.py's CSS) sit visibly on top of it.
+backgroundColor = "#FBF7F1"
 secondaryBackgroundColor = "#F2EFEC"
 textColor = "#0B1F33"
 font = "sans serif"

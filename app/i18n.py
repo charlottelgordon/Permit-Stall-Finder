@@ -128,17 +128,21 @@ MATCH_STATUS_LABELS_ES: dict[MatchStatus, str] = {
 
 DATA_QUALITY_FLAG_LABELS_ES: dict[DataQualityFlag, str] = {
     DataQualityFlag.STATUS_ISSUE_DATE_INCONSISTENT: (
-        "El estado y la fecha de emisión del registro de origen son inconsistentes entre sí "
-        "para este permiso."
+        "El propio registro de permiso de la ciudad tiene un estado y una fecha de emisión que "
+        "no concuerdan del todo para este permiso -- es una discrepancia en los datos de origen, "
+        "no algo introducido por esta herramienta."
     ),
     DataQualityFlag.INSPECTION_MATCH_UNCERTAIN_FOR_TYPE: (
-        "Este tipo de permiso tiene una tasa de coincidencia históricamente incierta con el "
-        "conjunto de datos público de inspecciones -- una inspección faltante es menos "
-        "informativa para este tipo."
+        "Para este tipo de permiso, los registros de inspección no siempre se vinculan de forma "
+        "confiable con los registros de permisos en los datos de la ciudad -- así que si no "
+        "aparece una inspección aquí, eso no significa necesariamente que no haya ocurrido."
     ),
     DataQualityFlag.FIRST_OBSERVATION: (
-        "Esta es la primera vez que esta herramienta observa este permiso -- no se conoce el "
-        "historial de estado anterior."
+        "Esta es la primera vez que Permit Check LA consulta este número de permiso, así que no "
+        "podemos contarle su historial de estancamientos antes de hoy. Esta herramienta funciona "
+        "comparando varios conjuntos de datos del Departamento de Edificación y Seguridad de Los "
+        "Ángeles cada vez que se busca un permiso -- todavía no hay una instantánea anterior con "
+        "la cual comparar este."
     ),
 }
 
@@ -603,7 +607,7 @@ _STRINGS: dict[str, dict[str, str]] = {
     "qg_status": {"en": "Status", "es": "Estado"},
     "qg_issuance_status": {"en": "Issuance status", "es": "Estado de emisión"},
     "qg_last_update": {"en": "Last status update", "es": "Última actualización de estado"},
-    "qg_top_findings": {"en": "Top Findings", "es": "Principales hallazgos"},
+    "qg_top_findings": {"en": "Total Number of Findings", "es": "Número total de hallazgos"},
     "qg_result": {"en": "Result", "es": "Resultado"},
     "resources_header": {"en": "Resources", "es": "Recursos"},
     # location_map.py
@@ -621,12 +625,15 @@ _STRINGS: dict[str, dict[str, str]] = {
         "es": "Lo que no pudimos revisar",
     },
     "coverage_notes_warning": {
-        "en": "A few checks below couldn't be completed for this permit, or the city's data has "
-        "some known gaps. That doesn't mean there is or isn't a delay -- it just means we can't "
-        "say, for those specific checks.",
-        "es": "Algunas revisiones no se pudieron completar para este permiso, o los datos de la "
-        "ciudad tienen algunos vacíos conocidos. Eso no significa que haya o no haya un retraso -- "
-        "solo significa que no podemos saberlo para esas revisiones en particular.",
+        "en": "Permit Check LA works by comparing two City of Los Angeles Department of Building "
+        "and Safety datasets -- permits and inspections -- to reconstruct a permit's timeline. "
+        "The specific items below are ones we couldn't fully check for this permit. That doesn't "
+        "mean there is or isn't a delay -- it just means we can't say, for those specific items.",
+        "es": "Permit Check LA funciona comparando dos conjuntos de datos del Departamento de "
+        "Edificación y Seguridad de Los Ángeles -- permisos e inspecciones -- para reconstruir el "
+        "cronograma de un permiso. Los puntos específicos a continuación son los que no pudimos "
+        "revisar por completo para este permiso. Eso no significa que haya o no haya un retraso -- "
+        "solo significa que no podemos saberlo para esos puntos en particular.",
     },
     "coverage_gaps_label": {"en": "Checks we skipped", "es": "Revisiones que omitimos"},
     "data_quality_notes_label": {"en": "About the data", "es": "Sobre los datos"},
@@ -651,7 +658,7 @@ _STRINGS: dict[str, dict[str, str]] = {
     "technical_details": {"en": "Technical details", "es": "Detalles técnicos"},
     "reconstruction_notes": {"en": "Reconstruction notes:", "es": "Notas de reconstrucción:"},
     # stall_findings.py
-    "stall_findings_header": {"en": "Stall findings", "es": "Hallazgos de estancamiento"},
+    "stall_findings_header": {"en": "Where this project has stalled", "es": "Dónde se ha estancado este proyecto"},
     "mixed_grounding_caption": {
         "en": "Some findings below are backed by an authoritative knowledge-base entry; "
         "others are not -- this is noted individually on each finding.",
@@ -730,13 +737,13 @@ _STRINGS: dict[str, dict[str, str]] = {
     # --- Phase 10 redesign: header, unified search, results table, drill-down ---
     "site_welcome_intro": {
         "en": (
-            "Welcome! Track the journey of an LA building permit, identify unusual delays or "
-            "process friction, and see grounded guidance on what might happen next."
+            "See where your permit's stuck, why, and what usually gets it moving. Built for "
+            "developers and contractors tracking active projects in Los Angeles, CA."
         ),
         "es": (
-            "¡Bienvenido! Siga el trayecto de un permiso de construcción de Los Ángeles, "
-            "identifique retrasos inusuales o fricción en el proceso, y consulte "
-            "orientación fundamentada sobre lo que podría pasar a continuación."
+            "Vea dónde se ha detenido su permiso, por qué, y qué suele ponerlo en marcha de "
+            "nuevo. Diseñado para desarrolladores y contratistas que dan seguimiento a "
+            "proyectos activos en Los Ángeles, CA."
         ),
     },
     "unified_search_placeholder": {

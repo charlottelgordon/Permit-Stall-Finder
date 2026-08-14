@@ -118,17 +118,20 @@ def _render_steps_content(steps: list[NextStep], placeholder: str) -> None:
         st.markdown(f"- {step.text} _( {grounding_strength_label(step.grounding_strength)} )_")
 
 
-def _render_learn_more(explanation: DeveloperExplanation, kb: KnowledgeBase) -> None:
+def _render_learn_more(explanation: DeveloperExplanation, kb: KnowledgeBase) -> bool:
     """"Learn more about this finding" -- every source behind this one
-    finding's own grounded explanation, as plain links."""
+    finding's own grounded explanation, as plain links. Returns whether it
+    rendered anything, so the card can decide whether a divider belongs
+    after it (no divider between two empty sections)."""
     if explanation.grounding_status != GroundingStatus.GROUNDED:
-        return
+        return False
     entry = kb_entry_by_id(kb, explanation.knowledge_base_entry_id)
     if entry is None or not entry.sources:
-        return
+        return False
     st.markdown(f"**{t('learn_more_this_finding')}**")
     for source in entry.sources:
         st.markdown(f"- [{source.title}]({source.url})")
+    return True
 
 
 def _render_source_grounding(explanation: DeveloperExplanation, kb: KnowledgeBase) -> None:
@@ -157,7 +160,10 @@ def _render_card(
 ) -> None:
     with st.expander(_card_label(detection), expanded=False):
         _render_metrics(detection)
-        _render_learn_more(explanation, kb)
+        st.divider()
+
+        if _render_learn_more(explanation, kb):
+            st.divider()
 
         what_means_heading = (
             t("no_entry_heading")
@@ -167,22 +173,27 @@ def _render_card(
 
         st.markdown(f"**{t('what_data_shows')}**")
         st.write(explanation.what_the_data_shows)
+        st.divider()
 
         st.markdown(f"**{what_means_heading}**")
         st.write(explanation.what_this_usually_means)
+        st.divider()
 
         st.markdown(f"**{t('steps_you_can_take')}**")
         _render_steps_content(explanation.developer_actionable_steps, t("no_developer_steps"))
+        st.divider()
 
         st.markdown(f"**{t('steps_depend_on_city')}**")
         _render_steps_content(explanation.city_dependent_steps, t("no_city_steps"))
 
         if explanation.limitations:
+            st.divider()
             st.markdown(f"**{t('cannot_tell')}**")
             for item in explanation.limitations:
                 st.markdown(f"- {item}")
 
         if detection.caveats:
+            st.divider()
             st.markdown(f"**{t('caveats')}**")
             for caveat in detection.caveats:
                 st.markdown(f"- {caveat}")
