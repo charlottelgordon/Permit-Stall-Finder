@@ -607,6 +607,15 @@ _STRINGS: dict[str, dict[str, str]] = {
     "qg_status": {"en": "Status", "es": "Estado"},
     "qg_issuance_status": {"en": "Issuance status", "es": "Estado de emisión"},
     "qg_last_update": {"en": "Last status update", "es": "Última actualización de estado"},
+    "qg_permit_status_header": {"en": "Permit status", "es": "Estado del permiso"},
+    "qg_status_last_reported_template": {
+        "en": "This permit's status was last reported as changed {rel}.",
+        "es": "El estado de este permiso se informó por última vez como cambiado {rel}.",
+    },
+    "ymd_ago_template": {"en": "{ymd} ago", "es": "hace {ymd}"},
+    "ymd_year_abbr": {"en": "y", "es": "a"},
+    "ymd_month_abbr": {"en": "m", "es": "m"},
+    "ymd_day_abbr": {"en": "d", "es": "d"},
     "qg_top_findings": {"en": "Total Number of Findings", "es": "Número total de hallazgos"},
     "qg_result": {"en": "Result", "es": "Resultado"},
     "resources_header": {"en": "Resources", "es": "Recursos"},
@@ -915,6 +924,44 @@ def status_updated_phrase(days_since_status_change: int) -> str:
     'Last status update' column -- wraps relative_days_ago() in the
     language-appropriate sentence frame."""
     return t("status_updated_template").format(rel=relative_days_ago(days_since_status_change))
+
+
+def _ymd_breakdown(days: int) -> str:
+    """"2y 2m 3d" style breakdown of a day count into years/months/days
+    (calendar-approximate: 365-day years, 30-day months, same
+    approximation relative_days_ago's plain day-count sidesteps
+    entirely) -- omits zero-value components except to guarantee at
+    least one part is always shown (e.g. "3d", never an empty string)."""
+    units = {
+        "year": t("ymd_year_abbr"),
+        "month": t("ymd_month_abbr"),
+        "day": t("ymd_day_abbr"),
+    }
+    years, remainder = divmod(days, 365)
+    months, d = divmod(remainder, 30)
+    parts = []
+    if years:
+        parts.append(f"{years}{units['year']}")
+    if months:
+        parts.append(f"{months}{units['month']}")
+    if d or not parts:
+        parts.append(f"{d}{units['day']}")
+    return " ".join(parts)
+
+
+def status_last_reported_changed_phrase(days_since_status_change: int) -> str:
+    """"This permit's status was last reported as changed 2y 2m 3d ago."
+    -- the drill-down quick-glance panel's own, more spelled-out phrasing
+    for the same already-computed day count status_updated_phrase() above
+    words more tersely for the results table's column. days_since_status_
+    change is never recomputed here, only worded, same as every other
+    plain-language function in this module."""
+    rel = (
+        t("today_label")
+        if days_since_status_change <= 0
+        else t("ymd_ago_template").format(ymd=_ymd_breakdown(days_since_status_change))
+    )
+    return t("qg_status_last_reported_template").format(rel=rel)
 
 
 def issuance_status_text(issued: bool) -> str:

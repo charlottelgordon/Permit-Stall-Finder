@@ -134,6 +134,11 @@ class PortfolioRow:
     raw_status_desc: str = "—"
     last_status_update: str = "—"
     status_date: date | None = None
+    # Raw day count behind last_status_update's pre-worded string --
+    # quick_glance.py's combined "Permit status" block words this
+    # itself (a more spelled-out phrasing than the results table's own
+    # column), and needs the number, not the already-composed sentence.
+    days_since_status_change: int | None = None
 
 
 def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
@@ -157,8 +162,9 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
     submitted_date = snapshot.submitted_date if snapshot else None
     status_date = snapshot.status_date if snapshot else None
 
+    days_since_status_change = (as_of_date - status_date).days if status_date else None
     last_status_update = (
-        status_updated_phrase((as_of_date - status_date).days) if status_date else "—"
+        status_updated_phrase(days_since_status_change) if days_since_status_change is not None else "—"
     )
     issuance_status = issuance_status_text(bool(snapshot and snapshot.issue_date))
     raw_status_desc = snapshot.status_desc if snapshot else "—"
@@ -186,6 +192,7 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
         raw_status_desc=raw_status_desc,
         last_status_update=last_status_update,
         status_date=status_date,
+        days_since_status_change=days_since_status_change,
     )
 
 

@@ -21,6 +21,11 @@ too was flagged as a third repeat of the same information.
 Phase 16: "Type" now also carries the match-status line and work
 description that used to open permit_journey.py's own view (moved, not
 copied -- permit_journey.py no longer renders them).
+
+Combined "Status" / "Issuance status" / "Last status update" into one
+"Permit status" paragraph per explicit request -- three closely-related
+facts about the same thing that read better as one narrative sentence
+than three separately-labeled fields.
 """
 
 from __future__ import annotations
@@ -28,7 +33,7 @@ from __future__ import annotations
 import streamlit as st
 
 import portfolio
-from i18n import match_status_label, outcome_headline, t
+from i18n import match_status_label, outcome_headline, status_last_reported_changed_phrase, t
 from permit_stall_finder.orchestration.pipeline import AnalysisOutcome, PermitAnalysisResult
 
 _OUTCOME_ICONS = {
@@ -55,6 +60,19 @@ def _type_block(result: PermitAnalysisResult, row: portfolio.PortfolioRow) -> st
     return "  \n".join(lines)
 
 
+def _permit_status_block(row: portfolio.PortfolioRow) -> str:
+    """Everything under "Permit status": issuance status, the permit's
+    current status, and when that status was last reported changed, as
+    one narrative paragraph, e.g. "Permit has been issued. Certificate
+    of Occupancy issued. This permit's status was last reported as
+    changed 2y 2m 3d ago." The third sentence is omitted (not shown as
+    a broken fragment) when there's no status_date to compute it from."""
+    sentences = [f"{row.issuance_status}.", f"{row.status_desc}."]
+    if row.days_since_status_change is not None:
+        sentences.append(status_last_reported_changed_phrase(row.days_since_status_change))
+    return " ".join(sentences)
+
+
 def render(result: PermitAnalysisResult) -> None:
     row = portfolio.summarize_result(result)
     detections = result.stall_assessment.detections
@@ -62,9 +80,7 @@ def render(result: PermitAnalysisResult) -> None:
     with st.container(border=True):
         st.markdown(f"**{t('qg_address')}**  \n{row.address}")
         st.markdown(f"**{t('qg_type')}**  \n{_type_block(result, row)}")
-        st.markdown(f"**{t('qg_status')}**  \n{row.status_desc}")
-        st.markdown(f"**{t('qg_issuance_status')}**  \n{row.issuance_status}")
-        st.markdown(f"**{t('qg_last_update')}**  \n{row.last_status_update}")
+        st.markdown(f"**{t('qg_permit_status_header')}**  \n{_permit_status_block(row)}")
 
         if detections:
             st.markdown(f"**{t('qg_top_findings')}**  \n{len(detections)}")
