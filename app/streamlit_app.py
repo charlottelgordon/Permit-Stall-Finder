@@ -161,14 +161,18 @@ st.markdown(
     .header-home-link {
         display: inline-flex;
         align-items: center;
-        color: #FFFFFF;
         font-weight: 600;
         font-size: 0.85rem;
-        /* !important: Streamlit's own base anchor styling sets
-           text-decoration: underline with higher specificity than a
-           bare class selector here otherwise beats -- confirmed via
-           computed-style inspection, the same class of bug the
-           site-welcome-intro margin fix above ran into. */
+        /* !important on both color and text-decoration: Streamlit's own
+           base anchor styling sets a link color (a themed blue, not
+           primaryColor) and text-decoration: underline, both with
+           higher specificity than a bare class selector here otherwise
+           beats -- confirmed via computed-style inspection showing
+           rgb(0, 84, 163) text despite this rule saying #FFFFFF. Same
+           class of bug the site-welcome-intro margin fix above ran
+           into; text-decoration alone wasn't enough because color is a
+           separate overridden property. */
+        color: #FFFFFF !important;
         text-decoration: none !important;
         padding: 0.35rem 0.9rem;
         border: 1.5px solid #052D49;
@@ -178,11 +182,14 @@ st.markdown(
     }
     .header-home-link:hover {
         background-color: #0A4066;
-        color: #FFFFFF;
+        color: #FFFFFF !important;
     }
     .header-external-link {
         display: block;
-        color: #052D49;
+        /* !important: same Streamlit base-link-color override as
+           .header-home-link above -- without it this rendered
+           Streamlit's default themed blue instead of navy. */
+        color: #052D49 !important;
         font-weight: 600;
         font-size: 0.9rem;
         text-decoration: none !important;
