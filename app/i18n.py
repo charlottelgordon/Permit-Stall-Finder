@@ -708,6 +708,22 @@ _STRINGS: dict[str, dict[str, str]] = {
         "en": "What we cannot tell from this data",
         "es": "Lo que no podemos determinar con estos datos",
     },
+    "findings_cause_disclaimer": {
+        "en": (
+            "Permit Check LA reports elapsed time and inspection counts, not cause. "
+            "It cannot determine which party (applicant, contractor, or LADBS) is "
+            "responsible for delays, why a permit hasn't progressed further, or "
+            "whether a gap reflects slow construction versus a delay in requesting "
+            "the next inspection."
+        ),
+        "es": (
+            "Permit Check LA informa el tiempo transcurrido y el número de "
+            "inspecciones, no la causa. No puede determinar qué parte (solicitante, "
+            "contratista o LADBS) es responsable de los retrasos, por qué un permiso "
+            "no ha avanzado más, o si un intervalo refleja una construcción lenta "
+            "frente a una demora en solicitar la siguiente inspección."
+        ),
+    },
     "caveats": {"en": "Caveats", "es": "Advertencias"},
     "source_and_grounding": {"en": "Source & grounding", "es": "Fuente y fundamento"},
     "no_kb_entry": {

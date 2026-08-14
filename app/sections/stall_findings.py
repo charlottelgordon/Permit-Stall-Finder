@@ -39,6 +39,16 @@ Cards are ordered ongoing-first, already-concluded-last (see
 _is_ongoing()/render()'s sort) -- someone checking in on an active
 project cares most about what's still actively stalled right now, not
 a gap between two inspections that both already happened.
+
+Each card's own "What we cannot tell from this data" section
+(explanation.limitations, per-finding) is likewise no longer rendered
+here -- it repeated the same handful of structural caveats on every
+card (this tool can't attribute cause or fault) rather than saying
+anything specific to that one finding. render() now shows a single
+fixed disclaimer caption once, below every card, covering the same
+ground (see t("findings_cause_disclaimer")). report_export.py is
+untouched and still lists explanation.limitations per finding in the
+downloadable report.
 """
 
 from __future__ import annotations
@@ -247,12 +257,6 @@ def _render_card(
         st.markdown(f"**{t('steps_depend_on_city')}**")
         _render_steps_content(explanation.city_dependent_steps, t("no_city_steps"))
 
-        if explanation.limitations:
-            st.divider()
-            st.markdown(f"**{t('cannot_tell')}**")
-            for item in explanation.limitations:
-                st.markdown(f"- {item}")
-
         if detection.caveats:
             st.divider()
             st.markdown(f"**{t('caveats')}**")
@@ -291,3 +295,5 @@ def render(
     )
     for detection, explanation in pairs:
         _render_card(detection, explanation, kb)
+
+    st.caption(t("findings_cause_disclaimer"))
