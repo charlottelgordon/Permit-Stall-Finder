@@ -10,7 +10,12 @@ future personalization pass can read that value without any changes
 here.
 
 Previously these were image-buttons; switched back to plain buttons per
-explicit request -- the imagery read as overwhelming.
+explicit request -- the imagery read as overwhelming. There was also
+briefly a small "Role: X ⌄" control next to the EN/ES toggle for
+switching roles without leaving the search page -- removed per explicit
+request; the Home link (streamlit_app.py's header) is the only way back
+to this picker now, which resets the whole session including the
+selected role.
 
 The word "persona" is internal terminology only -- never rendered in
 any user-facing string here (see i18n.py's persona_* keys, none of
@@ -46,23 +51,3 @@ def render() -> None:
                 if st.button(t(label_key), key=f"persona_select_{persona_key}", width="stretch"):
                     st.session_state.selected_persona = persona_key
                     st.rerun()
-
-
-def render_switch_button() -> None:
-    """A small, low-key text control -- "Role: Contractor ⌄" -- sitting
-    in the same row as the EN/ES toggle once a role is picked,
-    deliberately sized/styled (see streamlit_app.py's stylesheet) to
-    match that toggle's own understated visual weight rather than
-    reading as a prominent button. The "Role:" prefix and the caret are
-    both there so the small text alone still communicates "this is your
-    current selection, click to change" -- neither one is functional on
-    its own (there's no literal dropdown; clicking anywhere clears the
-    selection and reopens the picker). Wrapped in its own keyed
-    container so the stylesheet can target just this control. The
-    caller controls outer layout/columns; this only renders the button
-    itself."""
-    label_key = next(lk for pk, lk in _PERSONAS if pk == st.session_state.selected_persona)
-    with st.container(key="persona_switch_wrap"):
-        if st.button(f"{t('persona_switch_prefix')} {t(label_key)} ⌄", key="persona_switch_button", width="stretch"):
-            st.session_state.selected_persona = None
-            st.rerun()

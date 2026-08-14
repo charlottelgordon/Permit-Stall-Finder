@@ -275,30 +275,6 @@ st.markdown(
         outline: 2px solid #052D49;
         outline-offset: 2px;
     }
-    /* The role switcher (shown once a role is picked, next to the EN/ES
-       toggle) -- deliberately NOT styled as a button (no border, no
-       fill): sized and weighted to match the plain "EN · ES" toggle
-       label beside it, so this stays a small, low-key indicator rather
-       than a second prominent control competing for attention in the
-       header area. The "Role:" prefix + caret in its label (see
-       persona_picker.py) are what signal "current selection, click to
-       change" at this small scale -- a subtle underline on hover is the
-       only other affordance. */
-    div[class*="st-key-persona_switch_wrap"] div[data-testid="stButton"] button {
-        background-color: transparent;
-        color: #052D49;
-        font-weight: 400;
-        font-size: 0.8rem;
-        border: none;
-        padding: 0.25rem 0.4rem;
-        border-bottom: 1px solid transparent;
-        border-radius: 0;
-    }
-    div[class*="st-key-persona_switch_wrap"] div[data-testid="stButton"] button:hover {
-        background-color: transparent;
-        color: #052D49;
-        border-bottom-color: #052D49;
-    }
     .search-loading-track {
         width: 100%;
         height: 6px;
@@ -438,15 +414,8 @@ conn = get_connection()
 
 # Language toggle, right-aligned above the welcome text (moved off the
 # search row -- next to the tooltip there, it was crowding that row's
-# spacing). Once a role is picked, its own switch button sits in this
-# same row, immediately to the toggle's left -- no separate "Browsing
-# as" line taking up its own row.
-if st.session_state.selected_persona:
-    _, switch_col, toggle_col = st.columns([4, 1, 1])
-    with switch_col:
-        persona_picker.render_switch_button()
-else:
-    _, toggle_col = st.columns([5, 1])
+# spacing).
+_, toggle_col = st.columns([5, 1])
 with toggle_col:
     render_language_toggle()
 
