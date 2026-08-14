@@ -668,12 +668,6 @@ _STRINGS: dict[str, dict[str, str]] = {
     "reconstruction_notes": {"en": "Reconstruction notes:", "es": "Notas de reconstrucción:"},
     # stall_findings.py
     "stall_findings_header": {"en": "Where this project has stalled", "es": "Dónde se ha estancado este proyecto"},
-    "mixed_grounding_caption": {
-        "en": "Some findings below are backed by an authoritative knowledge-base entry; "
-        "others are not -- this is noted individually on each finding.",
-        "es": "Algunos hallazgos a continuación están respaldados por una entrada autorizada de "
-        "la base de conocimiento; otros no -- esto se indica individualmente en cada hallazgo.",
-    },
     "card_label_ongoing": {"en": "Ongoing", "es": "En curso"},
     "card_label_completed": {"en": "Completed", "es": "Completado"},
     "stage_context_between": {"en": "Between {stage}", "es": "Entre {stage}"},
@@ -773,8 +767,8 @@ _STRINGS: dict[str, dict[str, str]] = {
     },
     "header_home_aria_label": {"en": "Home", "es": "Inicio"},
     "header_ladbs_link": {
-        "en": "LADBS Building Permit Info",
-        "es": "Información de permisos de construcción de LADBS",
+        "en": "Official LADBS Building Permit Resources",
+        "es": "Recursos oficiales de permisos de construcción de LADBS",
     },
     # persona_picker.py
     "persona_picker_heading": {

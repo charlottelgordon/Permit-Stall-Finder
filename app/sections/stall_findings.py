@@ -49,13 +49,32 @@ fixed disclaimer caption once, below every card, covering the same
 ground (see t("findings_cause_disclaimer")). report_export.py is
 untouched and still lists explanation.limitations per finding in the
 downloadable report.
+
+"Learn more about this finding" and "Source & grounding" -- two
+sections that both listed the same knowledge-base entry's sources at
+different levels of detail -- are now one combined section
+(_render_sources_section()), under the "Source & grounding" heading,
+using the fuller title+publisher+verification-status listing
+throughout. _render_card() places it last, below Caveats, since it's
+supporting evidence for the finding rather than part of the finding's
+own explanation. Its own "Caveats on this guidance" sub-part (the KB
+entry's caveats, distinct from detection.caveats above it) is a single
+st.caption() paragraph now, not a bulleted list -- smaller text,
+several caveats read as one continuous note rather than a formal list.
+
+render()'s mixed_grounding_caption line (a caption below the "Where
+this project has stalled" header noting that some findings are
+KB-backed and some aren't) is removed -- each card already states its
+own grounding status individually via _render_sources_section(), so
+the blanket caption above the cards was telling the user something
+every card already tells them itself.
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
-from formatting import has_mixed_grounding, kb_entry_by_id
+from formatting import kb_entry_by_id
 from i18n import (
     benchmark_semantics_label,
     category_label,
@@ -193,23 +212,14 @@ def _render_steps_content(steps: list[NextStep], placeholder: str) -> None:
         st.markdown(f"- {step.text} _( {grounding_strength_label(step.grounding_strength)} )_")
 
 
-def _render_learn_more(explanation: DeveloperExplanation, kb: KnowledgeBase) -> bool:
-    """"Learn more about this finding" -- every source behind this one
-    finding's own grounded explanation, as plain links. Returns whether it
-    rendered anything, so the card can decide whether a divider belongs
-    after it (no divider between two empty sections)."""
-    if explanation.grounding_status != GroundingStatus.GROUNDED:
-        return False
-    entry = kb_entry_by_id(kb, explanation.knowledge_base_entry_id)
-    if entry is None or not entry.sources:
-        return False
-    st.markdown(f"**{t('learn_more_this_finding')}**")
-    for source in entry.sources:
-        st.markdown(f"- [{source.title}]({source.url})")
-    return True
-
-
-def _render_source_grounding(explanation: DeveloperExplanation, kb: KnowledgeBase) -> None:
+def _render_sources_section(explanation: DeveloperExplanation, kb: KnowledgeBase) -> None:
+    """"Learn more about this finding" and "Source & grounding" combined --
+    both used to list the same knowledge-base entry's sources, just at two
+    different levels of detail (plain title links vs. title+publisher+
+    verification-status+retrieved-date). One section now, under a single
+    heading, using the fuller listing throughout; render() places this
+    last in every card since it's supporting evidence, not part of the
+    finding's own explanation."""
     st.markdown(f"**{t('source_and_grounding')}**")
     entry = kb_entry_by_id(kb, explanation.knowledge_base_entry_id)
     if entry is None:
@@ -224,8 +234,7 @@ def _render_source_grounding(explanation: DeveloperExplanation, kb: KnowledgeBas
         )
     if entry.caveats:
         st.markdown(f"**{t('caveats_on_guidance')}**")
-        for caveat in entry.caveats:
-            st.markdown(f"- {caveat}")
+        st.caption(" ".join(entry.caveats))
 
 
 def _render_card(
@@ -236,9 +245,6 @@ def _render_card(
     with st.expander(_card_label(detection), expanded=False):
         _render_metrics(detection)
         st.divider()
-
-        if _render_learn_more(explanation, kb):
-            st.divider()
 
         what_means_heading = (
             t("no_entry_heading")
@@ -264,7 +270,7 @@ def _render_card(
                 st.markdown(f"- {caveat}")
 
         st.divider()
-        _render_source_grounding(explanation, kb)
+        _render_sources_section(explanation, kb)
 
 
 def render(
@@ -276,9 +282,6 @@ def render(
         return
 
     st.subheader(t("stall_findings_header"))
-
-    if has_mixed_grounding(developer_explanations.explanations):
-        st.caption(t("mixed_grounding_caption"))
 
     # Ongoing findings first, already-concluded ones last (e.g. a
     # finished INTER_INSPECTION_GAP -- a gap between two inspections
