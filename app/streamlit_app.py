@@ -31,6 +31,7 @@ import html
 from pathlib import Path
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 import drill_down
 import portfolio
@@ -206,6 +207,13 @@ st.markdown(
     .header-external-link:hover {
         border-bottom-color: #052D49;
     }
+    /* The real reset button the visible Home link's onclick triggers --
+       kept in the DOM (display: none, not left unrendered) since a JS
+       .click() still works on a hidden button; it just never needs to
+       be seen. */
+    div[class*="st-key-header_home_reset_trigger"] {
+        display: none;
+    }
     @media (max-width: 640px) {
         .app-header-bar {
             padding: 0 0.5rem;
@@ -369,7 +377,7 @@ st.markdown(
 _logo_b64 = base64.b64encode((Path(__file__).parent / "assets" / "logo.png").read_bytes()).decode()
 st.markdown(
     '<div class="app-header-bar">'
-    f'<div class="app-header-left"><a href="/" class="header-home-link" '
+    f'<div class="app-header-left"><a href="javascript:void(0)" class="header-home-link" '
     f'title="{t("header_home_aria_label")}">{t("header_home_aria_label")}</a></div>'
     f'<div class="app-header-center" role="heading" aria-level="1">'
     f'<img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></div>'
@@ -378,6 +386,52 @@ st.markdown(
     f'target="_blank" rel="noopener noreferrer" class="header-external-link">{t("header_ladbs_link")}</a></div>'
     "</div>",
     unsafe_allow_html=True,
+)
+# The visible "Home" element above is a styled <a>, kept exactly where
+# it already was (avoids re-deriving the header's overlay-into-the-
+# fixed-orange-bar positioning math for a second element) -- but
+# href="javascript:void(0)" means clicking it does no real browser
+# navigation at all, so it can never open a new tab. It has no
+# onclick= attribute (Streamlit strips inline event-handler attributes
+# from markdown HTML as an XSS protection, confirmed by inspecting the
+# rendered DOM -- unsafe_allow_html=True does not exempt them); the
+# script block below wires up a real click handler from outside that
+# sanitized HTML instead. The hidden button is what actually resets
+# state on click -- kept in the DOM via display: none (not left
+# unrendered), since a JS click still works on a hidden button.
+with st.container(key="header_home_reset_trigger"):
+    home_clicked = st.button("Home", key="header_home_reset_button")
+if home_clicked:
+    st.session_state.pending_home_reset = True
+    st.rerun()
+
+# Bridges the visible Home link's click to the hidden button above --
+# same zero-size-iframe-reaching-into-window.parent.document technique
+# i18n.py's _sync_html_lang() already uses for exactly this "Streamlit
+# doesn't expose an API for this" situation. Re-injected on every
+# script run (like that one is) so the handler survives the header
+# markdown being replaced on each rerun; assigning .onclick directly
+# (rather than addEventListener) means a fresh assignment always
+# replaces the prior one instead of stacking duplicate handlers.
+components.html(
+    """
+    <script>
+    try {
+        const homeLink = window.parent.document.querySelector('.header-home-link');
+        const hiddenBtn = window.parent.document.querySelector(
+            'div[class*="st-key-header_home_reset_trigger"] button'
+        );
+        if (homeLink && hiddenBtn) {
+            homeLink.onclick = function(e) {
+                e.preventDefault();
+                hiddenBtn.click();
+            };
+        }
+    } catch (e) {}
+    </script>
+    """,
+    height=0,
+    width=0,
 )
 
 # --- Session state defaults --------------------------------------------
@@ -394,14 +448,17 @@ if "extra_drilldown_permits" not in st.session_state:
 if "error" not in st.session_state:
     st.session_state.error = None
 
-# One-shot flag from a "Clear results" click (see below): must run
-# *before* st.text_input(key="unified_search_input") is instantiated
-# further down, since Streamlit disallows writing to a widget's
-# session_state key once that widget has already rendered this run --
-# the button that sets this flag is itself rendered after the text
-# input, so the reset can only safely happen on the *next* pass, right
-# at the top, which is what the button's own st.rerun() sets up.
-if st.session_state.pop("pending_clear", False):
+# One-shot flags from a "Clear results" click or the Home button (see
+# below): must run *before* st.text_input(key="unified_search_input") is
+# instantiated further down, since Streamlit disallows writing to a
+# widget's session_state key once that widget has already rendered this
+# run -- both buttons that set these flags render after the text input,
+# so the reset can only safely happen on the *next* pass, right at the
+# top, which is what each button's own st.rerun() sets up. Home does
+# everything Clear does, plus also reopening the role picker.
+_pending_clear = st.session_state.pop("pending_clear", False)
+_pending_home_reset = st.session_state.pop("pending_home_reset", False)
+if _pending_clear or _pending_home_reset:
     st.session_state.table_rows = None
     st.session_state.results_cache = {}
     st.session_state.drilldown_permits = []
@@ -409,6 +466,8 @@ if st.session_state.pop("pending_clear", False):
     st.session_state.error = None
     st.session_state.batch_errors = []
     st.session_state.unified_search_input = ""
+if _pending_home_reset:
+    st.session_state.selected_persona = None
 
 conn = get_connection()
 
