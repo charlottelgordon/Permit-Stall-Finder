@@ -223,22 +223,35 @@ st.markdown(
         margin: 0.5rem 0 1.25rem 0;
         color: #052D49;
     }
-    /* Persona picker buttons: plain orange buttons with thin blue text
-       -- switched back from image-buttons per explicit request (the
-       imagery read as overwhelming). Scoped to the "persona_picker_row"
-       container key so it doesn't restyle any other button on the page. */
+    /* Persona picker buttons: white cards (matching the rest of the
+       app's card treatment -- see stVerticalBlockBorderWrapper/
+       stExpander above) with a navy border and a thin orange accent
+       bar along the bottom, rather than a solid orange fill -- a wall
+       of solid orange directly under the already-orange header bar
+       was flat and visually loud. Hover inverts to a solid navy fill,
+       which reuses the app's own primary-button color (the Search
+       button) so the "this is clickable" signal is consistent with
+       the rest of the page. Scoped to the "persona_picker_row"
+       container key so it doesn't restyle any other button. */
     div[class*="st-key-persona_picker_row"] div[data-testid="stButton"] button {
-        background-color: #F5760A;
+        background-color: #FFFFFF;
         color: #052D49;
-        font-weight: 400;
-        border: none;
+        font-weight: 600;
+        border: 1.5px solid #052D49;
+        border-bottom: 4px solid #F5760A;
         border-radius: 8px;
         padding: 1rem 1.25rem;
         font-size: 1rem;
+        box-shadow: 0 1px 4px rgba(5, 45, 73, 0.1);
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out,
+            transform 0.15s ease-in-out;
     }
     div[class*="st-key-persona_picker_row"] div[data-testid="stButton"] button:hover {
-        background-color: #DD6A09;
-        color: #052D49;
+        background-color: #052D49;
+        color: #FFFFFF;
+        border-color: #052D49;
+        border-bottom-color: #F5760A;
+        transform: translateY(-1px);
     }
     div[class*="st-key-persona_picker_row"] div[data-testid="stButton"] button:focus-visible {
         outline: 2px solid #052D49;
