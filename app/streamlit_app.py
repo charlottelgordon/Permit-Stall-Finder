@@ -149,10 +149,69 @@ st.markdown(
     }
     .persona-picker-heading {
         text-align: center;
-        font-weight: 600;
+        font-weight: 700;
         font-size: 1.1rem;
-        margin: 0.5rem 0 1rem 0;
+        margin: 0.5rem 0 1.25rem 0;
         color: #052D49;
+    }
+    /* Persona image-buttons: the real st.button is stretched over the
+       image via CSS so the whole card is one click target instead of an
+       image plus a separate button below it -- see
+       sections/persona_picker.py's module docstring.
+       st.container(key=...) is what makes "just this one card" a valid
+       CSS target, via the "st-key-<key>" class Streamlit adds to it.
+       The absolute positioning targets the BUTTON'S OWN element
+       container (:has(), not just the <button> tag) -- Streamlit gives
+       every widget's wrapper "position: relative", so positioning only
+       the inner <button> left it confined inside that wrapper's own
+       (post-image, near-zero-height) slot instead of covering the card;
+       positioning the wrapper itself is what actually stretches the
+       click target over the image. color: transparent, not opacity: 0
+       -- opacity: 0 gets treated as hidden by accessibility tooling
+       (confirmed: it dropped out of the accessible-interactive-elements
+       tree entirely), which would make these buttons unreachable for
+       assistive tech despite still being visually/mechanically
+       clickable; a transparent-colored but non-zero-opacity button
+       stays in that tree while still reading as "invisible." */
+    div[class*="st-key-persona_card_"] {
+        position: relative;
+        width: fit-content;
+        margin: 0 auto;
+    }
+    div[class*="st-key-persona_card_"] img {
+        display: block;
+        border-radius: 12px;
+        border: 1px solid #E4E9F2;
+        box-shadow: 0 1px 4px rgba(5, 45, 73, 0.12);
+        transition: box-shadow 0.15s ease-in-out, transform 0.15s ease-in-out;
+    }
+    div[class*="st-key-persona_card_"]:hover img {
+        box-shadow: 0 4px 10px rgba(5, 45, 73, 0.2);
+        transform: translateY(-2px);
+    }
+    div[class*="st-key-persona_card_"] div[data-testid="stElementContainer"]:has(div[data-testid="stButton"]) {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        z-index: 2;
+    }
+    div[class*="st-key-persona_card_"] div[data-testid="stButton"] {
+        width: 100%;
+        height: 100%;
+    }
+    div[class*="st-key-persona_card_"] div[data-testid="stButton"] button {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        color: transparent;
+        cursor: pointer;
+        border: none;
+        padding: 0;
+        margin: 0;
+    }
+    div[class*="st-key-persona_card_"] div[data-testid="stButton"] button:focus-visible {
+        outline: 2px solid #052D49;
+        outline-offset: 2px;
     }
     .search-loading-track {
         width: 100%;

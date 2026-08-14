@@ -1,10 +1,19 @@
 """Persona-selection gate shown on first load, before the search bar --
 lets a user identify as Contractor / Developer / Government Employee /
-Individual by clicking one of four icons. Purely a display gate for now
-(which screen shows next), not yet used to vary any content -- storing
-the choice in st.session_state.selected_persona is enough for the
-current request; a future personalization pass can read that value
-without any changes here.
+Individual by clicking one of four square image-buttons. Purely a
+display gate for now (which screen shows next), not yet used to vary
+any content -- storing the choice in st.session_state.selected_persona
+is enough for the current request; a future personalization pass can
+read that value without any changes here.
+
+Each "card" is an st.image with a real st.button stretched over it via
+CSS (position: absolute, opacity: 0) so the image itself is the click
+target -- Streamlit has no native clickable-image widget. The button's
+own text stays as its accessible name (screen readers still get it) even
+though it's visually invisible; the image supplies the visible label.
+st.container(key=...) is what makes this possible: it's the only way to
+get a stable, per-card CSS hook (a "st-key-<key>" class) to scope the
+overlay to just that one card instead of every button on the page.
 """
 
 from __future__ import annotations
@@ -16,6 +25,9 @@ import streamlit as st
 from i18n import t
 
 _ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+_IMAGE_WIDTH = 130
+"""Square-button sizing per explicit request -- small enough to read as
+a row of buttons, not a row of full photos."""
 
 # (session-state value, image filename, i18n label key)
 _PERSONAS = [
@@ -36,10 +48,11 @@ def render() -> None:
     cols = st.columns(4)
     for col, (persona_key, filename, label_key) in zip(cols, _PERSONAS):
         with col:
-            st.image(str(_ASSETS_DIR / filename), width="stretch")
-            if st.button(t(label_key), key=f"persona_select_{persona_key}", width="stretch"):
-                st.session_state.selected_persona = persona_key
-                st.rerun()
+            with st.container(key=f"persona_card_{persona_key}"):
+                st.image(str(_ASSETS_DIR / filename), width=_IMAGE_WIDTH)
+                if st.button(t(label_key), key=f"persona_select_{persona_key}"):
+                    st.session_state.selected_persona = persona_key
+                    st.rerun()
 
 
 def render_change_link() -> None:

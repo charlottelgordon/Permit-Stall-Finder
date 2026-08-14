@@ -736,20 +736,13 @@ _STRINGS: dict[str, dict[str, str]] = {
 
     # --- Phase 10 redesign: header, unified search, results table, drill-down ---
     "site_welcome_intro": {
-        "en": (
-            "See where your permit's stuck, why, and what usually gets it moving. Built for "
-            "developers and contractors tracking active projects in Los Angeles, CA."
-        ),
-        "es": (
-            "Vea dónde se ha detenido su permiso, por qué, y qué suele ponerlo en marcha de "
-            "nuevo. Diseñado para desarrolladores y contratistas que dan seguimiento a "
-            "proyectos activos en Los Ángeles, CA."
-        ),
+        "en": "See where your Los Angeles City building permit's stuck, why, and what usually gets it moving.",
+        "es": "Vea dónde se ha detenido su permiso de construcción de la Ciudad de Los Ángeles, por qué, y qué suele ponerlo en marcha de nuevo.",
     },
     # persona_picker.py
     "persona_picker_heading": {
-        "en": "Which best describes you?",
-        "es": "¿Cuál lo describe mejor?",
+        "en": "Let us know your role, so you can get the most out of this experience",
+        "es": "Cuéntenos su rol, para que pueda aprovechar al máximo esta experiencia",
     },
     "persona_contractor": {"en": "Contractor", "es": "Contratista"},
     "persona_developer": {"en": "Developer", "es": "Desarrollador"},
