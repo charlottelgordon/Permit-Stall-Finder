@@ -1,19 +1,16 @@
 """Persona-selection gate shown on first load, before the search bar --
 lets a user identify as Contractor / Developer / Government Employee /
-Individual by clicking one of four square image-buttons. Purely a
-display gate for now (which screen shows next), not yet used to vary
-any content -- storing the choice in st.session_state.selected_persona
-is enough for the current request; a future personalization pass can
-read that value without any changes here.
+Individual by clicking one of four plain text buttons (styled orange
+with blue text via streamlit_app.py's stylesheet, scoped to the
+"persona_picker_row" container key so it doesn't affect any other
+button on the page). Purely a display gate for now (which screen shows
+next), not yet used to vary any content -- storing the choice in
+st.session_state.selected_persona is enough for the current request; a
+future personalization pass can read that value without any changes
+here.
 
-Each "card" is an st.image with a real st.button stretched over it via
-CSS (see streamlit_app.py's stylesheet) so the image itself is the click
-target -- Streamlit has no native clickable-image widget. The button's
-own text stays as its accessible name (screen readers still get it) even
-though it's visually transparent; the image supplies the visible label.
-st.container(key=...) is what makes this possible: it's the only way to
-get a stable, per-card CSS hook (a "st-key-<key>" class) to scope the
-overlay to just that one card instead of every button on the page.
+Previously these were image-buttons; switched back to plain buttons per
+explicit request -- the imagery read as overwhelming.
 
 The word "persona" is internal terminology only -- never rendered in
 any user-facing string here (see i18n.py's persona_* keys, none of
@@ -22,25 +19,16 @@ which say the word "persona" itself).
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import streamlit as st
 
 from i18n import t
 
-_ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
-_IMAGE_WIDTH = 150
-"""Base square-button size (mobile/narrow default) -- streamlit_app.py's
-stylesheet sizes them up further, and tightens the gap between them, on
-wider (desktop) viewports via a min-width media query targeting the
-"persona_picker_row" container key below."""
-
-# (session-state value, image filename, i18n label key)
+# (session-state value, i18n label key)
 _PERSONAS = [
-    ("contractor", "Contractor.jpg", "persona_contractor"),
-    ("developer", "Developer.jpg", "persona_developer"),
-    ("government_employee", "Government Employee.jpg", "persona_government_employee"),
-    ("individual", "Individual.jpg", "persona_individual"),
+    ("contractor", "persona_contractor"),
+    ("developer", "persona_developer"),
+    ("government_employee", "persona_government_employee"),
+    ("individual", "persona_individual"),
 ]
 
 
@@ -53,13 +41,11 @@ def render() -> None:
     )
     with st.container(key="persona_picker_row"):
         cols = st.columns(4, gap="small")
-        for col, (persona_key, filename, label_key) in zip(cols, _PERSONAS):
+        for col, (persona_key, label_key) in zip(cols, _PERSONAS):
             with col:
-                with st.container(key=f"persona_card_{persona_key}"):
-                    st.image(str(_ASSETS_DIR / filename), width=_IMAGE_WIDTH)
-                    if st.button(t(label_key), key=f"persona_select_{persona_key}"):
-                        st.session_state.selected_persona = persona_key
-                        st.rerun()
+                if st.button(t(label_key), key=f"persona_select_{persona_key}", width="stretch"):
+                    st.session_state.selected_persona = persona_key
+                    st.rerun()
 
 
 def render_switch_button() -> None:
@@ -68,7 +54,7 @@ def render_switch_button() -> None:
     once a role is picked. Clicking it clears the selection and reopens
     the picker, so a wrong/accidental choice isn't a dead end. The caller
     controls layout/columns; this just renders the button itself."""
-    label_key = next(lk for pk, _, lk in _PERSONAS if pk == st.session_state.selected_persona)
+    label_key = next(lk for pk, lk in _PERSONAS if pk == st.session_state.selected_persona)
     if st.button(t(label_key), key="persona_switch_button", width="stretch"):
         st.session_state.selected_persona = None
         st.rerun()
