@@ -847,8 +847,26 @@ _STRINGS: dict[str, dict[str, str]] = {
     },
     "col_permit_status": {"en": "Permit status", "es": "Estado del permiso"},
     "col_permit_status_help": {
-        "en": "This permit's current status, as reported by LADBS.",
-        "es": "El estado actual de este permiso, según lo informado por LADBS.",
+        "en": (
+            "This permit's current status, as reported by LADBS. Common values:\n"
+            "Submitted: application received, not yet under review\n"
+            "PC in Progress: plan review in progress, not yet issued\n"
+            "Corrections Issued: corrections requested before the next step\n"
+            "Ready to Issue: approved, awaiting issuance\n"
+            "Issued: the permit has been issued\n"
+            "CofO Issued: Certificate of Occupancy issued\n"
+            "Permit Finaled: all inspections complete"
+        ),
+        "es": (
+            "El estado actual de este permiso, según lo informado por LADBS. Valores comunes:\n"
+            "Submitted: solicitud recibida, aún no revisada\n"
+            "PC in Progress: revisión de planos en curso, aún no emitido\n"
+            "Corrections Issued: se solicitaron correcciones antes del siguiente paso\n"
+            "Ready to Issue: aprobado, en espera de emisión\n"
+            "Issued: el permiso ha sido emitido\n"
+            "CofO Issued: Certificado de Ocupación emitido\n"
+            "Permit Finaled: todas las inspecciones completas"
+        ),
     },
     "col_last_update": {"en": "Last status update", "es": "Última actualización de estado"},
     "col_last_update_help": {
