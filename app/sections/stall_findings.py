@@ -80,6 +80,15 @@ developer_explainer.py), so showing them added nothing past the first
 sentence. detection.caveats (a structural field, distinct from KB
 grounding) still renders when present, since those aren't guaranteed
 empty in this case.
+
+Steps you can take / Steps that depend on the city are likewise only
+shown while _is_ongoing(detection) is true -- next-action guidance for
+a finding whose own measurement window already closed (e.g. a
+completed inter-inspection gap between two inspections that both
+already happened) has nothing left to act on. Caveats and Source &
+grounding are unaffected by this -- they're about the finding's
+evidence/citations, not next steps, so they still render for a
+completed finding.
 """
 
 from __future__ import annotations
@@ -277,14 +286,20 @@ def _render_card(
 
         st.markdown(f"**{t('what_this_usually_means')}**")
         st.write(explanation.what_this_usually_means)
-        st.divider()
 
-        st.markdown(f"**{t('steps_you_can_take')}**")
-        _render_steps_content(explanation.developer_actionable_steps, t("no_developer_steps"))
-        st.divider()
+        # Steps are next-action guidance -- irrelevant once this specific
+        # finding's own measurement window has already closed (e.g. a
+        # completed inter-inspection gap: there's nothing left to act on
+        # for a gap that already ended). Shown only while the finding is
+        # still ongoing.
+        if _is_ongoing(detection):
+            st.divider()
+            st.markdown(f"**{t('steps_you_can_take')}**")
+            _render_steps_content(explanation.developer_actionable_steps, t("no_developer_steps"))
+            st.divider()
 
-        st.markdown(f"**{t('steps_depend_on_city')}**")
-        _render_steps_content(explanation.city_dependent_steps, t("no_city_steps"))
+            st.markdown(f"**{t('steps_depend_on_city')}**")
+            _render_steps_content(explanation.city_dependent_steps, t("no_city_steps"))
 
         if detection.caveats:
             st.divider()
