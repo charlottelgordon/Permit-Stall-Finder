@@ -858,12 +858,6 @@ _STRINGS: dict[str, dict[str, str]] = {
     "issued_status_text": {"en": "Permit has been issued", "es": "El permiso ha sido emitido"},
     "not_issued_status_text": {"en": "Permit has not been issued", "es": "El permiso no ha sido emitido"},
     "today_label": {"en": "today", "es": "hoy"},
-    "one_day_ago": {"en": "1 day ago", "es": "hace 1 día"},
-    "days_ago_template": {"en": "{n} days ago", "es": "hace {n} días"},
-    "status_updated_template": {
-        "en": "status updated {rel}",
-        "es": "estado actualizado {rel}",
-    },
     "drill_down_header": {"en": "Permit Details", "es": "Detalles del permiso"},
     "drill_down_permit_journey": {"en": "Permit Journey", "es": "Trayectoria del permiso"},
     "drill_down_other_permits": {
@@ -929,30 +923,11 @@ _ERROR_TRANSLATIONS: dict[str, str] = {
 }
 
 
-def relative_days_ago(days: int) -> str:
-    """Turns an already-computed day count (today's date minus some
-    observed date -- the caller does that subtraction, this function only
-    words the result) into "today" / "1 day ago" / "{n} days ago"."""
-    if days <= 0:
-        return t("today_label")
-    if days == 1:
-        return t("one_day_ago")
-    return t("days_ago_template").format(n=days)
-
-
-def status_updated_phrase(days_since_status_change: int) -> str:
-    """"status updated 2 days ago" style phrasing for the results table's
-    'Last status update' column -- wraps relative_days_ago() in the
-    language-appropriate sentence frame."""
-    return t("status_updated_template").format(rel=relative_days_ago(days_since_status_change))
-
-
 def _ymd_breakdown(days: int) -> str:
     """"2y 2m 3d" style breakdown of a day count into years/months/days
-    (calendar-approximate: 365-day years, 30-day months, same
-    approximation relative_days_ago's plain day-count sidesteps
-    entirely) -- omits zero-value components except to guarantee at
-    least one part is always shown (e.g. "3d", never an empty string)."""
+    (calendar-approximate: 365-day years, 30-day months) -- omits
+    zero-value components except to guarantee at least one part is
+    always shown (e.g. "3d", never an empty string)."""
     units = {
         "year": t("ymd_year_abbr"),
         "month": t("ymd_month_abbr"),
@@ -970,19 +945,34 @@ def _ymd_breakdown(days: int) -> str:
     return " ".join(parts)
 
 
+def _ymd_relative_phrase(days: int) -> str:
+    """"today" / "2y 2m 3d ago" -- the one shared building block behind
+    both status_updated_ymd_phrase() (terse, for the results table) and
+    status_last_reported_changed_phrase() (the fuller quick-glance
+    sentence). A raw day count like "794 days ago" is hard to size up at
+    a glance; breaking it into years/months/days reads instantly."""
+    if days <= 0:
+        return t("today_label")
+    return t("ymd_ago_template").format(ymd=_ymd_breakdown(days))
+
+
+def status_updated_ymd_phrase(days_since_status_change: int) -> str:
+    """"2y 2m 3d ago" -- the results table's 'Last status update' column
+    value. No "status updated" prefix: the column header already says
+    "Last status update", so the cell just states the relative time."""
+    return _ymd_relative_phrase(days_since_status_change)
+
+
 def status_last_reported_changed_phrase(days_since_status_change: int) -> str:
     """"This permit's status was last reported as changed 2y 2m 3d ago."
     -- the drill-down quick-glance panel's own, more spelled-out phrasing
-    for the same already-computed day count status_updated_phrase() above
-    words more tersely for the results table's column. days_since_status_
-    change is never recomputed here, only worded, same as every other
-    plain-language function in this module."""
-    rel = (
-        t("today_label")
-        if days_since_status_change <= 0
-        else t("ymd_ago_template").format(ymd=_ymd_breakdown(days_since_status_change))
+    around the same _ymd_relative_phrase() the results table's column
+    uses tersely. days_since_status_change is never recomputed here,
+    only worded, same as every other plain-language function in this
+    module."""
+    return t("qg_status_last_reported_template").format(
+        rel=_ymd_relative_phrase(days_since_status_change)
     )
-    return t("qg_status_last_reported_template").format(rel=rel)
 
 
 def issuance_status_text(issued: bool) -> str:

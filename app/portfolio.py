@@ -31,7 +31,7 @@ from i18n import (
     issuance_status_text,
     outcome_headline,
     plain_status_desc,
-    status_updated_phrase,
+    status_updated_ymd_phrase,
     summarize_severity_counts_compact,
 )
 from permit_stall_finder.orchestration.pipeline import (
@@ -164,7 +164,7 @@ def summarize_result(result: PermitAnalysisResult) -> PortfolioRow:
 
     days_since_status_change = (as_of_date - status_date).days if status_date else None
     last_status_update = (
-        status_updated_phrase(days_since_status_change) if days_since_status_change is not None else "—"
+        status_updated_ymd_phrase(days_since_status_change) if days_since_status_change is not None else "—"
     )
     issuance_status = issuance_status_text(bool(snapshot and snapshot.issue_date))
     raw_status_desc = snapshot.status_desc if snapshot else "—"
