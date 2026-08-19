@@ -4,7 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository state
 
-This repository currently contains no source code — only `Permit_Stall_Finder_PRD_Template.docx`, the product requirements document for the project. There is no build system, package manifest, test suite, or application code yet. When the user asks you to start implementing, you are building the project from scratch and should propose a stack/architecture rather than assume one exists.
+All three agents are implemented, with a Streamlit UI on top and a full offline test suite. Layout:
+
+- `src/permit_stall_finder/` — the agent pipeline (`agents/`, `schema/`, `ingestion/`, `analysis/`, `analytics/`, `knowledge_base/`, `storage/`, `orchestration/`) and `cli.py` for running any stage from the command line.
+- `app/` — the Streamlit app (`streamlit_app.py` is the entrypoint; `sections/` holds per-view render modules). Search, a Trends Dashboard (backed by a static artifact `scripts/generate_trends_artifact.py` generates offline — see that script's own docstring for why it can't run live on Streamlit Community Cloud), and a starred-searches / My Permits view.
+- `tests/` — offline, fixture-backed (`tests/fixtures/`), no network access required.
+- `research/` — the design docs each module's own comments cite (`DATASET_VALIDATION.md`, `AGENT2_DESIGN.md`, `AGENT3_DESIGN.md`, `UI_DESIGN.md`).
+
+Run the app: `streamlit run app/streamlit_app.py`. Run tests: `pytest`.
 
 ## Project: Permit Stall Finder
 
@@ -18,13 +25,13 @@ A multi-agent tool that reconstructs the full lifecycle of a Los Angeles buildin
 
 ### Agent architecture (per PRD)
 
-The system is designed as three agents operating in a pipeline, each consuming the prior agent's structured output:
+The system is three agents operating in a pipeline, each consuming the prior agent's structured output (see `orchestration/pipeline.py` for how they're wired together, and `cli.py` for running any single stage in isolation):
 
-1. **Agent 1 — Journey Reconstructor**: Joins the two datasets by permit number into one ordered timeline (submission, plan check milestones, issuance, every inspection event with date/type/result). Must handle permits with missing or partial inspection records without failing. Defines a shared schema for a "permit journey" (stages, timestamps, statuses) that Agents 2 and 3 consume — this schema is the core internal contract between agents. Logs unmatched/unreconstructable permits for review rather than dropping them silently.
+1. **Agent 1 — Journey Reconstructor** (`agents/journey_reconstructor.py`): Joins the two datasets by permit number into one ordered timeline (submission, plan check milestones, issuance, every inspection event with date/type/result). Handles permits with missing or partial inspection records without failing. Defines a shared schema for a "permit journey" (`schema/journey.py`'s `PermitJourney`) that Agents 2 and 3 consume — this schema is the core internal contract between agents. Logs unmatched/unreconstructable permits to `reconstruction_log` (`storage/db.py`) rather than dropping them silently.
 
-2. **Agent 2 — Stall Detector**: Analyzes a reconstructed journey to identify where a permit has stopped progressing and for how long. Flags a permit as "stalled" against a threshold (e.g. no movement for X days at a stage), and distinguishes stall types where data supports it (e.g. awaiting reinspection, awaiting correction, awaiting plan check). Thresholds must be configurable per permit type / work description category, and threshold changes must be auditable.
+2. **Agent 2 — Stall Detector** (`agents/stall_detector.py`, see `research/AGENT2_DESIGN.md` for the full design): Analyzes a reconstructed journey to identify where a permit has stopped progressing and for how long. Flags a permit as "stalled" against a threshold, and distinguishes stall types where data supports it (see `schema/stall_detection.py`'s `StallCategory`). Thresholds are configurable per permit type / work description category (`config.py`), and threshold changes are auditable (`storage/cohort_cache.py`).
 
-3. **Agent 3 — Developer Explainer**: Takes a stall type + stage from Agent 2 and produces a plain-language, non-jargon explanation of the likely cause, grounded in observed historical data patterns (not speculation), plus a short list of typical next steps — distinguishing developer-actionable steps from city-dependent ones. Explanations must never be presented as an official LADBS determination and must include a disclaimer that the tool is informational only.
+3. **Agent 3 — Developer Explainer** (`agents/developer_explainer.py`, see `research/AGENT3_DESIGN.md`): Takes a stall type + stage from Agent 2 and produces a plain-language, non-jargon explanation of the likely cause, grounded in observed historical data patterns (not speculation) via `knowledge_base/`, plus a short list of typical next steps — distinguishing developer-actionable steps from city-dependent ones. Explanations are never presented as an official LADBS determination and always carry a disclaimer that the tool is informational only.
 
 ### Guiding principles (from PRD — apply these when designing agent behavior)
 - Explanations are grounded in observed data patterns, not speculation.

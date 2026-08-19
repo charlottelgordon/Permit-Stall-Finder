@@ -1,13 +1,16 @@
-# Permit Stall Finder
+# Permit Check LA
 
 Reconstructs the observable journey of a Los Angeles building permit —
 from submission through issuance, inspections, and finalization — by
 joining two LA Open Data datasets that are published separately but share
-a permit number. Built as three agents: Journey Reconstructor (Agent 1,
-implemented), Stall Detector (Agent 2, not yet built), Developer Explainer
-(Agent 3, not yet built).
+a permit number, then identifies where and why a permit has stalled and
+explains it in plain language. Built as three agents: Journey
+Reconstructor, Stall Detector, and Developer Explainer (all implemented —
+see [`CLAUDE.md`](CLAUDE.md) for what each one does and where its code
+lives), plus a Streamlit UI ([`app/`](app/)) on top.
 
-See [`CLAUDE.md`](CLAUDE.md) for project scope and guiding principles, and
+See [`CLAUDE.md`](CLAUDE.md) for project scope, guiding principles, and a
+map of the codebase, and
 [`research/DATASET_VALIDATION.md`](research/DATASET_VALIDATION.md) for the
 data investigation this implementation is grounded in — which datasets
 were chosen, why, and what their real join quality and coverage limits
@@ -31,21 +34,25 @@ python3 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 ```
 
-## Usage
+## Running the app
 
 ```bash
-.venv/bin/python -m permit_stall_finder.cli journey <permit_number>
+.venv/bin/streamlit run app/streamlit_app.py
 ```
 
-Example:
+## CLI
+
+Run any single stage of the pipeline directly (`journey` = Agent 1 only,
+`stalls` = Agent 1+2, `explain` = Agent 1+2+3, `analyze` = the full
+orchestrated pipeline — see `cli.py`):
 
 ```bash
-.venv/bin/python -m permit_stall_finder.cli journey 21030-20000-00256
+.venv/bin/python -m permit_stall_finder.cli analyze 21030-20000-00256
 ```
 
 Each run fetches the permit's current state and its inspection history,
 persists a dated snapshot to a local DuckDB database (`data/permit_stall_finder.duckdb`,
-gitignored), and prints the reconstructed `PermitJourney`.
+gitignored), and prints the result as JSON.
 
 ## Tests
 

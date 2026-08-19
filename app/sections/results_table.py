@@ -91,5 +91,11 @@ def render(rows: list[PortfolioRow], *, key: str = "results_table") -> list[str]
         key=key,
     )
 
-    selected_indices = event.selection["rows"] if event is not None else []
+    # Bracket access, not attribute access: st.dataframe's on_select event
+    # object supports both ("a dictionary-like object that supports both
+    # key and attribute notation" per Streamlit's own DataframeState
+    # docstring), but AppTest simulating a selection by pre-seeding
+    # session_state with a plain dict only supports the former -- see
+    # test_streamlit_app_redesign.py's row-selection test.
+    selected_indices = event["selection"]["rows"] if event is not None else []
     return [rows[i].permit_number for i in selected_indices if 0 <= i < len(rows)]

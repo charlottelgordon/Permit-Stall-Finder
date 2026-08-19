@@ -13,16 +13,11 @@ rather than inventing one.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
 
-from permit_stall_finder.schema.stall_detection import (
-    DelayStallDetection,
-    FrictionStallDetection,
-    Severity,
-    StallCategory,
-)
+from permit_stall_finder.schema.stall_detection import Severity, StallCategory
 
 DISCLAIMER = (
     "This explanation is informational only and is not an official "

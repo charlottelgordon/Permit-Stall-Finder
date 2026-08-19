@@ -535,14 +535,23 @@ st.markdown(
 # via the image's alt text" treatment without Streamlit's own
 # instrumentation). Sits inside the colored bar itself (not a separate
 # row below it), so the logo doesn't cost its own line of vertical space.
-_logo_b64 = base64.b64encode((Path(__file__).parent / "assets" / "logo.png").read_bytes()).decode()
+#
+# @st.cache_data, not a bare module-level read: Streamlit reruns this
+# whole script top-to-bottom on every interaction (every button click,
+# every keystroke), so without caching this file would be re-read from
+# disk and re-base64-encoded on every single rerun, not just once per
+# session -- confirmed as a real, measurable cost, not a theoretical one.
+@st.cache_data
+def _asset_b64(filename: str) -> str:
+    return base64.b64encode((Path(__file__).parent / "assets" / filename).read_bytes()).decode()
+
+
+_logo_b64 = _asset_b64("logo.png")
 # Same raw-<img>-as-data-URI approach as the logo above -- a GIF embedded
 # this way still animates in the browser (the <img> tag doesn't care that
 # the bytes underneath happen to be an animated GIF rather than a static
 # PNG), so no extra JS is needed to keep it moving.
-_search_loader_gif_b64 = base64.b64encode(
-    (Path(__file__).parent / "assets" / "house_building_loader (3).gif").read_bytes()
-).decode()
+_search_loader_gif_b64 = _asset_b64("house_building_loader (3).gif")
 st.markdown(
     '<div class="app-header-bar">'
     f'<div class="app-header-left"><a href="javascript:void(0)" class="header-home-link" '

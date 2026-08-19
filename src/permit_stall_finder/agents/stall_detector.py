@@ -51,7 +51,7 @@ FIXED THIS REVISION (were producing materially misleading results):
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 from permit_stall_finder import config
 from permit_stall_finder.analysis import cohorts as cohort_lib
@@ -70,7 +70,6 @@ from permit_stall_finder.schema.stall_detection import (
     FrictionStallDetection,
     IntervalState,
     LifecycleStage,
-    Severity,
     SeverityThresholds,
     StallAssessment,
     StallCategory,
