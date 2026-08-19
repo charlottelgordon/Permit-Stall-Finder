@@ -33,6 +33,7 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
+import browser_id
 import drill_down
 import portfolio
 import search_input
@@ -44,11 +45,11 @@ from i18n import (
     translate_error_message,
 )
 from errors import GENERIC_ERROR_MESSAGE, validate_permit_number
-from sections import persona_picker, report_export, results_table
+from sections import my_permits, persona_picker, report_export, results_table, trends_dashboard
 
 from permit_stall_finder import config
 from permit_stall_finder.ingestion.permits import fetch_permits_by_address
-from permit_stall_finder.storage import user_state
+from permit_stall_finder.storage import starred, user_state
 
 st.set_page_config(
     page_title=APP_NAME,
@@ -64,17 +65,84 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
     html, body, [class*="css"] {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'IBM Plex Sans', sans-serif;
     }
     h1, h2, h3, h4, h5, h6,
     [data-testid="stMarkdownContainer"] h1,
     [data-testid="stMarkdownContainer"] h2,
     [data-testid="stMarkdownContainer"] h3 {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 700;
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-weight: 600;
+    }
+    /* Carbon Design System v11 productive type scale (IBM Plex Sans),
+       applied to Streamlit's own heading/body/caption elements so text
+       hierarchy reads consistently across the app -- sizes/weights only,
+       no color changes (existing brand colors are untouched throughout
+       this stylesheet). Streamlit maps st.title -> h1, st.header -> h2,
+       st.subheader -> h3; body copy renders inside stMarkdownContainer
+       paragraphs, and st.caption renders inside stCaptionContainer. */
+    [data-testid="stMarkdownContainer"] h1 {
+        font-size: 1.75rem;   /* Carbon Heading 05 */
+        line-height: 2.25rem;
+        font-weight: 600;
+    }
+    [data-testid="stMarkdownContainer"] h2 {
+        font-size: 1.25rem;   /* Carbon Heading 04 */
+        line-height: 1.75rem;
+        font-weight: 600;
+    }
+    [data-testid="stMarkdownContainer"] h3 {
+        font-size: 1rem;      /* Carbon Heading 03 */
+        line-height: 1.5rem;
+        font-weight: 600;
+    }
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] li {
+        font-size: 0.875rem;  /* Carbon Body 01 */
+        line-height: 1.25rem;
+        font-weight: 400;
+    }
+    [data-testid="stCaptionContainer"],
+    [data-testid="stCaptionContainer"] p {
+        font-size: 0.75rem;   /* Carbon Helper text 01 */
+        line-height: 1rem;
+        font-weight: 400;
+        letter-spacing: 0.32px;
+    }
+    div[data-testid="stExpander"] summary {
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    /* Carbon button shape/sizing/states (radius, height, weight, focus
+       ring) applied to Streamlit's own button widgets -- Search, Clear
+       results, Download report, the hidden Home trigger. Persona-picker
+       buttons keep their own already-tuned card treatment further down
+       this stylesheet (that selector is more specific, so it still wins
+       over these defaults where the two overlap); this rule intentionally
+       carries no color declarations of its own. */
+    div[data-testid="stButton"] button,
+    div[data-testid="stFormSubmitButton"] button,
+    div[data-testid="stDownloadButton"] button {
+        border-radius: 0;
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-weight: 400;
+        font-size: 0.875rem;
+        min-height: 3rem;
+        padding: 0 1rem;
+        transition: background-color 70ms cubic-bezier(0.2, 0, 0.38, 0.9),
+            border-color 70ms cubic-bezier(0.2, 0, 0.38, 0.9),
+            color 70ms cubic-bezier(0.2, 0, 0.38, 0.9);
+    }
+    div[data-testid="stButton"] button:focus-visible,
+    div[data-testid="stFormSubmitButton"] button:focus-visible,
+    div[data-testid="stDownloadButton"] button:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: -2px;
+        box-shadow: none;
     }
     [data-testid="stHeader"] {
         background-color: #F5760A !important;
@@ -460,6 +528,8 @@ components.html(
 # --- Session state defaults --------------------------------------------
 if "selected_persona" not in st.session_state:
     st.session_state.selected_persona = None
+if "active_view" not in st.session_state:
+    st.session_state.active_view = "search"
 if "table_rows" not in st.session_state:
     st.session_state.table_rows = None
 if "results_cache" not in st.session_state:
@@ -491,8 +561,10 @@ if _pending_clear or _pending_home_reset:
     st.session_state.unified_search_input = ""
 if _pending_home_reset:
     st.session_state.selected_persona = None
+    st.session_state.active_view = "search"
 
 conn = get_connection()
+st.session_state.pcla_uid = browser_id.get_or_bootstrap_uid()
 
 # Language toggle, right-aligned above the welcome text (moved off the
 # search row -- next to the tooltip there, it was crowding that row's
@@ -514,177 +586,236 @@ st.markdown(
 if not st.session_state.selected_persona:
     persona_picker.render()
 else:
-    # --- Search: one bar, permit number(s) or address ---------------------
-    _, search_col, _ = st.columns([1, 3, 1])
-    with search_col:
-        input_col, tip_col = st.columns([9, 1])
-        with input_col:
-            raw_query = st.text_input(
-                t("unified_search_placeholder"),
-                placeholder=t("unified_search_placeholder"),
-                key="unified_search_input",
-                label_visibility="collapsed",
-            )
-        with tip_col:
-            # A custom circular "?" icon with a CSS-only hover tooltip --
-            # not text_input's own help= (Streamlit drops that help icon
-            # entirely when label_visibility="collapsed" is set, since
-            # there's no label row for it to attach to) and not the browser's
-            # native title= attribute (unreliable: inconsistent per-browser
-            # delay, easy to miss, no hover state at all on touch/mobile).
-            # This is a real :hover-driven CSS reveal, so it doesn't depend
-            # on native tooltip timing/rendering the way title= did.
-            _help_paragraphs = "".join(
-                f"<p>{html.escape(p)}</p>" for p in t("unified_search_help").split("\n\n")
-            )
-            st.markdown(
-                '<div class="search-tooltip-wrap">'
-                '<div class="search-tooltip-icon">?</div>'
-                f'<div class="search-tooltip-content">{_help_paragraphs}</div>'
-                "</div>",
-                unsafe_allow_html=True,
-            )
+    # --- Nav switcher: Search / Trends Dashboard / My Permits ------------
+    # Same "gate on session_state, branch what renders" idiom the persona
+    # picker above already uses -- plain st.buttons rather than Streamlit's
+    # native pages/st.navigation, which would reintroduce the sidebar
+    # chrome this app deliberately hides everywhere else (see stHeader/
+    # stToolbar/stMainMenu/stAppDeployButton rules in the stylesheet above).
+    nav_search_col, nav_trends_col, nav_my_permits_col, _ = st.columns([2, 2, 2, 4])
+    with nav_search_col:
+        if st.button(t("nav_search"), key="nav_search_button", width="stretch"):
+            st.session_state.active_view = "search"
+            st.rerun()
+    with nav_trends_col:
+        if st.button(t("nav_trends"), key="nav_trends_button", width="stretch"):
+            st.session_state.active_view = "trends"
+            st.rerun()
+    with nav_my_permits_col:
+        if st.button(t("nav_my_permits"), key="nav_my_permits_button", width="stretch"):
+            st.session_state.active_view = "my_permits"
+            st.rerun()
 
-        # Search + Clear, centered as a pair below the search bar.
-        _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])
-        with btn_search_col:
-            # Placeholder-swap loading state (Nielsen Norman heuristic #1,
-            # Visibility of System Status): the button becomes a disabled
-            # "Searching..." the instant it's clicked, and an animated
-            # loading bar plus a small looping gif + caption appear
-            # immediately below, so the user never wonders whether the
-            # click registered while the network-bound pipeline call below
-            # is still running.
-            search_button_slot = st.empty()
-            search_clicked = search_button_slot.button(
-                t("search_button"), type="primary", key="unified_search_button", width="stretch"
-            )
-        with btn_clear_col:
-            clear_clicked = st.button(
-                t("clear_results"), key="clear_results_button", width="stretch"
-            )
+    if st.session_state.active_view == "search":
+        # --- Search: one bar, permit number(s) or address ---------------------
+        _, search_col, _ = st.columns([1, 3, 1])
+        with search_col:
+            input_col, tip_col = st.columns([9, 1])
+            with input_col:
+                raw_query = st.text_input(
+                    t("unified_search_placeholder"),
+                    placeholder=t("unified_search_placeholder"),
+                    key="unified_search_input",
+                    label_visibility="collapsed",
+                )
+            with tip_col:
+                # A custom circular "?" icon with a CSS-only hover tooltip --
+                # not text_input's own help= (Streamlit drops that help icon
+                # entirely when label_visibility="collapsed" is set, since
+                # there's no label row for it to attach to) and not the browser's
+                # native title= attribute (unreliable: inconsistent per-browser
+                # delay, easy to miss, no hover state at all on touch/mobile).
+                # This is a real :hover-driven CSS reveal, so it doesn't depend
+                # on native tooltip timing/rendering the way title= did.
+                _help_paragraphs = "".join(
+                    f"<p>{html.escape(p)}</p>" for p in t("unified_search_help").split("\n\n")
+                )
+                st.markdown(
+                    '<div class="search-tooltip-wrap">'
+                    '<div class="search-tooltip-icon">?</div>'
+                    f'<div class="search-tooltip-content">{_help_paragraphs}</div>'
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
 
-        loading_bar_slot = st.empty()
-        loading_gif_slot = st.empty()
+            # Search + Clear, centered as a pair below the search bar.
+            _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])
+            with btn_search_col:
+                # Placeholder-swap loading state (Nielsen Norman heuristic #1,
+                # Visibility of System Status): the button becomes a disabled
+                # "Searching..." the instant it's clicked, and an animated
+                # loading bar plus a small looping gif + caption appear
+                # immediately below, so the user never wonders whether the
+                # click registered while the network-bound pipeline call below
+                # is still running.
+                search_button_slot = st.empty()
+                search_clicked = search_button_slot.button(
+                    t("search_button"), type="primary", key="unified_search_button", width="stretch"
+                )
+            with btn_clear_col:
+                clear_clicked = st.button(
+                    t("clear_results"), key="clear_results_button", width="stretch"
+                )
 
-    if clear_clicked:
-        st.session_state.pending_clear = True
-        st.rerun()
+            # Star/unstar the search just run -- tied to the query itself
+            # (last_search_kind/value), not to individual result rows:
+            # results_table.py's dataframe can't host per-row buttons, and
+            # starring targets the whole search per how this feature was
+            # scoped. A placeholder, not an inline render: last_search_value
+            # only gets set further down (inside "if search_clicked:"), so
+            # filling this in immediately here would always be one run
+            # stale -- same st.empty()-now/fill-in-later idiom
+            # search_button_slot below already uses for exactly that reason.
+            star_toggle_slot = st.empty()
 
-    if search_clicked:
-        query = raw_query.strip()
-        if not query:
-            st.warning(t("warning_enter_permit_number"))
-        else:
-            search_button_slot.button(
-                t("searching_button"),
-                type="primary",
-                disabled=True,
-                key="unified_search_button_loading",
-                width="stretch",
-            )
-            loading_bar_slot.markdown(
-                '<div class="search-loading-track"><div class="search-loading-bar"></div></div>',
-                unsafe_allow_html=True,
-            )
-            loading_gif_slot.markdown(
-                '<div class="search-loading-gif-wrap">'
-                f'<img src="data:image/gif;base64,{_search_loader_gif_b64}" alt="">'
-                f'<div class="search-loading-gif-caption">{t("search_loading_caption")}</div>'
-                "</div>",
-                unsafe_allow_html=True,
-            )
-            kind, values = search_input.classify(query)
-            permit_numbers: list[str] = []
-            st.session_state.error = None
-            st.session_state.batch_errors = []
+            loading_bar_slot = st.empty()
+            loading_gif_slot = st.empty()
 
-            if kind == "permit_numbers":
-                permit_numbers = values
+        if clear_clicked:
+            st.session_state.pending_clear = True
+            st.rerun()
+
+        if search_clicked:
+            query = raw_query.strip()
+            if not query:
+                st.warning(t("warning_enter_permit_number"))
             else:
-                try:
-                    matches = fetch_permits_by_address(values[0])
-                    permit_numbers = [m["permit_nbr"] for m in matches if m.get("permit_nbr")]
-                    user_state.record_search(conn, "address", values[0])
-                except Exception:
-                    st.session_state.error = translate_error_message(GENERIC_ERROR_MESSAGE)
-                if not permit_numbers and st.session_state.error is None:
-                    st.info(t("info_no_permits_found"))
+                search_button_slot.button(
+                    t("searching_button"),
+                    type="primary",
+                    disabled=True,
+                    key="unified_search_button_loading",
+                    width="stretch",
+                )
+                loading_bar_slot.markdown(
+                    '<div class="search-loading-track"><div class="search-loading-bar"></div></div>',
+                    unsafe_allow_html=True,
+                )
+                loading_gif_slot.markdown(
+                    '<div class="search-loading-gif-wrap">'
+                    f'<img src="data:image/gif;base64,{_search_loader_gif_b64}" alt="">'
+                    f'<div class="search-loading-gif-caption">{t("search_loading_caption")}</div>'
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
+                kind, values = search_input.classify(query)
+                permit_numbers: list[str] = []
+                st.session_state.error = None
+                st.session_state.batch_errors = []
+                st.session_state.last_search_kind = "permit_query" if kind == "permit_numbers" else "address"
+                st.session_state.last_search_value = query
 
-            if len(permit_numbers) == 1:
-                permit_number, validation_error = validate_permit_number(permit_numbers[0])
-                if validation_error:
-                    st.session_state.error = validation_error
-                    permit_numbers = []
+                if kind == "permit_numbers":
+                    permit_numbers = values
                 else:
-                    permit_numbers = [permit_number]
+                    try:
+                        matches = fetch_permits_by_address(values[0])
+                        permit_numbers = [m["permit_nbr"] for m in matches if m.get("permit_nbr")]
+                        user_state.record_search(conn, "address", values[0])
+                    except Exception:
+                        st.session_state.error = translate_error_message(GENERIC_ERROR_MESSAGE)
+                    if not permit_numbers and st.session_state.error is None:
+                        st.info(t("info_no_permits_found"))
 
-            if permit_numbers:
-                batch = portfolio.run_batch(
-                    conn, permit_numbers, sample_size=config.DEFAULT_COHORT_SAMPLE_SIZE, progress=False
+                if len(permit_numbers) == 1:
+                    permit_number, validation_error = validate_permit_number(permit_numbers[0])
+                    if validation_error:
+                        st.session_state.error = validation_error
+                        permit_numbers = []
+                    else:
+                        permit_numbers = [permit_number]
+
+                if permit_numbers:
+                    batch = portfolio.run_batch(
+                        conn, permit_numbers, sample_size=config.DEFAULT_COHORT_SAMPLE_SIZE, progress=False
+                    )
+                    for permit_number, result in batch.results_by_permit.items():
+                        st.session_state.results_cache[permit_number] = result
+                        user_state.record_search(conn, "permit_number", permit_number)
+
+                    st.session_state.table_rows = batch.rows
+                    st.session_state.drilldown_permits = (
+                        [batch.rows[0].permit_number] if len(batch.rows) == 1 else []
+                    )
+                    st.session_state.extra_drilldown_permits = []
+                    st.session_state.batch_errors = batch.errors
+
+                # Swap the button and loading bar back to their idle state in
+                # place, rather than a full st.rerun(): the results table/
+                # drill-down below still render later in this same script pass
+                # regardless (table_rows is already set above), so a rerun would
+                # only add a redundant round trip -- and would also wipe out the
+                # st.info/st.warning messages above (e.g. "no permits found")
+                # before the user had a chance to read them.
+                loading_bar_slot.empty()
+                loading_gif_slot.empty()
+                search_button_slot.button(
+                    t("search_button"), type="primary", key="unified_search_button_done", width="stretch"
                 )
-                for permit_number, result in batch.results_by_permit.items():
-                    st.session_state.results_cache[permit_number] = result
-                    user_state.record_search(conn, "permit_number", permit_number)
 
-                st.session_state.table_rows = batch.rows
-                st.session_state.drilldown_permits = (
-                    [batch.rows[0].permit_number] if len(batch.rows) == 1 else []
-                )
-                st.session_state.extra_drilldown_permits = []
-                st.session_state.batch_errors = batch.errors
+        # Filled in here, not where the placeholder was declared above --
+        # last_search_kind/value are only current as of *this* point in
+        # the run (set inside "if search_clicked:" above), and this runs
+        # on every rerun of the search view, not just right after a
+        # search click, so the star state stays correct across unrelated
+        # reruns too (e.g. after the star button's own click).
+        if st.session_state.get("last_search_value") and st.session_state.get("pcla_uid"):
+            _uid = st.session_state.pcla_uid
+            _kind = st.session_state.last_search_kind
+            _value = st.session_state.last_search_value
+            _currently_starred = starred.is_starred(conn, _uid, _kind, _value)
+            _star_label = t("unstar_this_search") if _currently_starred else t("star_this_search")
+            if star_toggle_slot.button(_star_label, key="star_toggle_button"):
+                if _currently_starred:
+                    starred.unstar_search(conn, _uid, _kind, _value)
+                else:
+                    starred.star_search(conn, _uid, _kind, _value)
+                st.rerun()
 
-            # Swap the button and loading bar back to their idle state in
-            # place, rather than a full st.rerun(): the results table/
-            # drill-down below still render later in this same script pass
-            # regardless (table_rows is already set above), so a rerun would
-            # only add a redundant round trip -- and would also wipe out the
-            # st.info/st.warning messages above (e.g. "no permits found")
-            # before the user had a chance to read them.
-            loading_bar_slot.empty()
-            loading_gif_slot.empty()
-            search_button_slot.button(
-                t("search_button"), type="primary", key="unified_search_button_done", width="stretch"
+        st.divider()
+
+        if st.session_state.error:
+            st.error(translate_error_message(st.session_state.error))
+
+        if st.session_state.get("batch_errors"):
+            errors = st.session_state.batch_errors
+            st.warning(
+                f"{len(errors)} " + t("warning_some_unanalyzed") + " "
+                + ", ".join(p for p, _ in errors)
             )
 
-    st.divider()
+        # --- Unified results table + drill-down -----------------------------------
+        if st.session_state.table_rows:
+            # Union, not replace: a fresh search seeds drilldown_permits directly
+            # above (auto-opening the single-permit case), and any permit the
+            # results table itself reports as checked gets folded in here and
+            # stays open across later reruns caused by *other* widgets (an
+            # "Other permits at this address" click, an expander toggle, etc.) --
+            # those unrelated reruns would otherwise read the dataframe's own
+            # selection as unchanged/empty and wrongly look like a deselection.
+            # Trade-off: unchecking a row doesn't close its tab -- there's no
+            # explicit "close tab" affordance in this redesign yet.
+            table_selected = results_table.render(st.session_state.table_rows)
+            for permit_number in table_selected:
+                if permit_number not in st.session_state.drilldown_permits:
+                    st.session_state.drilldown_permits.append(permit_number)
 
-if st.session_state.error:
-    st.error(translate_error_message(st.session_state.error))
+            # One combined, print-friendly report covering every permit currently
+            # shown in the table above (not just checked rows) -- someone who
+            # wants to save/print the full detail rather than read it on screen.
+            report_export.render_download_button(
+                [r.permit_number for r in st.session_state.table_rows],
+                st.session_state.results_cache,
+                get_knowledge_base(),
+            )
 
-if st.session_state.get("batch_errors"):
-    errors = st.session_state.batch_errors
-    st.warning(
-        f"{len(errors)} " + t("warning_some_unanalyzed") + " "
-        + ", ".join(p for p, _ in errors)
-    )
+            combined = list(st.session_state.drilldown_permits) + list(
+                st.session_state.extra_drilldown_permits
+            )
+            drill_down.render(conn, combined, st.session_state.results_cache, get_knowledge_base())
 
-# --- Unified results table + drill-down -----------------------------------
-if st.session_state.table_rows:
-    # Union, not replace: a fresh search seeds drilldown_permits directly
-    # above (auto-opening the single-permit case), and any permit the
-    # results table itself reports as checked gets folded in here and
-    # stays open across later reruns caused by *other* widgets (an
-    # "Other permits at this address" click, an expander toggle, etc.) --
-    # those unrelated reruns would otherwise read the dataframe's own
-    # selection as unchanged/empty and wrongly look like a deselection.
-    # Trade-off: unchecking a row doesn't close its tab -- there's no
-    # explicit "close tab" affordance in this redesign yet.
-    table_selected = results_table.render(st.session_state.table_rows)
-    for permit_number in table_selected:
-        if permit_number not in st.session_state.drilldown_permits:
-            st.session_state.drilldown_permits.append(permit_number)
+    elif st.session_state.active_view == "trends":
+        trends_dashboard.render()
 
-    # One combined, print-friendly report covering every permit currently
-    # shown in the table above (not just checked rows) -- someone who
-    # wants to save/print the full detail rather than read it on screen.
-    report_export.render_download_button(
-        [r.permit_number for r in st.session_state.table_rows],
-        st.session_state.results_cache,
-        get_knowledge_base(),
-    )
-
-    combined = list(st.session_state.drilldown_permits) + list(
-        st.session_state.extra_drilldown_permits
-    )
-    drill_down.render(conn, combined, st.session_state.results_cache, get_knowledge_base())
+    elif st.session_state.active_view == "my_permits":
+        my_permits.render(conn, st.session_state.get("pcla_uid"))

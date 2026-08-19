@@ -900,6 +900,83 @@ _STRINGS: dict[str, dict[str, str]] = {
             "Departamento de Edificación y Seguridad de la Ciudad de Los Ángeles."
         ),
     },
+
+    # --- Nav switcher (Search / Trends Dashboard / My Permits) -----------
+    "nav_search": {"en": "Search", "es": "Buscar"},
+    "nav_trends": {"en": "Trends Dashboard", "es": "Panel de tendencias"},
+    "nav_my_permits": {"en": "My Permits", "es": "Mis permisos"},
+
+    # --- Trends dashboard --------------------------------------------------
+    "trends_dashboard_header": {"en": "Trends Dashboard", "es": "Panel de tendencias"},
+    "trends_disclaimer_text": {
+        "en": (
+            "These figures describe how permits like this have historically moved through "
+            "the process, based on a sample of past permits -- they are not a prediction "
+            "of how long any specific permit will take, and this tool is informational only, "
+            "not an official LADBS determination."
+        ),
+        "es": (
+            "Estas cifras describen cómo se han movido históricamente permisos similares a "
+            "este dentro del proceso, según una muestra de permisos anteriores -- no son una "
+            "predicción de cuánto tardará un permiso específico, y esta herramienta es solo "
+            "informativa, no una determinación oficial de LADBS."
+        ),
+    },
+    "trends_generated_caption": {
+        "en": "Based on a sample of up to {n} permits per year/type, generated {generated}.",
+        "es": "Basado en una muestra de hasta {n} permisos por año/tipo, generado el {generated}.",
+    },
+    "trends_no_artifact": {
+        "en": (
+            "No trends data has been generated yet. Run "
+            "scripts/generate_trends_artifact.py to build it."
+        ),
+        "es": (
+            "Aún no se han generado datos de tendencias. Ejecute "
+            "scripts/generate_trends_artifact.py para generarlos."
+        ),
+    },
+    "trends_no_data_for_selection": {
+        "en": "No data for this selection.", "es": "No hay datos para esta selección.",
+    },
+    "trends_year_over_year_header": {
+        "en": "Typical duration, year over year", "es": "Duración típica, año tras año",
+    },
+    "trends_duration_by_type_header": {
+        "en": "Typical duration by permit type", "es": "Duración típica por tipo de permiso",
+    },
+    "trends_delay_reasons_header": {
+        "en": "Most common delay reasons this year", "es": "Motivos de retraso más comunes este año",
+    },
+    "trends_permit_type_label": {"en": "Permit type", "es": "Tipo de permiso"},
+    "trends_year_label": {"en": "Year", "es": "Año"},
+    "trends_metric_label": {"en": "Metric", "es": "Métrica"},
+    "trends_metric_issuance": {
+        "en": "Days from submission to issuance", "es": "Días de la presentación a la emisión",
+    },
+    "trends_metric_first_inspection": {
+        "en": "Days from issuance to first inspection",
+        "es": "Días de la emisión a la primera inspección",
+    },
+    "trends_metric_inter_inspection": {
+        "en": "Days between inspections", "es": "Días entre inspecciones",
+    },
+    "trends_delay_occurrences_suffix": {"en": "occurrences", "es": "ocurrencias"},
+
+    # --- Starred searches / My Permits --------------------------------------
+    "star_this_search": {"en": "☆ Star this search", "es": "☆ Marcar esta búsqueda"},
+    "unstar_this_search": {"en": "★ Starred", "es": "★ Marcada"},
+    "my_permits_header": {"en": "My Permits", "es": "Mis permisos"},
+    "my_permits_empty": {
+        "en": "You haven't starred any searches yet. Run a search, then click \"Star this search\" to have it load here automatically next time.",
+        "es": "Aún no ha marcado ninguna búsqueda. Realice una búsqueda y haga clic en \"Marcar esta búsqueda\" para que se cargue aquí automáticamente la próxima vez.",
+    },
+    "my_permits_no_uid": {
+        "en": "Starring isn't available yet this session -- try reloading the page.",
+        "es": "Marcar aún no está disponible en esta sesión -- intente recargar la página.",
+    },
+    "my_permits_starred_searches_header": {"en": "Starred searches", "es": "Búsquedas marcadas"},
+    "unstar_button": {"en": "Unstar", "es": "Quitar marca"},
 }
 
 

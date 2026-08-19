@@ -66,6 +66,25 @@ CREATE TABLE IF NOT EXISTS search_history (
     PRIMARY KEY (kind, value)
 );
 
+CREATE TABLE IF NOT EXISTS starred_searches (
+    -- A user-starred *search* (the whole typed query -- a permit-query
+    -- string or an address), not individual permit rows, so "My Permits"
+    -- can later re-expand it back into the same permit list the original
+    -- search resolved to. uid is an anonymous per-browser id (see
+    -- app/browser_id.py) -- the only table in this file where a column
+    -- actually partitions data by user; every other table here is
+    -- app-wide by design (see user_state.py's own docstring). kind uses
+    -- its own vocabulary ("permit_query" | "address"), deliberately
+    -- distinct from search_history.kind's ("permit_number" | "address"):
+    -- search_history logs one row per already-resolved permit number,
+    -- but a starred search needs to persist the un-resolved query itself.
+    uid TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    value TEXT NOT NULL,
+    starred_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (uid, kind, value)
+);
+
 CREATE TABLE IF NOT EXISTS cohort_stats (
     cohort_key TEXT NOT NULL,       -- category + sorted dimensions, e.g. "pre_issuance_status_dwell|permit_type=Bldg-Alter/Repair|status_desc=Corrections Issued"
     computed_at TIMESTAMP NOT NULL,

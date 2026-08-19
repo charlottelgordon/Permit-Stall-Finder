@@ -1,0 +1,100 @@
+{
+  "generated_at": "2026-08-19T03:49:51.467382+00:00",
+  "start_year": 2023,
+  "end_year": 2024,
+  "sample_size_per_bucket": 10,
+  "cohort_sample_size": 50,
+  "permit_types": [
+    "Bldg-Alter/Repair",
+    "Bldg-New"
+  ],
+  "buckets": [
+    {
+      "year": 2023,
+      "permit_type": "Bldg-Alter/Repair",
+      "n_sampled": 10,
+      "n_analyzed": 10,
+      "median_days_submitted_to_issuance": 63.0,
+      "median_days_issuance_to_first_inspection": 64.0,
+      "median_inter_inspection_gap_days": 0.0,
+      "stall_category_counts": {
+        "issuance_to_first_inspection_gap": 4,
+        "inter_inspection_gap": 7,
+        "repeated_not_ready_outcomes": 7,
+        "repeated_cancellations": 5,
+        "inactivity_since_last_inspection": 3,
+        "repeated_corrections": 3
+      },
+      "severity_counts": {
+        "watch": 4,
+        "severe": 18,
+        "elevated": 7
+      }
+    },
+    {
+      "year": 2023,
+      "permit_type": "Bldg-New",
+      "n_sampled": 10,
+      "n_analyzed": 10,
+      "median_days_submitted_to_issuance": 236.0,
+      "median_days_issuance_to_first_inspection": 132.0,
+      "median_inter_inspection_gap_days": 0.0,
+      "stall_category_counts": {
+        "pre_issuance_status_dwell": 1,
+        "issuance_to_first_inspection_gap": 1,
+        "inter_inspection_gap": 2,
+        "repeated_corrections": 1,
+        "repeated_not_ready_outcomes": 2,
+        "repeated_cancellations": 1
+      },
+      "severity_counts": {
+        "watch": 5,
+        "severe": 3
+      }
+    },
+    {
+      "year": 2024,
+      "permit_type": "Bldg-Alter/Repair",
+      "n_sampled": 10,
+      "n_analyzed": 10,
+      "median_days_submitted_to_issuance": 63.5,
+      "median_days_issuance_to_first_inspection": 16.0,
+      "median_inter_inspection_gap_days": 0.0,
+      "stall_category_counts": {
+        "no_inspection_since_issuance": 5,
+        "issuance_to_first_inspection_gap": 1,
+        "inter_inspection_gap": 2,
+        "repeated_not_ready_outcomes": 1,
+        "repeated_cancellations": 1
+      },
+      "severity_counts": {
+        "severe": 7,
+        "elevated": 2,
+        "watch": 1
+      }
+    },
+    {
+      "year": 2024,
+      "permit_type": "Bldg-New",
+      "n_sampled": 10,
+      "n_analyzed": 10,
+      "median_days_submitted_to_issuance": 244.0,
+      "median_days_issuance_to_first_inspection": 75.5,
+      "median_inter_inspection_gap_days": 0.0,
+      "stall_category_counts": {
+        "issuance_to_first_inspection_gap": 2,
+        "inter_inspection_gap": 5,
+        "repeated_corrections": 2,
+        "repeated_cancellations": 1,
+        "finalization_gap": 1,
+        "repeated_not_ready_outcomes": 2,
+        "inactivity_since_last_inspection": 2
+      },
+      "severity_counts": {
+        "watch": 3,
+        "severe": 8,
+        "elevated": 4
+      }
+    }
+  ]
+}
