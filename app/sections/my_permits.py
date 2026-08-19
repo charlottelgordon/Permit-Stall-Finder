@@ -35,6 +35,23 @@ def _resolve_entry(entry: starred.StarredSearchEntry) -> list[str]:
     return [m["permit_nbr"] for m in matches if m.get("permit_nbr")]
 
 
+def resolve_starred_permit_numbers(conn, uid: str) -> list[str]:
+    """Every permit number behind this uid's starred searches, resolved
+    and de-duplicated (order preserved) -- the same expansion render()
+    below does for its own results table, exposed here so
+    trends_dashboard.py's "my saved permits" scope can reuse it rather
+    than re-implementing entry resolution a second time."""
+    entries = starred.read_starred_searches(conn, uid)
+    permit_numbers: list[str] = []
+    seen: set[str] = set()
+    for entry in entries:
+        for permit_number in _resolve_entry(entry):
+            if permit_number not in seen:
+                seen.add(permit_number)
+                permit_numbers.append(permit_number)
+    return permit_numbers
+
+
 def render(conn, uid: str | None) -> None:
     st.subheader(t("my_permits_header"))
 
@@ -59,14 +76,7 @@ def render(conn, uid: str | None) -> None:
 
     st.divider()
 
-    permit_numbers: list[str] = []
-    seen: set[str] = set()
-    for entry in entries:
-        for permit_number in _resolve_entry(entry):
-            if permit_number not in seen:
-                seen.add(permit_number)
-                permit_numbers.append(permit_number)
-
+    permit_numbers = resolve_starred_permit_numbers(conn, uid)
     if not permit_numbers:
         st.info(t("info_no_permits_found"))
         return

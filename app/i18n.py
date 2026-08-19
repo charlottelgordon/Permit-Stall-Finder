@@ -901,10 +901,12 @@ _STRINGS: dict[str, dict[str, str]] = {
         ),
     },
 
-    # --- Nav switcher (Search / Trends Dashboard) -- My Permits folded
-    # into the Search view itself, not a separate nav destination ---------
+    # --- Nav switcher: Home / Search / My Permits / Trends Dashboard / FAQ -
+    "nav_home": {"en": "Home", "es": "Inicio"},
     "nav_search": {"en": "Search", "es": "Buscar"},
+    "nav_my_permits": {"en": "My Permits", "es": "Mis permisos"},
     "nav_trends": {"en": "Trends Dashboard", "es": "Panel de tendencias"},
+    "nav_faq": {"en": "FAQ", "es": "Preguntas frecuentes"},
 
     # --- Trends dashboard --------------------------------------------------
     "trends_dashboard_header": {"en": "Trends Dashboard", "es": "Panel de tendencias"},
@@ -951,10 +953,98 @@ _STRINGS: dict[str, dict[str, str]] = {
     "trends_permit_type_label": {"en": "Permit type", "es": "Tipo de permiso"},
     "trends_year_label": {"en": "Year", "es": "Año"},
     "trends_filters_header": {"en": "Filters", "es": "Filtros"},
+    "trends_scope_label": {"en": "Show trends for", "es": "Mostrar tendencias de"},
+    "trends_scope_citywide": {"en": "Citywide", "es": "Toda la ciudad"},
+    "trends_scope_my_permits": {"en": "My saved permits", "es": "Mis permisos guardados"},
+    "trends_my_permits_caption": {
+        "en": "Based on your {n} saved permit(s), computed just now.",
+        "es": "Basado en sus {n} permiso(s) guardado(s), calculado en este momento.",
+    },
+    "trends_my_permits_empty": {
+        "en": "Star a search first to see trends across your own saved permits.",
+        "es": "Marque una búsqueda primero para ver tendencias entre sus propios permisos guardados.",
+    },
     "trends_date_range_label": {"en": "Date range", "es": "Rango de fechas"},
     "trends_delay_reasons_range_caption": {
         "en": "Combined across {start}–{end}",
         "es": "Combinado entre {start} y {end}",
+    },
+
+    # --- FAQ (sections/faq.py) ---------------------------------------------
+    "faq_infographic_header": {
+        "en": "How long does each phase typically take?",
+        "es": "¿Cuánto suele tardar cada fase?",
+    },
+    "faq_infographic_subtext": {
+        "en": "Based on the same Trends Dashboard data, for one permit type and year at a time.",
+        "es": "Basado en los mismos datos del Panel de tendencias, para un tipo de permiso y año a la vez.",
+    },
+    "faq_infographic_typical_label": {"en": "Typical:", "es": "Típico:"},
+    "faq_infographic_no_data": {
+        "en": "Not separately tracked in this data.",
+        "es": "No se rastrea por separado en estos datos.",
+    },
+    "faq_phase_1_title": {"en": "1. Before submission", "es": "1. Antes de la presentación"},
+    "faq_phase_1_steps": {
+        "en": "Confirm the property is within LA City zoning limits · Gather documentation (proof of ownership, project plans, contractor license) · Submit through ePlan",
+        "es": "Confirmar que la propiedad está dentro de los límites de zonificación de LA · Reunir documentación (prueba de propiedad, planos, licencia de contratista) · Presentar a través de ePlan",
+    },
+    "faq_phase_2_title": {
+        "en": "2. Plan check, corrections, payment & issuance",
+        "es": "2. Revisión de planos, correcciones, pago y emisión",
+    },
+    "faq_phase_2_steps": {
+        "en": "Routed to plan check (Express, Counter, Expanded Counter, or Regular Plan, depending on project complexity) · Correction cycles until issues are resolved · Payment · Issuance",
+        "es": "Enviado a revisión de planos (Express, Mostrador, Mostrador Ampliado o Plan Regular, según la complejidad) · Ciclos de corrección hasta resolver los problemas · Pago · Emisión",
+    },
+    "faq_phase_3_title": {"en": "3. Construction & inspections", "es": "3. Construcción e inspecciones"},
+    "faq_phase_3_steps": {
+        "en": "Each phase (e.g. foundation, framing) requires its own passed inspection before work continues.",
+        "es": "Cada fase (por ejemplo, cimentación, estructura) requiere su propia inspección aprobada antes de continuar.",
+    },
+    "faq_phase_3_duration": {
+        "en": "{first} to first inspection · {between} typical gap between inspections",
+        "es": "{first} hasta la primera inspección · {between} de brecha típica entre inspecciones",
+    },
+    "faq_phase_4_title": {"en": "4. Final inspection & closeout", "es": "4. Inspección final y cierre"},
+    "faq_phase_4_steps": {
+        "en": "Final inspection, then Certificate of Occupancy or permit finaled.",
+        "es": "Inspección final y luego Certificado de Ocupación o cierre del permiso.",
+    },
+    "faq_questions_header": {"en": "Questions", "es": "Preguntas"},
+    "faq_q_data_source": {"en": "Where does this data come from?", "es": "¿De dónde provienen estos datos?"},
+    "faq_a_data_source": {
+        "en": "Permit Check LA joins two City of Los Angeles Open Data datasets -- Building Permits and Building Inspections -- using the permit number as the shared key. Both are published by LADBS and updated on their own schedules.",
+        "es": "Permit Check LA combina dos conjuntos de datos abiertos de la Ciudad de Los Ángeles -- Permisos de Construcción e Inspecciones de Construcción -- usando el número de permiso como clave compartida. Ambos son publicados por LADBS y se actualizan según sus propios calendarios.",
+    },
+    "faq_q_official": {
+        "en": "Is this an official LADBS status check?",
+        "es": "¿Es esta una verificación oficial de LADBS?",
+    },
+    "faq_a_official": {
+        "en": "No. Permit Check LA is informational only and is not an official determination by the Los Angeles Department of Building and Safety (LADBS). Always confirm current status directly with LADBS.",
+        "es": "No. Permit Check LA es solo informativo y no es una determinación oficial del Departamento de Edificación y Seguridad de Los Ángeles (LADBS). Siempre confirme el estado actual directamente con LADBS.",
+    },
+    "faq_q_severity": {
+        "en": "What do Watch, Elevated, and Severe mean?",
+        "es": "¿Qué significan Vigilancia, Elevado y Severo?",
+    },
+    "faq_a_severity": {
+        "en": "They describe how unusual a permit's elapsed time or event count is compared to similar permits -- Watch is slower than roughly 75% of comparable permits, Elevated slower than roughly 90%, Severe slower than roughly 95%. They describe how unusual something is, not who is at fault or what caused it.",
+        "es": "Describen qué tan inusual es el tiempo transcurrido o la cantidad de eventos de un permiso en comparación con permisos similares -- Vigilancia es más lento que aproximadamente el 75% de los permisos comparables, Elevado más lento que aproximadamente el 90%, Severo más lento que aproximadamente el 95%. Describen qué tan inusual es algo, no quién tiene la culpa ni qué lo causó.",
+    },
+    "faq_q_no_guidance": {
+        "en": "Why do some findings say “No authoritative guidance available”?",
+        "es": "¿Por qué algunos hallazgos dicen “No hay orientación autorizada disponible”?",
+    },
+    "faq_a_no_guidance": {
+        "en": "Some patterns Agent 2 detects don't yet have an approved knowledge-base entry explaining what they usually mean. Rather than guess, Permit Check LA says so directly and suggests contacting LADBS about that specific permit.",
+        "es": "Algunos patrones que detecta el Agente 2 aún no tienen una entrada aprobada en la base de conocimiento que explique qué suelen significar. En lugar de adivinar, Permit Check LA lo indica directamente y sugiere contactar a LADBS sobre ese permiso específico.",
+    },
+    "faq_q_freshness": {"en": "How current is the data?", "es": "¿Qué tan actuales son los datos?"},
+    "faq_a_freshness": {
+        "en": "A permit search always pulls live from the two City datasets at the moment you search. The Trends Dashboard is different -- it's built from a periodically-regenerated sample, not live, so its own “generated” date tells you how fresh it is.",
+        "es": "Una búsqueda de permiso siempre obtiene datos en vivo de los dos conjuntos de datos de la Ciudad en el momento de la búsqueda. El Panel de tendencias es diferente -- se construye a partir de una muestra regenerada periódicamente, no en vivo, así que su propia fecha de “generado” indica qué tan reciente es.",
     },
     "trends_metric_label": {"en": "Metric", "es": "Métrica"},
     "trends_metric_issuance": {

@@ -33,19 +33,66 @@ user.
 
 from __future__ import annotations
 
+from collections import defaultdict
+from datetime import datetime, timezone
+
 import pandas as pd
 import streamlit as st
 
+import portfolio
 from i18n import category_label, t
 from permit_stall_finder import config
-from permit_stall_finder.analytics.trends import TrendsArtifact, load_artifact
-from permit_stall_finder.schema.stall_detection import StallCategory
-from sections import disclaimer
+from permit_stall_finder.analytics.trends import TrendsArtifact, aggregate_bucket, load_artifact
+from permit_stall_finder.schema.journey import PermitJourney
+from permit_stall_finder.schema.stall_detection import StallAssessment, StallCategory
+from sections import disclaimer, my_permits
 
 
 @st.cache_data
 def _load_artifact_cached(path: str) -> TrendsArtifact:
     return load_artifact(path)
+
+
+def _build_personal_artifact(conn, uid: str) -> TrendsArtifact | None:
+    """The same TrendsArtifact shape scripts/generate_trends_artifact.py
+    produces, built live from just this uid's starred permits instead of
+    a citywide sample -- reuses aggregate_bucket() unchanged (the exact
+    function the offline script calls), grouping by (submitted year,
+    permit type) the same way that script does. Returns None if there's
+    nothing to build one from (no starred permits, or none resolved to a
+    permit with a known submitted_date/permit_type)."""
+    permit_numbers = my_permits.resolve_starred_permit_numbers(conn, uid)
+    if not permit_numbers:
+        return None
+
+    batch = portfolio.run_batch(
+        conn, permit_numbers, sample_size=config.DEFAULT_COHORT_SAMPLE_SIZE, progress=True
+    )
+    groups: dict[tuple[int, str], list[tuple[PermitJourney, StallAssessment]]] = defaultdict(list)
+    for result in batch.results_by_permit.values():
+        snapshot = result.journey.latest_snapshot
+        if snapshot is None or snapshot.submitted_date is None:
+            continue
+        groups[(snapshot.submitted_date.year, snapshot.permit_type)].append(
+            (result.journey, result.stall_assessment)
+        )
+    if not groups:
+        return None
+
+    buckets = [
+        aggregate_bucket(year, permit_type, n_sampled=len(pairs), journeys_and_assessments=pairs)
+        for (year, permit_type), pairs in groups.items()
+    ]
+    years = sorted({b.year for b in buckets})
+    return TrendsArtifact(
+        generated_at=datetime.now(timezone.utc),
+        start_year=years[0],
+        end_year=years[-1],
+        sample_size_per_bucket=len(permit_numbers),
+        cohort_sample_size=config.DEFAULT_COHORT_SAMPLE_SIZE,
+        permit_types=sorted({b.permit_type for b in buckets}),
+        buckets=buckets,
+    )
 
 
 def _bucket_for(artifact: TrendsArtifact, year: int, permit_type: str):
@@ -58,21 +105,38 @@ def _duration_cell(days: float | None) -> str:
     return f"{days:.0f} {t('days_suffix')}" if days is not None else "—"
 
 
-def render() -> None:
-    try:
-        artifact = _load_artifact_cached(config.TRENDS_ARTIFACT_PATH)
-    except FileNotFoundError:
-        st.subheader(t("trends_dashboard_header"))
-        st.info(t("trends_no_artifact"))
-        return
-
+def render(conn=None, uid: str | None = None) -> None:
     st.subheader(t("trends_dashboard_header"))
-    st.caption(
-        t("trends_generated_caption").format(
-            n=artifact.sample_size_per_bucket,
-            generated=artifact.generated_at.strftime("%Y-%m-%d"),
-        )
+
+    scope = st.radio(
+        t("trends_scope_label"),
+        ["citywide", "my_permits"],
+        format_func=lambda v: t("trends_scope_citywide") if v == "citywide" else t("trends_scope_my_permits"),
+        horizontal=True,
+        key="trends_scope",
     )
+
+    if scope == "my_permits":
+        if not uid:
+            st.info(t("my_permits_no_uid"))
+            return
+        artifact = _build_personal_artifact(conn, uid)
+        if artifact is None:
+            st.info(t("trends_my_permits_empty"))
+            return
+        st.caption(t("trends_my_permits_caption").format(n=artifact.sample_size_per_bucket))
+    else:
+        try:
+            artifact = _load_artifact_cached(config.TRENDS_ARTIFACT_PATH)
+        except FileNotFoundError:
+            st.info(t("trends_no_artifact"))
+            return
+        st.caption(
+            t("trends_generated_caption").format(
+                n=artifact.sample_size_per_bucket,
+                generated=artifact.generated_at.strftime("%Y-%m-%d"),
+            )
+        )
 
     years = sorted({b.year for b in artifact.buckets})
     permit_types = artifact.permit_types

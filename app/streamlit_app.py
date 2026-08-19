@@ -45,7 +45,7 @@ from i18n import (
     translate_error_message,
 )
 from errors import GENERIC_ERROR_MESSAGE, validate_permit_number
-from sections import my_permits, persona_picker, report_export, results_table, trends_dashboard
+from sections import faq, my_permits, persona_picker, report_export, results_table, trends_dashboard
 
 from permit_stall_finder import config
 from permit_stall_finder.ingestion.permits import fetch_permits_by_address
@@ -808,23 +808,35 @@ with st.container(key="header_language_toggle_wrap"):
 if not st.session_state.selected_persona:
     persona_picker.render()
 else:
-    # --- Nav switcher: Search / Trends Dashboard --------------------------
+    # --- Nav switcher: Home / Search / My Permits / Trends Dashboard / FAQ -
     # Same "gate on session_state, branch what renders" idiom the persona
     # picker above already uses -- plain st.buttons rather than Streamlit's
     # native pages/st.navigation, which would reintroduce the sidebar
     # chrome this app deliberately hides everywhere else (see stHeader/
     # stToolbar/stMainMenu/stAppDeployButton rules in the stylesheet above).
-    # My Permits is no longer a separate destination -- its content is now
-    # part of the Search view itself (see below), so there's no button for
-    # it here.
-    nav_search_col, nav_trends_col, _ = st.columns([2, 2, 6])
+    # Home here does exactly what the header's own Home link already does
+    # (full reset, back to the persona picker) -- same underlying flag,
+    # just also reachable as a tab alongside the other four.
+    nav_home_col, nav_search_col, nav_my_permits_col, nav_trends_col, nav_faq_col = st.columns(5)
+    with nav_home_col:
+        if st.button(t("nav_home"), key="nav_home_button", width="stretch"):
+            st.session_state.pending_home_reset = True
+            st.rerun()
     with nav_search_col:
         if st.button(t("nav_search"), key="nav_search_button", width="stretch"):
             st.session_state.active_view = "search"
             st.rerun()
+    with nav_my_permits_col:
+        if st.button(t("nav_my_permits"), key="nav_my_permits_button", width="stretch"):
+            st.session_state.active_view = "my_permits"
+            st.rerun()
     with nav_trends_col:
         if st.button(t("nav_trends"), key="nav_trends_button", width="stretch"):
             st.session_state.active_view = "trends"
+            st.rerun()
+    with nav_faq_col:
+        if st.button(t("nav_faq"), key="nav_faq_button", width="stretch"):
+            st.session_state.active_view = "faq"
             st.rerun()
 
     # --- Search: one bar, permit number(s) or address ---------------------
@@ -1057,12 +1069,11 @@ else:
             )
             drill_down.render(conn, combined, st.session_state.results_cache, get_knowledge_base())
 
-        # My Permits, folded into the Search view rather than a separate nav
-        # destination -- this is what a visitor sees by default (before
-        # searching anything) if they've starred any prior search, and stays
-        # available below any ad-hoc search results otherwise.
-        st.divider()
+    elif st.session_state.active_view == "my_permits":
         my_permits.render(conn, st.session_state.get("pcla_uid"))
 
     elif st.session_state.active_view == "trends":
-        trends_dashboard.render()
+        trends_dashboard.render(conn, st.session_state.get("pcla_uid"))
+
+    elif st.session_state.active_view == "faq":
+        faq.render()
