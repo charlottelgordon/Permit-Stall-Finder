@@ -1,12 +1,27 @@
 """Trends Dashboard -- reads the static artifact
 scripts/generate_trends_artifact.py produces (config.TRENDS_ARTIFACT_PATH)
 and renders three views: a year-over-year typical-duration trend, typical
-duration by permit type for one chosen year, and that year's most common
-delay reasons. Every number shown here already exists on the artifact --
-this module computes no new statistics of its own, extending
-stall_findings.py's "no UI-composed analytical sentences from raw
-numbers" rule to "no UI-computed statistics from raw numbers" for
-consistency.
+duration by permit type for one chosen year, and combined delay-reason
+counts across the selected years. Every number shown here already exists
+on the artifact -- this module computes no new statistics of its own
+beyond plain sums of already-tallied counts (view 3's combine-across-
+types-and-years step, the same kind of arithmetic view 3 already did
+across types alone before filters existed) -- extending stall_findings.py's
+"no UI-composed analytical sentences from raw numbers" rule to "no
+UI-computed statistics from raw numbers" for consistency. It never
+synthesizes a new median/percentile across a range the artifact didn't
+already compute one for.
+
+A filter bar (permit type, year range) sits above all three views and
+drives what each one shows -- the same "one filter state, everything
+below reacts to it" principle a full filterable trends dashboard spec
+called for; map view, click-to-filter charts, saved searches with
+alerts, and a contractor/developer scope selector are deliberately not
+part of this pass (each has a real blocker: no live per-permit
+geography/status breakdown in the artifact yet, no Streamlit-native way
+to do click-to-filter or a side drawer without a custom component, and
+open questions about auth/notifications the spec itself hadn't answered
+by the current pass).
 
 Never live-queried: the deployed app has no persistent job scheduler or
 filesystem guarantee across redeploys (see
@@ -66,6 +81,35 @@ def render() -> None:
         disclaimer.render(t("trends_disclaimer_text"))
         return
 
+    # --- Filter bar: drives every view below --------------------------
+    st.markdown(f"**{t('trends_filters_header')}**")
+    filter_type_col, filter_year_col = st.columns(2)
+    with filter_type_col:
+        selected_types = st.multiselect(
+            t("trends_permit_type_label"), permit_types, default=permit_types, key="trends_filter_types"
+        )
+    with filter_year_col:
+        if len(years) > 1:
+            year_range = st.select_slider(
+                t("trends_date_range_label"), options=years, value=(years[0], years[-1]), key="trends_filter_years"
+            )
+        else:
+            st.caption(f"{t('trends_date_range_label')}: {years[0]}")
+            year_range = (years[0], years[0])
+
+    # Empty selection reads as "nothing chosen yet," not "filter out
+    # everything" -- falls back to every type, same spirit as leaving a
+    # filter untouched.
+    active_types = selected_types or permit_types
+    active_years = [y for y in years if year_range[0] <= y <= year_range[1]]
+
+    st.divider()
+
+    if not active_types or not active_years:
+        st.info(t("trends_no_data_for_selection"))
+        disclaimer.render(t("trends_disclaimer_text"))
+        return
+
     # --- View 1: year-over-year duration trend -----------------------
     st.markdown(f"**{t('trends_year_over_year_header')}**")
     metric_options = {
@@ -75,7 +119,7 @@ def render() -> None:
     }
     col_type, col_metric = st.columns(2)
     with col_type:
-        selected_type = st.selectbox(t("trends_permit_type_label"), permit_types, key="trends_type_select")
+        selected_type = st.selectbox(t("trends_permit_type_label"), active_types, key="trends_type_select")
     with col_metric:
         metric_label = st.selectbox(
             t("trends_metric_label"), list(metric_options.keys()), key="trends_metric_select"
@@ -83,7 +127,7 @@ def render() -> None:
     metric_field = metric_options[metric_label]
 
     trend_values: dict[str, float] = {}
-    for year in years:
+    for year in active_years:
         bucket = _bucket_for(artifact, year, selected_type)
         value = getattr(bucket, metric_field) if bucket else None
         if value is not None:
@@ -98,10 +142,10 @@ def render() -> None:
     # --- View 2: typical duration by permit type, one year -----------
     st.markdown(f"**{t('trends_duration_by_type_header')}**")
     selected_year = st.selectbox(
-        t("trends_year_label"), years, index=len(years) - 1, key="trends_duration_year"
+        t("trends_year_label"), active_years, index=len(active_years) - 1, key="trends_duration_year"
     )
     duration_rows = []
-    for permit_type in permit_types:
+    for permit_type in active_types:
         bucket = _bucket_for(artifact, selected_year, permit_type)
         if bucket is None:
             continue
@@ -122,15 +166,22 @@ def render() -> None:
 
     st.divider()
 
-    # --- View 3: most common delay reasons, selected year --------------
+    # --- View 3: most common delay reasons, combined across the
+    # selected years (not just one) -- a plain sum of already-tallied
+    # counts across both types and years, the same safe arithmetic this
+    # view already did across types alone before the year-range filter
+    # existed; never a synthesized rate or median across the range. ----
     st.markdown(f"**{t('trends_delay_reasons_header')}**")
+    if active_years[0] != active_years[-1]:
+        st.caption(t("trends_delay_reasons_range_caption").format(start=active_years[0], end=active_years[-1]))
     combined_counts: dict[str, int] = {}
-    for permit_type in permit_types:
-        bucket = _bucket_for(artifact, selected_year, permit_type)
-        if bucket is None:
-            continue
-        for category_value, count in bucket.stall_category_counts.items():
-            combined_counts[category_value] = combined_counts.get(category_value, 0) + count
+    for permit_type in active_types:
+        for year in active_years:
+            bucket = _bucket_for(artifact, year, permit_type)
+            if bucket is None:
+                continue
+            for category_value, count in bucket.stall_category_counts.items():
+                combined_counts[category_value] = combined_counts.get(category_value, 0) + count
 
     if combined_counts:
         ranked = sorted(combined_counts.items(), key=lambda kv: kv[1], reverse=True)

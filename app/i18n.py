@@ -950,6 +950,12 @@ _STRINGS: dict[str, dict[str, str]] = {
     },
     "trends_permit_type_label": {"en": "Permit type", "es": "Tipo de permiso"},
     "trends_year_label": {"en": "Year", "es": "Año"},
+    "trends_filters_header": {"en": "Filters", "es": "Filtros"},
+    "trends_date_range_label": {"en": "Date range", "es": "Rango de fechas"},
+    "trends_delay_reasons_range_caption": {
+        "en": "Combined across {start}–{end}",
+        "es": "Combinado entre {start} y {end}",
+    },
     "trends_metric_label": {"en": "Metric", "es": "Métrica"},
     "trends_metric_issuance": {
         "en": "Days from submission to issuance", "es": "Días de la presentación a la emisión",
