@@ -216,7 +216,7 @@ st.markdown(
     }
     [data-testid="stHeader"] {
         background-color: var(--n-0) !important;
-        height: 5.5rem !important;
+        height: 10.5rem !important;
         border-bottom: 1px solid var(--border);
     }
     [data-testid="stToolbar"], [data-testid="stMainMenu"], [data-testid="stAppDeployButton"] {
@@ -261,7 +261,13 @@ st.markdown(
            header's full height 1:1. That's what makes align-items: center
            land the logo/icon/link on the header's true vertical center,
            not an approximation. */
-        height: 5.5rem;
+        height: 10.5rem;
+        /* -2.5rem, not scaled with the taller height above: measured live
+           (getBoundingClientRect()) that this offset cancels out
+           Streamlit's own fixed pre-header spacer, which doesn't change
+           with our chosen height -- an earlier guess that it should scale
+           with height overshot by exactly the height increase (confirmed
+           by the bar rendering 80px above y=0 at -7.5rem before this). */
         margin-top: -2.5rem;
         margin-bottom: 1.75rem;
         padding: 0 1.25rem;
@@ -283,13 +289,25 @@ st.markdown(
     }
     .app-header-bar [role="heading"] {
         display: flex;
+        flex-direction: column;
         align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
         margin: 0;
     }
     .app-header-bar img {
-        height: 4rem;
+        height: 7rem;
         width: auto;
         display: block;
+    }
+    .app-header-tagline {
+        margin: 0;
+        text-align: center;
+        max-width: 30rem;
+        font-size: 1rem;
+        line-height: 1.4;
+        font-weight: 400;
+        color: var(--text-secondary);
     }
     /* An in-app pill button, not an underlined text link -- it doesn't
        navigate away from the site (unlike header-external-link below),
@@ -311,9 +329,8 @@ st.markdown(
            higher specificity than a bare class selector here otherwise
            beats -- confirmed via computed-style inspection showing
            rgb(0, 84, 163) text despite this rule saying the intended
-           color. Same class of bug the site-welcome-intro margin fix
-           below ran into; text-decoration alone wasn't enough because
-           color is a separate overridden property. */
+           color; text-decoration alone wasn't enough because color is a
+           separate overridden property. */
         color: var(--text-primary) !important;
         text-decoration: none !important;
         padding: 0.35rem 0.9rem;
@@ -335,8 +352,13 @@ st.markdown(
         font-weight: 500;
         font-size: 0.85rem;
         text-decoration: none !important;
-        border-bottom: 1px solid transparent;
-        transition: border-color 0.15s ease-in-out;
+        /* Always underlined (not just on hover) -- a real link inside
+           plain-looking header text otherwise reads as ambiguous about
+           whether it's clickable. Hover deepens the color instead of
+           revealing the underline, since the underline is no longer the
+           hover signal. */
+        border-bottom: 1px solid var(--a-strong);
+        transition: color 0.15s ease-in-out, border-color 0.15s ease-in-out;
         /* Truncates with an ellipsis on a narrow viewport instead of
            wrapping across multiple lines and overflowing the header's
            fixed height -- needs the min-width: 0 on .app-header-right
@@ -346,7 +368,39 @@ st.markdown(
         text-overflow: ellipsis;
     }
     .header-external-link:hover {
-        border-bottom-color: var(--a-strong);
+        color: var(--a) !important;
+        border-bottom-color: var(--a);
+    }
+    /* Positions the (real, separately-rendered) language toggle into the
+       header's bottom-right corner, under the LADBS link -- position:
+       fixed rather than absolute, since this container isn't a DOM
+       descendant of .app-header-bar and so can't rely on it as a
+       positioning ancestor. Values tuned empirically against the actual
+       rendered header, same as this header's other positioning math. */
+    div[class*="st-key-header_language_toggle_wrap"] {
+        /* width: fit-content, not the stVerticalBlock default of 100% --
+           without it, "right: 1.25rem" anchors a full-viewport-width box
+           (whose own content then still sits at its own left edge), not
+           the toggle itself; confirmed via the rendered box's
+           getBoundingClientRect() showing width: 900 (full viewport)
+           before this fix. */
+        position: fixed;
+        top: 6.6rem;
+        right: 1.25rem;
+        width: fit-content;
+        z-index: 999992;
+    }
+    @media (max-width: 640px) {
+        /* Centered, not right-anchored -- the mobile header stacks
+           everything in one centered column below (see the second
+           mobile media query), so there's no right-aligned LADBS link
+           for "right: Xrem" to line up under anymore. */
+        div[class*="st-key-header_language_toggle_wrap"] {
+            top: 10.9rem;
+            right: auto;
+            left: 50%;
+            transform: translateX(-50%);
+        }
     }
     /* The real reset button the visible Home link's onclick triggers --
        kept in the DOM (display: none, not left unrendered) since a JS
@@ -356,32 +410,115 @@ st.markdown(
         display: none;
     }
     @media (max-width: 640px) {
+        /* The desktop 3-column grid (Home | logo | LADBS link) has
+           nowhere near enough horizontal room for a much bigger logo at
+           phone widths -- confirmed live: at 375px the auto-width center
+           column demanded more space than the grid had, and the side
+           columns rendered overlapping the logo instead of beside it.
+           Stacked into one centered column instead, avoiding the
+           horizontal squeeze entirely. */
+        [data-testid="stHeader"] {
+            height: 13rem !important;
+        }
         .app-header-bar {
-            padding: 0 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            height: 13rem;
+            margin-top: -2.5rem;
+            padding: 0.5rem 0.5rem 0;
+        }
+        .app-header-left, .app-header-right {
+            justify-self: unset;
+            min-width: 0;
+            max-width: 100%;
         }
         .app-header-bar img {
-            height: 2.75rem;
+            height: 3rem;
         }
-        .header-home-link,
+        .app-header-tagline {
+            font-size: 0.8rem;
+            max-width: 88vw;
+        }
+        .header-home-link {
+            font-size: 0.75rem;
+        }
         .header-external-link {
-            font-size: 0.65rem;
+            font-size: 0.75rem;
+            max-width: 88vw;
         }
     }
-    .site-welcome-intro {
-        /* !important on the margins: Streamlit's own default <p> margin
-           reset (inside its markdown-container wrapper) otherwise wins
-           over a bare class selector and zeroes out the auto left/right
-           margins that center this block -- max-width alone still
-           applies fine, so this looked like a "why is it centered-width
-           but not centered-position" bug until inspecting computed
-           styles showed margin-left/right coming back as 0px. */
+    /* Lifecycle stepper (sections/lifecycle_stepper.py) -- a compact
+       row of numbered dots + connectors at the top of each permit card,
+       distinct from the severity chips/finding cards below it (this
+       shows overall process position, not stall findings). */
+    .lifecycle-stepper {
+        display: flex;
+        align-items: flex-start;
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+    .lifecycle-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1 1 0;
+        min-width: 0;
         text-align: center;
-        max-width: 640px;
-        margin-top: 0.5rem !important;
-        margin-bottom: 1.5rem !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
+    }
+    .lifecycle-step-dot {
+        width: 1.6rem;
+        height: 1.6rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        border: 2px solid var(--border-strong);
         color: var(--text-secondary);
+        background: var(--n-50);
+        flex-shrink: 0;
+    }
+    .lifecycle-step.complete .lifecycle-step-dot {
+        background: var(--a-strong);
+        border-color: var(--a-strong);
+        color: #fff;
+    }
+    .lifecycle-step.current .lifecycle-step-dot {
+        background: var(--n-50);
+        border-color: var(--a);
+        color: var(--a);
+        box-shadow: 0 0 0 3px var(--a-tint);
+    }
+    .lifecycle-step-label {
+        font-size: 0.65rem;
+        color: var(--text-secondary);
+        margin-top: 0.3rem;
+        line-height: 1.2;
+    }
+    .lifecycle-step.current .lifecycle-step-label {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    .lifecycle-step-connector {
+        flex: 0 1 1.5rem;
+        min-width: 0.5rem;
+        height: 2px;
+        background: var(--border-strong);
+        margin-top: 0.79rem;
+    }
+    .lifecycle-step-connector.complete {
+        background: var(--a-strong);
+    }
+    @media (max-width: 640px) {
+        .lifecycle-step-label {
+            display: none;
+        }
+        .lifecycle-step-connector {
+            flex: 0 1 0.75rem;
+        }
     }
     .persona-picker-heading {
         text-align: center;
@@ -557,7 +694,8 @@ st.markdown(
     f'<div class="app-header-left"><a href="javascript:void(0)" class="header-home-link" '
     f'title="{t("header_home_aria_label")}">{t("header_home_aria_label")}</a></div>'
     f'<div class="app-header-center" role="heading" aria-level="1">'
-    f'<img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}"></div>'
+    f'<img src="data:image/png;base64,{_logo_b64}" alt="{APP_NAME}">'
+    f'<p class="app-header-tagline">{t("site_welcome_intro")}</p></div>'
     '<div class="app-header-right">'
     f'<a href="https://dbs.lacity.gov/services/plan-review-permitting/building-permits" '
     f'target="_blank" rel="noopener noreferrer" class="header-external-link">{t("header_ladbs_link")}</a></div>'
@@ -652,33 +790,34 @@ if _pending_home_reset:
 conn = get_connection()
 st.session_state.pcla_uid = browser_id.get_or_bootstrap_uid()
 
-# Language toggle, right-aligned above the welcome text (moved off the
-# search row -- next to the tooltip there, it was crowding that row's
-# spacing).
-_, toggle_col = st.columns([5, 1])
-with toggle_col:
+# Language toggle -- a real widget, so (unlike the tagline above) it
+# can't be embedded in the header's own raw-HTML markup; rendered here,
+# then pulled up into the header's bottom-right corner, under the LADBS
+# link, the same "position it into the fixed header from outside" idea
+# the Home-link bridge uses, but via position: fixed off the viewport
+# rather than a negative margin, since this container isn't a DOM
+# descendant of .app-header-bar the way that trick needs.
+with st.container(key="header_language_toggle_wrap"):
     render_language_toggle()
 
-# Welcome/intro text, centered under the logo -- always visible
-# (Phase: kept even after a search, per explicit request -- toggling it
-# on/off based on search state made the top of the page change on every
-# search, which read as jarring rather than helpful).
-st.markdown(
-    f'<p class="site-welcome-intro">{t("site_welcome_intro")}</p>',
-    unsafe_allow_html=True,
-)
+# The welcome/intro text used to render again here, standalone, below
+# the header -- now shown once, as the header's own tagline (see
+# app-header-tagline above), never repeated.
 
 # --- Persona gate: the search bar stays hidden until a role is picked --
 if not st.session_state.selected_persona:
     persona_picker.render()
 else:
-    # --- Nav switcher: Search / Trends Dashboard / My Permits ------------
+    # --- Nav switcher: Search / Trends Dashboard --------------------------
     # Same "gate on session_state, branch what renders" idiom the persona
     # picker above already uses -- plain st.buttons rather than Streamlit's
     # native pages/st.navigation, which would reintroduce the sidebar
     # chrome this app deliberately hides everywhere else (see stHeader/
     # stToolbar/stMainMenu/stAppDeployButton rules in the stylesheet above).
-    nav_search_col, nav_trends_col, nav_my_permits_col, _ = st.columns([2, 2, 2, 4])
+    # My Permits is no longer a separate destination -- its content is now
+    # part of the Search view itself (see below), so there's no button for
+    # it here.
+    nav_search_col, nav_trends_col, _ = st.columns([2, 2, 6])
     with nav_search_col:
         if st.button(t("nav_search"), key="nav_search_button", width="stretch"):
             st.session_state.active_view = "search"
@@ -687,197 +826,207 @@ else:
         if st.button(t("nav_trends"), key="nav_trends_button", width="stretch"):
             st.session_state.active_view = "trends"
             st.rerun()
-    with nav_my_permits_col:
-        if st.button(t("nav_my_permits"), key="nav_my_permits_button", width="stretch"):
-            st.session_state.active_view = "my_permits"
-            st.rerun()
 
-    if st.session_state.active_view == "search":
-        # --- Search: one bar, permit number(s) or address ---------------------
-        _, search_col, _ = st.columns([1, 3, 1])
-        with search_col:
-            input_col, tip_col = st.columns([9, 1])
-            with input_col:
-                raw_query = st.text_input(
-                    t("unified_search_placeholder"),
-                    placeholder=t("unified_search_placeholder"),
-                    key="unified_search_input",
-                    label_visibility="collapsed",
-                )
-            with tip_col:
-                # A custom circular "?" icon with a CSS-only hover tooltip --
-                # not text_input's own help= (Streamlit drops that help icon
-                # entirely when label_visibility="collapsed" is set, since
-                # there's no label row for it to attach to) and not the browser's
-                # native title= attribute (unreliable: inconsistent per-browser
-                # delay, easy to miss, no hover state at all on touch/mobile).
-                # This is a real :hover-driven CSS reveal, so it doesn't depend
-                # on native tooltip timing/rendering the way title= did.
-                _help_paragraphs = "".join(
-                    f"<p>{html.escape(p)}</p>" for p in t("unified_search_help").split("\n\n")
-                )
-                st.markdown(
-                    '<div class="search-tooltip-wrap">'
-                    '<div class="search-tooltip-icon">?</div>'
-                    f'<div class="search-tooltip-content">{_help_paragraphs}</div>'
-                    "</div>",
-                    unsafe_allow_html=True,
-                )
-
-            # Search + Clear, centered as a pair below the search bar.
-            _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])
-            with btn_search_col:
-                # Placeholder-swap loading state (Nielsen Norman heuristic #1,
-                # Visibility of System Status): the button becomes a disabled
-                # "Searching..." the instant it's clicked, and an animated
-                # loading bar plus a small looping gif + caption appear
-                # immediately below, so the user never wonders whether the
-                # click registered while the network-bound pipeline call below
-                # is still running.
-                search_button_slot = st.empty()
-                search_clicked = search_button_slot.button(
-                    t("search_button"), type="primary", key="unified_search_button", width="stretch"
-                )
-            with btn_clear_col:
-                clear_clicked = st.button(
-                    t("clear_results"), key="clear_results_button", width="stretch"
-                )
-
-            # Star/unstar the search just run -- tied to the query itself
-            # (last_search_kind/value), not to individual result rows:
-            # results_table.py's dataframe can't host per-row buttons, and
-            # starring targets the whole search per how this feature was
-            # scoped. A placeholder, not an inline render: last_search_value
-            # only gets set further down (inside "if search_clicked:"), so
-            # filling this in immediately here would always be one run
-            # stale -- same st.empty()-now/fill-in-later idiom
-            # search_button_slot below already uses for exactly that reason.
-            star_toggle_slot = st.empty()
-
-            loading_bar_slot = st.empty()
-            loading_gif_slot = st.empty()
-
-        if clear_clicked:
-            st.session_state.pending_clear = True
-            st.rerun()
-
-        if search_clicked:
-            query = raw_query.strip()
-            if not query:
-                st.warning(t("warning_enter_permit_number"))
-            else:
-                search_button_slot.button(
-                    t("searching_button"),
-                    type="primary",
-                    disabled=True,
-                    key="unified_search_button_loading",
-                    width="stretch",
-                )
-                loading_bar_slot.markdown(
-                    '<div class="search-loading-track"><div class="search-loading-bar"></div></div>',
-                    unsafe_allow_html=True,
-                )
-                loading_gif_slot.markdown(
-                    '<div class="search-loading-gif-wrap">'
-                    f'<img src="data:image/gif;base64,{_search_loader_gif_b64}" alt="">'
-                    f'<div class="search-loading-gif-caption">{t("search_loading_caption")}</div>'
-                    "</div>",
-                    unsafe_allow_html=True,
-                )
-                kind, values = search_input.classify(query)
-                permit_numbers: list[str] = []
-                st.session_state.error = None
-                st.session_state.batch_errors = []
-                st.session_state.last_search_kind = "permit_query" if kind == "permit_numbers" else "address"
-                st.session_state.last_search_value = query
-
-                if kind == "permit_numbers":
-                    permit_numbers = values
-                else:
-                    try:
-                        matches = fetch_permits_by_address(values[0])
-                        permit_numbers = [m["permit_nbr"] for m in matches if m.get("permit_nbr")]
-                        user_state.record_search(conn, "address", values[0])
-                    except Exception:
-                        st.session_state.error = translate_error_message(GENERIC_ERROR_MESSAGE)
-                    if not permit_numbers and st.session_state.error is None:
-                        st.info(t("info_no_permits_found"))
-
-                if len(permit_numbers) == 1:
-                    permit_number, validation_error = validate_permit_number(permit_numbers[0])
-                    if validation_error:
-                        st.session_state.error = validation_error
-                        permit_numbers = []
-                    else:
-                        permit_numbers = [permit_number]
-
-                if permit_numbers:
-                    batch = portfolio.run_batch(
-                        conn, permit_numbers, sample_size=config.DEFAULT_COHORT_SAMPLE_SIZE, progress=False
-                    )
-                    for permit_number, result in batch.results_by_permit.items():
-                        st.session_state.results_cache[permit_number] = result
-                        user_state.record_search(conn, "permit_number", permit_number)
-
-                    st.session_state.table_rows = batch.rows
-                    st.session_state.drilldown_permits = (
-                        [batch.rows[0].permit_number] if len(batch.rows) == 1 else []
-                    )
-                    st.session_state.extra_drilldown_permits = []
-                    st.session_state.batch_errors = batch.errors
-
-                # Swap the button and loading bar back to their idle state in
-                # place, rather than a full st.rerun(): the results table/
-                # drill-down below still render later in this same script pass
-                # regardless (table_rows is already set above), so a rerun would
-                # only add a redundant round trip -- and would also wipe out the
-                # st.info/st.warning messages above (e.g. "no permits found")
-                # before the user had a chance to read them.
-                loading_bar_slot.empty()
-                loading_gif_slot.empty()
-                search_button_slot.button(
-                    t("search_button"), type="primary", key="unified_search_button_done", width="stretch"
-                )
-
-        # Filled in here, not where the placeholder was declared above --
-        # last_search_kind/value are only current as of *this* point in
-        # the run (set inside "if search_clicked:" above), and this runs
-        # on every rerun of the search view, not just right after a
-        # search click, so the star state stays correct across unrelated
-        # reruns too (e.g. after the star button's own click).
-        if st.session_state.get("last_search_value") and st.session_state.get("pcla_uid"):
-            _uid = st.session_state.pcla_uid
-            _kind = st.session_state.last_search_kind
-            _value = st.session_state.last_search_value
-            _currently_starred = starred.is_starred(conn, _uid, _kind, _value)
-            _star_label = t("unstar_this_search") if _currently_starred else t("star_this_search")
-            # Key carries the starred/unstarred state, not just an id --
-            # the stylesheet above targets "st-key-star_toggle_button_starred"
-            # specifically to give the filled (starred) state its own
-            # restrained-orange color, the only non-neutral/non-navy button
-            # anywhere in the app. Streamlit treats a key change as a new
-            # widget, which is fine here: nothing depends on this button
-            # preserving internal state across the toggle.
-            _star_key = f"star_toggle_button_{'starred' if _currently_starred else 'unstarred'}"
-            if star_toggle_slot.button(_star_label, key=_star_key):
-                if _currently_starred:
-                    starred.unstar_search(conn, _uid, _kind, _value)
-                else:
-                    starred.star_search(conn, _uid, _kind, _value)
-                st.rerun()
-
-        st.divider()
-
-        if st.session_state.error:
-            st.error(translate_error_message(st.session_state.error))
-
-        if st.session_state.get("batch_errors"):
-            errors = st.session_state.batch_errors
-            st.warning(
-                f"{len(errors)} " + t("warning_some_unanalyzed") + " "
-                + ", ".join(p for p, _ in errors)
+    # --- Search: one bar, permit number(s) or address ---------------------
+    # Deliberately outside the active_view branches below -- both Search
+    # and Trends show this same bar at the top now, per explicit request.
+    # Submitting a search while on the Trends view switches to the Search
+    # view (see the active_view check inside "if permit_numbers:" below),
+    # since results only ever render there.
+    _, search_col, _ = st.columns([1, 3, 1])
+    with search_col:
+        input_col, tip_col = st.columns([9, 1])
+        with input_col:
+            raw_query = st.text_input(
+                t("unified_search_placeholder"),
+                placeholder=t("unified_search_placeholder"),
+                key="unified_search_input",
+                label_visibility="collapsed",
+            )
+        with tip_col:
+            # A custom circular "?" icon with a CSS-only hover tooltip --
+            # not text_input's own help= (Streamlit drops that help icon
+            # entirely when label_visibility="collapsed" is set, since
+            # there's no label row for it to attach to) and not the browser's
+            # native title= attribute (unreliable: inconsistent per-browser
+            # delay, easy to miss, no hover state at all on touch/mobile).
+            # This is a real :hover-driven CSS reveal, so it doesn't depend
+            # on native tooltip timing/rendering the way title= did.
+            _help_paragraphs = "".join(
+                f"<p>{html.escape(p)}</p>" for p in t("unified_search_help").split("\n\n")
+            )
+            st.markdown(
+                '<div class="search-tooltip-wrap">'
+                '<div class="search-tooltip-icon">?</div>'
+                f'<div class="search-tooltip-content">{_help_paragraphs}</div>'
+                "</div>",
+                unsafe_allow_html=True,
             )
 
+        # Search + Clear, centered as a pair below the search bar.
+        _, btn_search_col, btn_clear_col, _ = st.columns([1, 3, 3, 1])
+        with btn_search_col:
+            # Placeholder-swap loading state (Nielsen Norman heuristic #1,
+            # Visibility of System Status): the button becomes a disabled
+            # "Searching..." the instant it's clicked, and an animated
+            # loading bar plus a small looping gif + caption appear
+            # immediately below, so the user never wonders whether the
+            # click registered while the network-bound pipeline call below
+            # is still running.
+            search_button_slot = st.empty()
+            search_clicked = search_button_slot.button(
+                t("search_button"), type="primary", key="unified_search_button", width="stretch"
+            )
+        with btn_clear_col:
+            clear_clicked = st.button(
+                t("clear_results"), key="clear_results_button", width="stretch"
+            )
+
+        # Star/unstar the search just run -- tied to the query itself
+        # (last_search_kind/value), not to individual result rows:
+        # results_table.py's dataframe can't host per-row buttons, and
+        # starring targets the whole search per how this feature was
+        # scoped. A placeholder, not an inline render: last_search_value
+        # only gets set further down (inside "if search_clicked:"), so
+        # filling this in immediately here would always be one run
+        # stale -- same st.empty()-now/fill-in-later idiom
+        # search_button_slot below already uses for exactly that reason.
+        star_toggle_slot = st.empty()
+
+        loading_bar_slot = st.empty()
+        loading_gif_slot = st.empty()
+
+    if clear_clicked:
+        st.session_state.pending_clear = True
+        st.rerun()
+
+    if search_clicked:
+        query = raw_query.strip()
+        if not query:
+            st.warning(t("warning_enter_permit_number"))
+        else:
+            search_button_slot.button(
+                t("searching_button"),
+                type="primary",
+                disabled=True,
+                key="unified_search_button_loading",
+                width="stretch",
+            )
+            loading_bar_slot.markdown(
+                '<div class="search-loading-track"><div class="search-loading-bar"></div></div>',
+                unsafe_allow_html=True,
+            )
+            loading_gif_slot.markdown(
+                '<div class="search-loading-gif-wrap">'
+                f'<img src="data:image/gif;base64,{_search_loader_gif_b64}" alt="">'
+                f'<div class="search-loading-gif-caption">{t("search_loading_caption")}</div>'
+                "</div>",
+                unsafe_allow_html=True,
+            )
+            kind, values = search_input.classify(query)
+            permit_numbers: list[str] = []
+            st.session_state.error = None
+            st.session_state.batch_errors = []
+            st.session_state.last_search_kind = "permit_query" if kind == "permit_numbers" else "address"
+            st.session_state.last_search_value = query
+
+            if kind == "permit_numbers":
+                permit_numbers = values
+            else:
+                try:
+                    matches = fetch_permits_by_address(values[0])
+                    permit_numbers = [m["permit_nbr"] for m in matches if m.get("permit_nbr")]
+                    user_state.record_search(conn, "address", values[0])
+                except Exception:
+                    st.session_state.error = translate_error_message(GENERIC_ERROR_MESSAGE)
+                if not permit_numbers and st.session_state.error is None:
+                    st.info(t("info_no_permits_found"))
+
+            if len(permit_numbers) == 1:
+                permit_number, validation_error = validate_permit_number(permit_numbers[0])
+                if validation_error:
+                    st.session_state.error = validation_error
+                    permit_numbers = []
+                else:
+                    permit_numbers = [permit_number]
+
+            if permit_numbers:
+                batch = portfolio.run_batch(
+                    conn, permit_numbers, sample_size=config.DEFAULT_COHORT_SAMPLE_SIZE, progress=False
+                )
+                for permit_number, result in batch.results_by_permit.items():
+                    st.session_state.results_cache[permit_number] = result
+                    user_state.record_search(conn, "permit_number", permit_number)
+
+                st.session_state.table_rows = batch.rows
+                st.session_state.drilldown_permits = (
+                    [batch.rows[0].permit_number] if len(batch.rows) == 1 else []
+                )
+                st.session_state.extra_drilldown_permits = []
+                st.session_state.batch_errors = batch.errors
+
+                # A search submitted from the Trends view has nowhere to show
+                # its results there (only the Search view renders the results
+                # table/drill-down below) -- switch views so the user actually
+                # sees what they just searched for. Not needed when already on
+                # Search: the results render later in this same pass regardless.
+                if st.session_state.active_view != "search":
+                    st.session_state.active_view = "search"
+                    st.rerun()
+
+            # Swap the button and loading bar back to their idle state in
+            # place, rather than a full st.rerun(): the results table/
+            # drill-down below still render later in this same script pass
+            # regardless (table_rows is already set above), so a rerun would
+            # only add a redundant round trip -- and would also wipe out the
+            # st.info/st.warning messages above (e.g. "no permits found")
+            # before the user had a chance to read them.
+            loading_bar_slot.empty()
+            loading_gif_slot.empty()
+            search_button_slot.button(
+                t("search_button"), type="primary", key="unified_search_button_done", width="stretch"
+            )
+
+    # Filled in here, not where the placeholder was declared above --
+    # last_search_kind/value are only current as of *this* point in
+    # the run (set inside "if search_clicked:" above), and this runs
+    # on every rerun, not just right after a search click, so the star
+    # state stays correct across unrelated reruns too (e.g. after the
+    # star button's own click).
+    if st.session_state.get("last_search_value") and st.session_state.get("pcla_uid"):
+        _uid = st.session_state.pcla_uid
+        _kind = st.session_state.last_search_kind
+        _value = st.session_state.last_search_value
+        _currently_starred = starred.is_starred(conn, _uid, _kind, _value)
+        _star_label = t("unstar_this_search") if _currently_starred else t("star_this_search")
+        # Key carries the starred/unstarred state, not just an id --
+        # the stylesheet above targets "st-key-star_toggle_button_starred"
+        # specifically to give the filled (starred) state its own
+        # restrained-orange color, the only non-neutral/non-navy button
+        # anywhere in the app. Streamlit treats a key change as a new
+        # widget, which is fine here: nothing depends on this button
+        # preserving internal state across the toggle.
+        _star_key = f"star_toggle_button_{'starred' if _currently_starred else 'unstarred'}"
+        if star_toggle_slot.button(_star_label, key=_star_key):
+            if _currently_starred:
+                starred.unstar_search(conn, _uid, _kind, _value)
+            else:
+                starred.star_search(conn, _uid, _kind, _value)
+            st.rerun()
+
+    st.divider()
+
+    if st.session_state.error:
+        st.error(translate_error_message(st.session_state.error))
+
+    if st.session_state.get("batch_errors"):
+        errors = st.session_state.batch_errors
+        st.warning(
+            f"{len(errors)} " + t("warning_some_unanalyzed") + " "
+            + ", ".join(p for p, _ in errors)
+        )
+
+    if st.session_state.active_view == "search":
         # --- Unified results table + drill-down -----------------------------------
         if st.session_state.table_rows:
             # Union, not replace: a fresh search seeds drilldown_permits directly
@@ -908,8 +1057,12 @@ else:
             )
             drill_down.render(conn, combined, st.session_state.results_cache, get_knowledge_base())
 
+        # My Permits, folded into the Search view rather than a separate nav
+        # destination -- this is what a visitor sees by default (before
+        # searching anything) if they've starred any prior search, and stays
+        # available below any ad-hoc search results otherwise.
+        st.divider()
+        my_permits.render(conn, st.session_state.get("pcla_uid"))
+
     elif st.session_state.active_view == "trends":
         trends_dashboard.render()
-
-    elif st.session_state.active_view == "my_permits":
-        my_permits.render(conn, st.session_state.get("pcla_uid"))

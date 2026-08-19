@@ -901,10 +901,10 @@ _STRINGS: dict[str, dict[str, str]] = {
         ),
     },
 
-    # --- Nav switcher (Search / Trends Dashboard / My Permits) -----------
+    # --- Nav switcher (Search / Trends Dashboard) -- My Permits folded
+    # into the Search view itself, not a separate nav destination ---------
     "nav_search": {"en": "Search", "es": "Buscar"},
     "nav_trends": {"en": "Trends Dashboard", "es": "Panel de tendencias"},
-    "nav_my_permits": {"en": "My Permits", "es": "Mis permisos"},
 
     # --- Trends dashboard --------------------------------------------------
     "trends_dashboard_header": {"en": "Trends Dashboard", "es": "Panel de tendencias"},
@@ -977,6 +977,23 @@ _STRINGS: dict[str, dict[str, str]] = {
     },
     "my_permits_starred_searches_header": {"en": "Starred searches", "es": "Búsquedas marcadas"},
     "unstar_button": {"en": "Unstar", "es": "Quitar marca"},
+
+    # --- Lifecycle stepper (sections/lifecycle_stepper.py) -- the general
+    # LADBS permitting process, condensed for a compact per-permit-card
+    # visual. Full step descriptions live in the stepper's own caption
+    # line, not the dot labels themselves. ---------------------------------
+    "lifecycle_step_1": {"en": "Zoning check", "es": "Verificación de zonificación"},
+    "lifecycle_step_2": {"en": "Documentation", "es": "Documentación"},
+    "lifecycle_step_3": {"en": "Application submitted", "es": "Solicitud presentada"},
+    "lifecycle_step_4": {"en": "Plan check", "es": "Revisión de planos"},
+    "lifecycle_step_5": {"en": "Payment", "es": "Pago"},
+    "lifecycle_step_6": {"en": "Issuance", "es": "Emisión"},
+    "lifecycle_step_7": {"en": "Construction & inspections", "es": "Construcción e inspecciones"},
+    "lifecycle_step_8": {"en": "Final inspection & closeout", "es": "Inspección final y cierre"},
+    "lifecycle_step_caption": {
+        "en": "Step {n} of {total} — {label}",
+        "es": "Paso {n} de {total} — {label}",
+    },
 }
 
 

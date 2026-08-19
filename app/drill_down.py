@@ -46,6 +46,7 @@ from errors import GENERIC_ERROR_MESSAGE, safe_error_message
 from i18n import plain_status_desc, t, translate_error_message
 from sections import (
     disclaimer,
+    lifecycle_stepper,
     location_map,
     next_best_action,
     permit_journey,
@@ -114,6 +115,8 @@ def _render_other_permits_at_address(result: PermitAnalysisResult) -> None:
 
 
 def _render_one(result: PermitAnalysisResult, kb) -> None:
+    lifecycle_stepper.render(result)
+
     left_col, right_col = st.columns([2, 3])
     with left_col:
         quick_glance.render(result)
