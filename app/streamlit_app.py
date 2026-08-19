@@ -67,6 +67,53 @@ st.markdown(
     <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
+    /* Design system pass (Linear/Vercel/Raycast-inspired, translated to
+       plain CSS custom properties since this is server-rendered Streamlit,
+       not a Tailwind build). A cool slate neutral scale carries a faint
+       blue bias toward the accent; the existing brand navy stays the one
+       interactive accent (systematized into a tint/base/strong scale
+       rather than one flat hex reused everywhere); severity colors are a
+       separate semantic scale, deliberately not built from the accent
+       hue. Orange -- the other half of the existing brand -- is
+       restrained to exactly two places on purpose: the logo mark itself,
+       and the "starred" state below. It never appears on a primary
+       action, nav item, or severity chip. Radius/shadow/hover-lift move
+       away from the previous Carbon pass's sharp, flat corners toward
+       the softer, elevated card language this pass calls for. */
+    :root {
+        --n-0: #F7F8FA;
+        --n-50: #FFFFFF;
+        --n-100: #EEF1F5;
+        --n-200: #E1E5EB;
+        --n-300: #C9D0DA;
+        --n-500: #5B6B80;
+        --n-900: #16212E;
+
+        --a-tint: #E7EEF4;
+        --a-soft: #C7D8E6;
+        --a: #0B3556;
+        --a-strong: #052D49;
+
+        --brand-warm: #F5760A;
+        --brand-warm-tint: #FDEEE0;
+
+        --sem-watch: #2B7A78;
+        --sem-watch-bg: #E6F2F1;
+        --sem-elevated: #93650A;
+        --sem-elevated-bg: #FBF0DE;
+        --sem-severe: #A24638;
+        --sem-severe-bg: #FBEAE7;
+
+        --border: var(--n-200);
+        --border-strong: var(--n-300);
+        --text-primary: var(--n-900);
+        --text-secondary: var(--n-500);
+        --shadow-color: 16 33 46;
+
+        --radius: 10px;
+        --radius-lg: 14px;
+    }
+
     html, body, [class*="css"] {
         font-family: 'IBM Plex Sans', sans-serif;
     }
@@ -77,92 +124,115 @@ st.markdown(
         font-family: 'IBM Plex Sans', sans-serif;
         font-weight: 600;
     }
-    /* Carbon Design System v11 productive type scale (IBM Plex Sans),
-       applied to Streamlit's own heading/body/caption elements so text
-       hierarchy reads consistently across the app -- sizes/weights only,
-       no color changes (existing brand colors are untouched throughout
-       this stylesheet). Streamlit maps st.title -> h1, st.header -> h2,
+    /* Type scale kept from the prior pass -- sizes/weights carry
+       hierarchy on their own, one family throughout, matching the
+       Linear/Vercel convention of varying weight rather than switching
+       faces. Streamlit maps st.title -> h1, st.header -> h2,
        st.subheader -> h3; body copy renders inside stMarkdownContainer
        paragraphs, and st.caption renders inside stCaptionContainer. */
     [data-testid="stMarkdownContainer"] h1 {
-        font-size: 1.75rem;   /* Carbon Heading 05 */
+        font-size: 1.75rem;
         line-height: 2.25rem;
         font-weight: 600;
     }
     [data-testid="stMarkdownContainer"] h2 {
-        font-size: 1.25rem;   /* Carbon Heading 04 */
+        font-size: 1.25rem;
         line-height: 1.75rem;
         font-weight: 600;
     }
     [data-testid="stMarkdownContainer"] h3 {
-        font-size: 1rem;      /* Carbon Heading 03 */
+        font-size: 1rem;
         line-height: 1.5rem;
         font-weight: 600;
     }
     [data-testid="stMarkdownContainer"] p,
     [data-testid="stMarkdownContainer"] li {
-        font-size: 0.875rem;  /* Carbon Body 01 */
+        font-size: 0.875rem;
         line-height: 1.25rem;
         font-weight: 400;
+        color: var(--text-primary);
     }
     [data-testid="stCaptionContainer"],
     [data-testid="stCaptionContainer"] p {
-        font-size: 0.75rem;   /* Carbon Helper text 01 */
+        font-size: 0.75rem;
         line-height: 1rem;
         font-weight: 400;
         letter-spacing: 0.32px;
+        color: var(--text-secondary);
     }
     div[data-testid="stExpander"] summary {
         font-family: 'IBM Plex Sans', sans-serif;
         font-weight: 600;
         font-size: 0.875rem;
     }
-    /* Carbon button shape/sizing/states (radius, height, weight, focus
-       ring) applied to Streamlit's own button widgets -- Search, Clear
-       results, Download report, the hidden Home trigger. Persona-picker
-       buttons keep their own already-tuned card treatment further down
-       this stylesheet (that selector is more specific, so it still wins
-       over these defaults where the two overlap); this rule intentionally
-       carries no color declarations of its own. */
+    /* Button shape/sizing/states -- Search, Clear results, Download
+       report, the hidden Home trigger, the star toggle. Persona-picker
+       cards and the starred state keep their own more-specific selectors
+       further down, which win over these defaults where they overlap. */
     div[data-testid="stButton"] button,
     div[data-testid="stFormSubmitButton"] button,
     div[data-testid="stDownloadButton"] button {
-        border-radius: 0;
+        border-radius: var(--radius);
         font-family: 'IBM Plex Sans', sans-serif;
-        font-weight: 400;
+        font-weight: 500;
         font-size: 0.875rem;
-        min-height: 3rem;
-        padding: 0 1rem;
-        transition: background-color 70ms cubic-bezier(0.2, 0, 0.38, 0.9),
-            border-color 70ms cubic-bezier(0.2, 0, 0.38, 0.9),
-            color 70ms cubic-bezier(0.2, 0, 0.38, 0.9);
+        min-height: 2.75rem;
+        padding: 0 1.1rem;
+        border-color: var(--border-strong);
+        transition: background-color 0.15s ease, border-color 0.15s ease,
+            color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    }
+    div[data-testid="stButton"] button:hover,
+    div[data-testid="stFormSubmitButton"] button:hover,
+    div[data-testid="stDownloadButton"] button:hover {
+        transform: translateY(-1px);
+    }
+    div[data-testid="stButton"] button[kind="secondary"]:hover,
+    div[data-testid="stDownloadButton"] button:hover {
+        border-color: var(--a);
+        color: var(--a);
+    }
+    div[data-testid="stButton"] button[kind="primary"] {
+        box-shadow: 0 1px 2px rgba(var(--shadow-color) / 0.12);
+    }
+    div[data-testid="stButton"] button[kind="primary"]:hover {
+        box-shadow: 0 4px 12px rgba(var(--shadow-color) / 0.18);
     }
     div[data-testid="stButton"] button:focus-visible,
     div[data-testid="stFormSubmitButton"] button:focus-visible,
     div[data-testid="stDownloadButton"] button:focus-visible {
-        outline: 2px solid currentColor;
-        outline-offset: -2px;
-        box-shadow: none;
+        outline: none;
+        box-shadow: 0 0 0 3px var(--a-soft), 0 0 0 1.5px var(--a);
+    }
+    /* The starred toggle's filled state -- streamlit_app.py gives this
+       button a different `key` depending on whether the current search
+       is already starred, specifically so this selector can reach it;
+       see the star-toggle block below for why. This is the only button
+       anywhere in the app that isn't neutral or navy. */
+    div[class*="st-key-star_toggle_button_starred"] button {
+        background-color: var(--brand-warm-tint) !important;
+        color: var(--brand-warm) !important;
+        border-color: transparent !important;
     }
     [data-testid="stHeader"] {
-        background-color: #F5760A !important;
+        background-color: var(--n-0) !important;
         height: 5.5rem !important;
-        /* The navy band between the orange header strip and the page
-           body -- a border-bottom rather than a separate element so it's
-           guaranteed to sit exactly flush with the header's own edge,
-           full width, with no extra flow-space math needed. */
-        border-bottom: 6px solid #052D49;
+        border-bottom: 1px solid var(--border);
     }
     [data-testid="stToolbar"], [data-testid="stMainMenu"], [data-testid="stAppDeployButton"] {
         display: none;
     }
     div[data-testid="stVerticalBlockBorderWrapper"],
     div[data-testid="stExpander"] {
-        border-radius: 10px;
-        /* Cards sit white on top of the page's warmer off-white
-           background (see .streamlit/config.toml's backgroundColor) so
-           they read as distinct surfaces rather than blending in. */
-        background-color: #FFFFFF;
+        border-radius: var(--radius-lg);
+        border-color: var(--border) !important;
+        background-color: var(--n-50);
+        box-shadow: 0 10px 26px -18px rgba(var(--shadow-color) / 0.3);
+    }
+    div[data-testid="stDataFrame"] {
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid var(--border);
     }
     div.block-container {
         padding-top: 1.5rem !important;
@@ -226,41 +296,44 @@ st.markdown(
        so it shouldn't carry that same "external link" visual signal.
        A house-picture icon was tried first and read as confusing on a
        page whose own subject matter is building permits; a bordered
-       button reads unambiguously as a nav control either way. */
+       button reads unambiguously as a nav control either way. Bordered/
+       neutral rather than navy-filled now that the header itself is
+       light -- a solid-navy pill directly under a light header reads as
+       loud as the old solid-orange header did. */
     .header-home-link {
         display: inline-flex;
         align-items: center;
-        font-weight: 600;
+        font-weight: 500;
         font-size: 0.85rem;
         /* !important on both color and text-decoration: Streamlit's own
            base anchor styling sets a link color (a themed blue, not
            primaryColor) and text-decoration: underline, both with
            higher specificity than a bare class selector here otherwise
            beats -- confirmed via computed-style inspection showing
-           rgb(0, 84, 163) text despite this rule saying #FFFFFF. Same
-           class of bug the site-welcome-intro margin fix above ran
-           into; text-decoration alone wasn't enough because color is a
-           separate overridden property. */
-        color: #FFFFFF !important;
+           rgb(0, 84, 163) text despite this rule saying the intended
+           color. Same class of bug the site-welcome-intro margin fix
+           below ran into; text-decoration alone wasn't enough because
+           color is a separate overridden property. */
+        color: var(--text-primary) !important;
         text-decoration: none !important;
         padding: 0.35rem 0.9rem;
-        border: 1.5px solid #052D49;
+        border: 1.5px solid var(--border-strong);
         border-radius: 999px;
-        background-color: #052D49;
-        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+        background-color: var(--n-50);
+        transition: border-color 0.15s ease, color 0.15s ease;
     }
     .header-home-link:hover {
-        background-color: #0A4066;
-        color: #FFFFFF !important;
+        border-color: var(--a);
+        color: var(--a) !important;
     }
     .header-external-link {
         display: block;
         /* !important: same Streamlit base-link-color override as
            .header-home-link above -- without it this rendered
-           Streamlit's default themed blue instead of navy. */
-        color: #052D49 !important;
-        font-weight: 600;
-        font-size: 0.9rem;
+           Streamlit's default themed blue instead of the accent. */
+        color: var(--a-strong) !important;
+        font-weight: 500;
+        font-size: 0.85rem;
         text-decoration: none !important;
         border-bottom: 1px solid transparent;
         transition: border-color 0.15s ease-in-out;
@@ -273,7 +346,7 @@ st.markdown(
         text-overflow: ellipsis;
     }
     .header-external-link:hover {
-        border-bottom-color: #052D49;
+        border-bottom-color: var(--a-strong);
     }
     /* The real reset button the visible Home link's onclick triggers --
        kept in the DOM (display: none, not left unrendered) since a JS
@@ -308,62 +381,61 @@ st.markdown(
         margin-bottom: 1.5rem !important;
         margin-left: auto !important;
         margin-right: auto !important;
-        color: #444;
+        color: var(--text-secondary);
     }
     .persona-picker-heading {
         text-align: center;
-        font-weight: 700;
-        font-size: 1.4rem;
+        font-weight: 500;
+        font-size: 0.95rem;
         margin: 0.5rem 0 1.25rem 0;
-        color: #052D49;
+        color: var(--text-secondary);
     }
-    /* Persona picker buttons: white cards (matching the rest of the
-       app's card treatment -- see stVerticalBlockBorderWrapper/
-       stExpander above) with a navy border and a thin orange accent
-       bar along the bottom, rather than a solid orange fill -- a wall
-       of solid orange directly under the already-orange header bar
-       was flat and visually loud. Hover inverts to a solid navy fill,
-       which reuses the app's own primary-button color (the Search
-       button) so the "this is clickable" signal is consistent with
-       the rest of the page. Scoped to the "persona_picker_row"
-       container key so it doesn't restyle any other button. */
+    /* Persona picker cards: neutral bordered cards (matching the rest of
+       the app's card language) that lift and pick up the accent border
+       on hover, rather than the previous navy-fill-on-hover treatment --
+       consistent with every other interactive card in the app now
+       (results table rows, stall-finding cards). No orange here: orange
+       is restrained to the logo mark and the starred state only, so a
+       role-select card doesn't compete with those two meanings. Scoped
+       to the "persona_picker_row" container key so it doesn't restyle
+       any other button. */
     div[class*="st-key-persona_picker_row"] div[data-testid="stButton"] button {
-        background-color: #FFFFFF;
-        color: #052D49;
-        font-weight: 600;
-        border: 1.5px solid #052D49;
-        border-bottom: 4px solid #F5760A;
-        border-radius: 8px;
-        padding: 1rem 1.25rem;
-        font-size: 1rem;
-        box-shadow: 0 1px 4px rgba(5, 45, 73, 0.1);
-        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out,
-            transform 0.15s ease-in-out;
+        background-color: var(--n-50);
+        color: var(--text-primary);
+        font-weight: 500;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.1rem 1rem;
+        font-size: 0.95rem;
+        box-shadow: 0 1px 2px rgba(var(--shadow-color) / 0.06);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease,
+            transform 0.15s ease;
     }
     div[class*="st-key-persona_picker_row"] div[data-testid="stButton"] button:hover {
-        background-color: #052D49;
-        color: #FFFFFF;
-        border-color: #052D49;
-        border-bottom-color: #F5760A;
-        transform: translateY(-1px);
+        border-color: var(--a);
+        box-shadow: 0 10px 26px -18px rgba(var(--shadow-color) / 0.4);
+        transform: translateY(-2px);
     }
     div[class*="st-key-persona_picker_row"] div[data-testid="stButton"] button:focus-visible {
-        outline: 2px solid #052D49;
-        outline-offset: 2px;
+        outline: none;
+        box-shadow: 0 0 0 3px var(--a-soft), 0 0 0 1.5px var(--a);
     }
     .search-loading-track {
         width: 100%;
         height: 6px;
         border-radius: 3px;
-        background: #E4E9F2;
+        background: var(--n-100);
         overflow: hidden;
         margin: 0.5rem 0 1rem 0;
     }
+    /* Navy-only gradient (no orange) -- consistent with orange being
+       restrained to the logo mark and the starred state elsewhere in
+       this stylesheet. */
     .search-loading-bar {
         height: 100%;
         width: 40%;
         border-radius: 3px;
-        background: linear-gradient(90deg, #99AFD7, #052D49, #E08A3C, #99AFD7);
+        background: linear-gradient(90deg, var(--a-soft), var(--a-strong), var(--a-soft));
         background-size: 300% 100%;
         animation: search-loading-slide 1.1s ease-in-out infinite,
             search-loading-color 2s linear infinite;
@@ -389,7 +461,7 @@ st.markdown(
     }
     .search-loading-gif-caption {
         font-size: 0.85rem;
-        color: #5B6472;
+        color: var(--text-secondary);
         text-align: center;
     }
     .search-tooltip-wrap {
@@ -406,12 +478,17 @@ st.markdown(
         width: 1.5rem;
         height: 1.5rem;
         border-radius: 50%;
-        border: 1.5px solid #052D49;
-        color: #052D49;
+        border: 1.5px solid var(--border-strong);
+        color: var(--text-secondary);
         font-size: 0.85rem;
-        font-weight: 700;
+        font-weight: 600;
         cursor: help;
         user-select: none;
+        transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .search-tooltip-wrap:hover .search-tooltip-icon {
+        border-color: var(--a);
+        color: var(--a);
     }
     .search-tooltip-content {
         visibility: hidden;
@@ -422,15 +499,15 @@ st.markdown(
         margin-top: 0.5rem;
         width: 320px;
         max-width: 80vw;
-        background: #052D49;
+        background: var(--a-strong);
         color: #FFFFFF;
         padding: 0.75rem 1rem;
-        border-radius: 8px;
+        border-radius: var(--radius);
         font-size: 0.85rem;
         line-height: 1.45;
         text-align: left;
         z-index: 9999;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+        box-shadow: 0 12px 32px -16px rgba(var(--shadow-color) / 0.4);
         transition: opacity 0.15s ease-in-out;
         pointer-events: none;
     }
@@ -765,7 +842,15 @@ else:
             _value = st.session_state.last_search_value
             _currently_starred = starred.is_starred(conn, _uid, _kind, _value)
             _star_label = t("unstar_this_search") if _currently_starred else t("star_this_search")
-            if star_toggle_slot.button(_star_label, key="star_toggle_button"):
+            # Key carries the starred/unstarred state, not just an id --
+            # the stylesheet above targets "st-key-star_toggle_button_starred"
+            # specifically to give the filled (starred) state its own
+            # restrained-orange color, the only non-neutral/non-navy button
+            # anywhere in the app. Streamlit treats a key change as a new
+            # widget, which is fine here: nothing depends on this button
+            # preserving internal state across the toggle.
+            _star_key = f"star_toggle_button_{'starred' if _currently_starred else 'unstarred'}"
+            if star_toggle_slot.button(_star_label, key=_star_key):
                 if _currently_starred:
                     starred.unstar_search(conn, _uid, _kind, _value)
                 else:

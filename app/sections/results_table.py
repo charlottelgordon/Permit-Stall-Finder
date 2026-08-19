@@ -34,7 +34,12 @@ from i18n import t
 from portfolio import PortfolioRow
 from permit_stall_finder.schema.stall_detection import Severity
 
-_SEVERE_HIGHLIGHT = "background-color: #1D4ED8; color: white; font-weight: 600;"
+# Matches the --sem-severe token in streamlit_app.py's stylesheet -- the
+# same semantic red used for severity chips elsewhere, not the accent
+# blue this used to be (semantic severity color is deliberately kept
+# separate from the navy interactive accent, see that stylesheet's own
+# token comments).
+_SEVERE_HIGHLIGHT = "background-color: #A24638; color: white; font-weight: 600;"
 
 
 def render(rows: list[PortfolioRow], *, key: str = "results_table") -> list[str]:

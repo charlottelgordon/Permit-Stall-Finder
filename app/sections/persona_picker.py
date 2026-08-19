@@ -1,13 +1,16 @@
 """Persona-selection gate shown on first load, before the search bar --
 lets a user identify as Contractor / Developer / Government Employee /
-Individual by clicking one of four plain text buttons (styled orange
-with blue text via streamlit_app.py's stylesheet, scoped to the
-"persona_picker_row" container key so it doesn't affect any other
-button on the page). Purely a display gate for now (which screen shows
-next), not yet used to vary any content -- storing the choice in
-st.session_state.selected_persona is enough for the current request; a
-future personalization pass can read that value without any changes
-here.
+Individual by clicking one of four bordered card buttons, each carrying
+a small Material Symbols icon via st.button's own icon= parameter (no
+raw HTML needed -- st.button doesn't support markup in its label, so
+this is the one distinguishing touch available without restructuring
+away from a plain button). Cards are styled via streamlit_app.py's
+stylesheet, scoped to the "persona_picker_row" container key so it
+doesn't affect any other button on the page. Purely a display gate for
+now (which screen shows next), not yet used to vary any content --
+storing the choice in st.session_state.selected_persona is enough for
+the current request; a future personalization pass can read that value
+without any changes here.
 
 Previously these were image-buttons; switched back to plain buttons per
 explicit request -- the imagery read as overwhelming. There was also
@@ -28,12 +31,12 @@ import streamlit as st
 
 from i18n import t
 
-# (session-state value, i18n label key)
+# (session-state value, i18n label key, Material Symbols icon shortcode)
 _PERSONAS = [
-    ("contractor", "persona_contractor"),
-    ("developer", "persona_developer"),
-    ("government_employee", "persona_government_employee"),
-    ("individual", "persona_individual"),
+    ("contractor", "persona_contractor", ":material/construction:"),
+    ("developer", "persona_developer", ":material/code:"),
+    ("government_employee", "persona_government_employee", ":material/account_balance:"),
+    ("individual", "persona_individual", ":material/person:"),
 ]
 
 
@@ -46,8 +49,8 @@ def render() -> None:
     )
     with st.container(key="persona_picker_row"):
         cols = st.columns(4, gap="small")
-        for col, (persona_key, label_key) in zip(cols, _PERSONAS):
+        for col, (persona_key, label_key, icon) in zip(cols, _PERSONAS):
             with col:
-                if st.button(t(label_key), key=f"persona_select_{persona_key}", width="stretch"):
+                if st.button(t(label_key), icon=icon, key=f"persona_select_{persona_key}", width="stretch"):
                     st.session_state.selected_persona = persona_key
                     st.rerun()
