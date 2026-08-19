@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 from permit_stall_finder import config
@@ -82,6 +83,45 @@ def fetch_permits_by_address(
     where = (
         f"upper(primary_address) like upper('%{socrata.escape_soql_string(address_query)}%')"
     )
+    return socrata.query(
+        config.PERMIT_DATASET_ID,
+        {
+            "$select": socrata.select_with_system_columns(PERMIT_FIELDS),
+            "$where": where,
+            "$order": "status_date DESC",
+            "$limit": str(limit),
+        },
+        base_url,
+    )
+
+
+_LEADING_HOUSE_NUMBER_RE = re.compile(r"^\s*\d+[\d/]*(?:\s+\d*/\d+)?(?:\s+|$)")
+
+
+def _strip_house_number(address_query: str) -> str:
+    """Strips a leading house number (and a trailing fractional unit like
+    "1/2", common in LA addresses) from an address query, leaving just
+    the street name -- e.g. "2511 N MT BEACON TER" -> "N MT BEACON TER".
+    Returns "" if the query is nothing but a house number (or empty), so
+    the caller knows there's no street name left to fall back on."""
+    return _LEADING_HOUSE_NUMBER_RE.sub("", address_query.strip()).strip()
+
+
+def fetch_permits_by_street_name(
+    address_query: str, base_url: str = config.SOCRATA_BASE_URL, limit: int = ADDRESS_SEARCH_LIMIT
+) -> list[dict]:
+    """Fallback for fetch_permits_by_address() when an exact address match
+    finds nothing -- strips the leading house number from address_query
+    and matches on the remaining street name alone, surfacing real,
+    permit-bearing addresses on the same street as a "closest address"
+    suggestion. This never invents an address or calls out to a geocoder;
+    it only ever returns addresses that already have a real permit on
+    file in this same dataset. Returns [] without querying at all if
+    stripping the house number leaves no street name to search on."""
+    street_name = _strip_house_number(address_query)
+    if not street_name:
+        return []
+    where = f"upper(primary_address) like upper('%{socrata.escape_soql_string(street_name)}%')"
     return socrata.query(
         config.PERMIT_DATASET_ID,
         {

@@ -48,8 +48,8 @@ from errors import GENERIC_ERROR_MESSAGE, validate_permit_number
 from sections import faq, my_permits, persona_picker, report_export, results_table, trends_dashboard
 
 from permit_stall_finder import config
-from permit_stall_finder.ingestion.permits import fetch_permits_by_address
-from permit_stall_finder.storage import starred, user_state
+from permit_stall_finder.ingestion.permits import fetch_permits_by_address, fetch_permits_by_street_name
+from permit_stall_finder.storage import search_counter, starred, user_state
 
 st.set_page_config(
     page_title=APP_NAME,
@@ -520,6 +520,24 @@ st.markdown(
             flex: 0 1 0.75rem;
         }
     }
+    /* Civic-impact stat (persona_picker.py) -- a small centered pill,
+       restrained rather than a big flashy counter, matching the rest of
+       this app's design language. Uses the accent tint, not the brand
+       navy fill or the restrained-orange starred color -- neither
+       "primary action" nor "starred" is the right meaning here. */
+    .impact-stat-wrap {
+        text-align: center;
+        margin: 0 0 0.75rem 0;
+    }
+    .impact-stat {
+        display: inline-block;
+        background: var(--a-tint);
+        color: var(--a-strong);
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 0.3rem 0.9rem;
+        border-radius: 999px;
+    }
     .persona-picker-heading {
         text-align: center;
         font-weight: 500;
@@ -806,7 +824,7 @@ with st.container(key="header_language_toggle_wrap"):
 
 # --- Persona gate: the search bar stays hidden until a role is picked --
 if not st.session_state.selected_persona:
-    persona_picker.render()
+    persona_picker.render(conn)
 else:
     # --- Nav switcher: Home / Search / My Permits / Trends Dashboard / FAQ -
     # Same "gate on session_state, branch what renders" idiom the persona
@@ -947,6 +965,19 @@ else:
             else:
                 try:
                     matches = fetch_permits_by_address(values[0])
+                    if not matches:
+                        # No exact match -- fall back to a relaxed,
+                        # street-name-only query rather than giving up
+                        # outright. Still only ever surfaces real,
+                        # permit-bearing addresses from this same
+                        # dataset (no geocoder, no invented address), so
+                        # this stays honest about what it's showing --
+                        # flagged explicitly to the user below, not
+                        # silently swapped in as if it were an exact hit.
+                        fallback_matches = fetch_permits_by_street_name(values[0])
+                        if fallback_matches:
+                            st.info(t("info_address_fallback_used"))
+                            matches = fallback_matches
                     permit_numbers = [m["permit_nbr"] for m in matches if m.get("permit_nbr")]
                     user_state.record_search(conn, "address", values[0])
                 except Exception:
@@ -976,6 +1007,11 @@ else:
                 )
                 st.session_state.extra_drilldown_permits = []
                 st.session_state.batch_errors = batch.errors
+                # Once per successful search submission, not once per
+                # resolved permit -- see search_counter.py's own
+                # docstring for why this is a separate tally from
+                # user_state.record_search() above.
+                search_counter.record_search_event(conn, st.session_state.last_search_kind)
 
                 # A search submitted from the Trends view has nowhere to show
                 # its results there (only the Search view renders the results

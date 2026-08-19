@@ -605,6 +605,10 @@ _STRINGS: dict[str, dict[str, str]] = {
         "es": "No se encontraron permisos para esa dirección. Intente con una dirección más "
         "corta o con otro formato.",
     },
+    "info_address_fallback_used": {
+        "en": "No permits found at that exact address — showing other permits on the same street instead.",
+        "es": "No se encontraron permisos en esa dirección exacta — mostrando otros permisos en la misma calle.",
+    },
     # quick_glance.py
     "qg_address": {"en": "Address", "es": "Dirección"},
     "qg_type": {"en": "Type", "es": "Tipo"},
@@ -776,6 +780,10 @@ _STRINGS: dict[str, dict[str, str]] = {
         "es": "Recursos oficiales de permisos de construcción de LADBS",
     },
     # persona_picker.py
+    "impact_stat_text": {
+        "en": "{n} search{plural} run on Permit Check LA so far",
+        "es": "{n} búsqueda{plural} realizada{plural} en Permit Check LA hasta ahora",
+    },
     "persona_picker_heading": {
         "en": "Let us know your role, so you can get the most out of this experience.",
         "es": "Cuéntenos su rol, para que pueda aprovechar al máximo esta experiencia.",

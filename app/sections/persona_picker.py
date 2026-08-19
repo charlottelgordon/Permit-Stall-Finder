@@ -30,6 +30,7 @@ from __future__ import annotations
 import streamlit as st
 
 from i18n import t
+from permit_stall_finder.storage import search_counter
 
 # (session-state value, i18n label key, Material Symbols icon shortcode)
 _PERSONAS = [
@@ -40,9 +41,28 @@ _PERSONAS = [
 ]
 
 
-def render() -> None:
+def render(conn) -> None:
     """The picker itself -- shown instead of the search bar until a
     persona is chosen."""
+    # Civic-impact stat: total search *actions* run on this app (see
+    # storage/search_counter.py's own docstring for why this is a
+    # separate append-only tally from search_history's distinct-value
+    # table). Hidden at 0 rather than showing "0 searches run" -- that
+    # reads as evidence of nothing happening, not as a real stat; it
+    # only shows once there's an actual number to be proud of. Note for
+    # whoever's reading this later: this resets to 0 on every redeploy,
+    # the same known limitation every other table in this storage layer
+    # already has (the local DuckDB file is gitignored and ephemeral).
+    search_count = search_counter.count_search_events(conn)
+    if search_count > 0:
+        stat_text = t("impact_stat_text").format(
+            n=f"{search_count:,}", plural="" if search_count == 1 else "s"
+        )
+        st.markdown(
+            f'<div class="impact-stat-wrap"><span class="impact-stat">{stat_text}</span></div>',
+            unsafe_allow_html=True,
+        )
+
     st.markdown(
         f'<p class="persona-picker-heading">{t("persona_picker_heading")}</p>',
         unsafe_allow_html=True,

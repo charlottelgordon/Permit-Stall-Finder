@@ -85,6 +85,18 @@ CREATE TABLE IF NOT EXISTS starred_searches (
     PRIMARY KEY (uid, kind, value)
 );
 
+CREATE TABLE IF NOT EXISTS search_event_log (
+    -- One row per successful search *submission* (not per permit number
+    -- it resolves to) -- an append-only tally backing the homepage's
+    -- "N searches run" civic-impact stat. Deliberately separate from
+    -- search_history above: that table upserts on (kind, value), so a
+    -- repeat search of the same thing never grows its row count -- exactly
+    -- wrong for "how many times has this app been used." No PRIMARY KEY:
+    -- every row is a distinct event, duplicates included on purpose.
+    kind TEXT NOT NULL,
+    searched_at TIMESTAMP NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS cohort_stats (
     cohort_key TEXT NOT NULL,       -- category + sorted dimensions, e.g. "pre_issuance_status_dwell|permit_type=Bldg-Alter/Repair|status_desc=Corrections Issued"
     computed_at TIMESTAMP NOT NULL,

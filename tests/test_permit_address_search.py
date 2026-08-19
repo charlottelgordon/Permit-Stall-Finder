@@ -107,3 +107,54 @@ def test_fetch_permits_by_address_returns_rows_unchanged(monkeypatch):
 
     assert result == fake_rows
 
+
+# --- fetch_permits_by_street_name() (closest-address fallback) -----------
+
+
+def test_strip_house_number_removes_leading_number():
+    assert permits._strip_house_number("2511 N MT BEACON TER") == "N MT BEACON TER"
+
+
+def test_strip_house_number_removes_fractional_unit_too():
+    assert permits._strip_house_number("2511 1/2 N MT BEACON TER") == "N MT BEACON TER"
+
+
+def test_strip_house_number_bare_number_leaves_nothing():
+    assert permits._strip_house_number("2511") == ""
+
+
+def test_strip_house_number_no_leading_number_returns_input_stripped():
+    assert permits._strip_house_number("  N MT BEACON TER  ") == "N MT BEACON TER"
+
+
+def test_fetch_permits_by_street_name_sends_street_only_where(monkeypatch):
+    captured = {}
+
+    def fake_query(dataset_id, params, base_url):
+        captured.update(params)
+        return []
+
+    monkeypatch.setattr(permits.socrata, "query", fake_query)
+
+    permits.fetch_permits_by_street_name("2511 N Mt Beacon Ter")
+
+    assert captured["$where"] == "upper(primary_address) like upper('%N Mt Beacon Ter%')"
+
+
+def test_fetch_permits_by_street_name_bare_house_number_skips_query(monkeypatch):
+    def fail_if_called(dataset_id, params, base_url):
+        raise AssertionError("should not query when no street name remains")
+
+    monkeypatch.setattr(permits.socrata, "query", fail_if_called)
+
+    assert permits.fetch_permits_by_street_name("2511") == []
+
+
+def test_fetch_permits_by_street_name_returns_rows_unchanged(monkeypatch):
+    fake_rows = [{"permit_nbr": "25016-20000-34482", "primary_address": "2509 N MT BEACON TER"}]
+    monkeypatch.setattr(permits.socrata, "query", lambda dataset_id, params, base_url: fake_rows)
+
+    result = permits.fetch_permits_by_street_name("2511 N Mt Beacon Ter")
+
+    assert result == fake_rows
+
